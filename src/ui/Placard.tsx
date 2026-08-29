@@ -12,6 +12,8 @@
  * than flattened to one fill, because that split IS the identification.
  */
 
+import "./placard.css";
+
 export type PlacardSpec = {
   /** Fill of the upper field. */
   top: string;
@@ -84,7 +86,7 @@ export function Placard({
           ? "Forbidden material. No placard: it may not be offered for transportation."
           : `Class ${shown} placard, ${spec.label}`
       }
-      style={{ opacity: muted ? 0.5 : 1, display: "block", flexShrink: 0 }}
+      className={muted ? "placard placard--muted" : "placard"}
     >
       <defs>
         <clipPath id={id}>

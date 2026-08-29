@@ -1,0 +1,17 @@
+/* Placard presentation.
+ *
+ * These live in a stylesheet rather than a React style prop so the deployed
+ * Content-Security-Policy can carry `style-src 'self'` with no
+ * 'unsafe-inline'. React would set these through the CSSOM, which CSP does
+ * not intercept, so it would have worked either way. Relying on that would be
+ * relying on a gap rather than on the policy, and the policy is the thing this
+ * project claims in writing. */
+
+.placard {
+  display: block;
+  flex-shrink: 0;
+}
+
+.placard--muted {
+  opacity: 0.5;
+}

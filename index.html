@@ -9,6 +9,27 @@
       content="Paste a chemical manifest and watch an agent load a truck legally. The page shows exactly which federal rule each pair breaks, and the shipping paper cannot be exported until the load passes."
     />
     <!--
+      Chrome origin trial token for WebMCP, registered 2026-08-29 for the
+      origin https://segregation-console.netlify.app and valid to 2026-11-16,
+      which is 56 days past the end of the judging window.
+
+      This is deliberately public: an origin-trial token is bound to an origin
+      and is meant to be served in the page. It is not a secret, and it is
+      committed so that a stranger cloning this repository gets a build that
+      behaves the same way on that origin.
+
+      Without it, Chrome does not enable WebMCP for this origin outside the
+      #enable-webmcp-testing flag, and Lighthouse's agentic-browsing WebMCP
+      audits report nothing at all rather than reporting a failure. That
+      silence is the trap: the implementation can be perfect and the audit
+      still shows an empty result.
+    -->
+    <meta
+      http-equiv="origin-trial"
+      content="AglgtEvgW5XieD27Bhuc+vCdUB4fU8SPrhHNaVRsJPqvWkq5vQaOD9wp7t2Mrf1X9awa+qVAzIPEflT5LvBAUAYAAABfeyJvcmlnaW4iOiJodHRwczovL3NlZ3JlZ2F0aW9uLWNvbnNvbGUubmV0bGlmeS5hcHA6NDQzIiwiZmVhdHVyZSI6IldlYk1DUCIsImV4cGlyeSI6MTc5NDg3MzYwMH0="
+    />
+
+    <!--
       The live region is rendered EMPTY here, in the initial HTML, rather than
       injected when the first verdict lands. Assistive technology must have
       registered the region before an announcement or the announcement is
