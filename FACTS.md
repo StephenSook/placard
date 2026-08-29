@@ -82,6 +82,26 @@ and 172.101(d)(1):
 
 Any index keyed on a UN number returns nothing for all 256 of these.
 
+## The measured divergence, 49 CFR 177.848(d) against the whole regulation
+
+Recomputed here and served live at `/api/measure`. This is the ONLY source for
+these figures: the demo-video narration, the README and the submission all draw
+from this table so they cannot diverge from one another.
+
+| Claim | Value |
+|---|---:|
+| Hazard categories the table indexes | 18 |
+| Configurations examined (ordered pairs x barrier x single shipper) | 1296 |
+| Configurations the 177.848(d) table alone clears | 792 |
+| Of those, configurations the full regulation forbids | 24 |
+| Share of table-cleared configurations that are actually prohibited | 3.0% |
+| Divergent on ground `CORROSIVE_OVER_OXIDIZER` | 8 |
+| Divergent on ground `EXPLOSIVE_INCOMPATIBLE` | 16 |
+
+This measures the SIZE OF THE GAP an agent reasons across when it treats the
+table as the whole rule. It is not a measurement of any model's accuracy, and no
+language model was run to produce it.
+
 ## Figures that are NOT derived here and must be sourced in place
 
 These are real and citable but come from outside the corpus, so every use must
@@ -92,6 +112,10 @@ carry its source inline. They are listed so a reviewer can find them.
 | PHMSA maximum civil penalty per violation per day | 49 U.S.C. 5123(a), as adjusted at 89 FR 106282 |
 | Separation satisfied by barriers, not air space | PHMSA interpretations 08-0143 and 03-0300 |
 | "Truckload" means loaded by a single shipper | PHMSA interpretation 04-0031 |
-| Unaided-model clearance rate on forbidden loads | this project's own frozen eval set, reported with its model, date and interval |
+| PHMSA maximum civil penalty, current dollar figure | look it up at 49 CFR 107.329 before stating it |
+
+NOT AVAILABLE and must never be asserted: any unaided-model clearance rate. No
+OpenAI key exists for this project, so no model arm was ever run. Use the
+measured divergence above, which needs no model.
 
 Nothing else may be stated as a number.
