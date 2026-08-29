@@ -133,9 +133,18 @@ the two can never get different answers about a material or a load. There is no
 sync step and no second source of truth to drift.
 
 The agent does the parts agents are good at. It reads "2 drums sulphuric acid
-soln 60%" out of a supplier email and turns it into UN1830, Class 8, packing
-group II. It searches the space of ways to split eleven items across two
-vehicles, which is a graph colouring problem a person does badly and slowly.
+soln 60%" out of a supplier email and puts Sulfuric acid at the top of a ranked
+candidate list for the officer to confirm, including when the supplier used the
+British spelling, which matters more than it sounds: the 172.101 table is not
+internally consistent about that. It contains "Nicotine sulphate" and "Titanium
+disulphide" alongside ninety entries spelled with an f, so a US shipper
+searching "nicotine sulfate" was getting nothing back. The agent also searches
+the space of ways to split a manifest across vehicles, which is a graph
+colouring problem a person does badly and slowly.
+
+Note what it does NOT do: it never classifies. `classify_line_item` returns
+candidates with `confirmationRequired` set, so injected or ambiguous text cannot
+become a line item without a human choosing it.
 
 The page does the part agents are demonstrably unreliable at, which is applying
 the regulation exactly, every time, with a citation.
