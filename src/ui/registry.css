@@ -80,8 +80,9 @@
 .registry__state {
   font-size: var(--t-nano);
   letter-spacing: 0.12em;
+  /* No opacity here. --deck-ink-soft is 5.08:1 on the deck, but at 0.75 it
+     renders as 3.50:1 and fails. */
   color: var(--deck-ink-soft);
-  opacity: 0.75;
 }
 
 /* ── absent ──────────────────────────────────────────────────────────────── */
@@ -90,7 +91,8 @@
   text-decoration: line-through;
   text-decoration-thickness: 1px;
   text-decoration-color: var(--deck-rule);
-  opacity: 0.55;
+  /* The strike-through already says "absent". Opacity on top of it only made
+     the name unreadable, at 2.52:1. */
 }
 
 /* ── live ────────────────────────────────────────────────────────────────── */
@@ -103,8 +105,7 @@
   color: var(--deck-ink);
 }
 .registry__item.is-live .registry__state {
-  color: var(--cleared);
-  opacity: 1;
+  color: var(--cleared-text);
 }
 
 /* ── the gated one ───────────────────────────────────────────────────────── */
@@ -123,8 +124,7 @@
   transition: background var(--t-quick) linear;
 }
 .registry__item.is-gated.is-absent .registry__state {
-  color: var(--refused);
-  opacity: 0.85;
+  color: var(--refused-text);
 }
 .registry__item.is-gated.is-live {
   background: #23301f;

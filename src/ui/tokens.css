@@ -63,6 +63,16 @@
   --cleared: var(--hz-nonflam);
   --caution: var(--hz-oxidizer);
 
+  /* The placard colours above are FILL colours, chosen by 49 CFR 172 subpart F
+     to be read as a large field at distance. They are not text colours, and
+     used as 11px type on the dark deck they measure 3.25:1 and 3.12:1, below
+     the 4.5:1 WCAG 1.4.3 needs. These are the lightest variants of the same
+     hues that clear 4.5:1 on BOTH deck grounds. Use a fill token for a placard
+     or a dot; use one of these the moment it becomes type. */
+  --cleared-text: #00a04a;   /* 4.56 on --deck-raised, 5.12 on --deck */
+  --refused-text: #e55d62;   /* 4.52 on --deck-raised, 5.07 on --deck */
+  --caution-text: #a68800;   /* 4.57 on --deck-raised, 5.13 on --deck */
+
   /* ── type ────────────────────────────────────────────────────────────── */
   --font-display: "Archivo", "Helvetica Neue", sans-serif;
   --font-body: "Public Sans", system-ui, sans-serif;

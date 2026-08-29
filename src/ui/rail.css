@@ -35,12 +35,16 @@
   background: var(--card);
   box-shadow: inset 0 0 0 1px var(--paper-edge);
   /* Families with nothing on the manifest recede, so the rail reads as a
-     tally at a glance rather than as a wall of equal-weight swatches. */
-  opacity: 0.55;
-  transition: opacity var(--t-quick) linear, box-shadow var(--t-quick) linear;
+     tally at a glance rather than as a wall of equal-weight swatches.
+     The recede is carried by the SWATCH and the border, never by opacity on
+     the card. Dimming the card dims its text too: at 0.55 the labels measured
+     2.39:1 and 4.33:1 against the card, failing WCAG 1.4.3 while the token
+     values themselves were fine. Opacity is invisible to a check that reads
+     tokens, which is exactly how this shipped. */
+  transition: box-shadow var(--t-quick) linear;
 }
+.rail__card:not(.is-present) .rail__swatch { opacity: 0.4; }
 .rail__card.is-present {
-  opacity: 1;
   box-shadow: inset 0 0 0 1px var(--ink);
 }
 

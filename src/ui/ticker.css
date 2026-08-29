@@ -65,13 +65,16 @@
   min-width: 1ch;
 }
 
-.ticker__text { color: var(--paper); opacity: 0.94; }
+/* Explicit colours rather than opacity. Both of these passed contrast as they
+   were, but opacity on type is invisible to any check that reads token values,
+   which is how three rules elsewhere shipped below 4.5:1. These are the exact
+   blended equivalents, so nothing changed visually: 13.96:1 and 4.65:1. */
+.ticker__text { color: #e7dcd4; }
 
 .ticker__cite {
   font-size: var(--t-nano);
   letter-spacing: 0.08em;
-  color: var(--paper);
-  opacity: 0.5;
+  color: #847d78;
 }
 
 @keyframes tickerScroll {

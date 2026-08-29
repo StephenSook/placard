@@ -248,6 +248,59 @@ describe("colour tokens meet WCAG 1.4.3", () => {
   });
 });
 
+describe("opacity is never applied to type", () => {
+  // THE TOKEN TEST ABOVE PASSED WHILE THE PAGE FAILED. Token values were fine;
+  // the rendered colours were not, because a rule dimmed a whole card and the
+  // text inside it came along. --deck-ink-soft is 5.08:1 on the deck and
+  // renders at 3.50:1 under opacity 0.75. A check that reads tokens is
+  // structurally blind to that, so this checks the mechanism instead.
+  //
+  // Opacity on a swatch, a dot, a rule or a keyframe is fine. Opacity on a rule
+  // that also sets a font or colour is what broke WCAG here.
+  const cssFiles = FILES.filter((f) => f.endsWith(".css"));
+
+  it("finds CSS to check", () => {
+    expect(cssFiles.length).toBeGreaterThan(5);
+  });
+
+  it("no rule sets both a text property and a fractional opacity", () => {
+    const offenders: string[] = [];
+    for (const f of cssFiles) {
+      const src = read(f);
+      // Crude block split is enough: each `selector { ... }` body.
+      for (const m of src.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+        const selector = m[1]!.trim();
+        const body = m[2]!;
+        if (/^\s*(from|to|\d+%)\s*$/.test(selector)) continue;   // keyframe steps
+        const op = /(?:^|[\s;])opacity:\s*([0-9.]+)/.exec(body);
+        if (!op || Number(op[1]) >= 1) continue;
+        const setsType = /(?:^|[\s;])(color|font-size|font-weight|font-family):/.test(body);
+        if (!setsType) continue;
+        // An entry state that animates or transitions INTO view is not a
+        // permanently dimmed piece of text. `.verdict__glyph` sits at opacity 0
+        // and transitions to 1; that is motion, not a contrast decision.
+        const animatesIn = /transition:[^;]*opacity|animation:/.test(body);
+        if (animatesIn) continue;
+        offenders.push(`${f}: ${selector.slice(0, 60)} (opacity ${op[1]})`);
+      }
+    }
+    expect(offenders, `opacity on a rule that also styles text:\n${offenders.join("\n")}`).toEqual([]);
+  });
+});
+
+describe("placard fills are never used as small type", () => {
+  it("state text uses the -text variants, not the placard fill tokens", () => {
+    // 49 CFR 172 subpart F picks these to be read as a large coloured field.
+    // As 11px type on the dark deck they measure 3.25:1 and 3.12:1.
+    const registry = read("src/ui/registry.css");
+    for (const m of registry.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
+      const body = m[2]!;
+      if (!/color:\s*var\(--(cleared|refused|caution)\)/.test(body)) continue;
+      expect.fail(`${m[1]!.trim()} uses a placard FILL as text; use --*-text`);
+    }
+  });
+});
+
 describe("landmarks", () => {
   it("every routed surface renders a <main>", () => {
     for (const f of ["src/Console.tsx", "src/Judge.tsx", "src/StatesPreview.tsx"]) {
