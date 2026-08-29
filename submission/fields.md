@@ -57,21 +57,20 @@ number, and put the restraint in the second clause rather than the first.
 **28257 Which agent(s) or client(s) did you test your WebMCP tools with?**
 (required, textarea, keep under 255 characters)
 
-*DRAFT. Do not submit until the ChatGPT in-app browser run has actually
-happened. Right now this answer would be describing a test that has not been
-performed, and the whole project is about not doing that.*
+**VERIFIED 2026-08-29 in Chrome 151 on the live origin, no flag.** Driven
+through `document.modelContext` directly: `getTools` returned 2 tools at mount,
+4 after a manifest was loaded, and `commit_manifest` absent throughout while the
+load failed. `executeTool` on `check_segregation` with `barriersPresent: true`
+returned REFUSED on ground CORROSIVE_OVER_OXIDIZER with 177.848(e)(3) verbatim.
+Splitting across two vehicles returned PASS with an approval token.
 
-> ChatGPT's in-app browser on GPT-5.6, and Chrome 149 with the origin trial live
-> (no flag needed). Also checked with Lighthouse's agentic-browsing audits, which
-> pass webmcp-schema-validity and webmcp-registered-tools, and with webmcp-evals
-> in smoke mode.
+**Still NOT verified: ChatGPT's in-app browser specifically.** Do not name it in
+this answer until that run happens.
 
-*If the ChatGPT run does not happen before submission, the honest version is:*
-
-> Chrome 149+ with the WebMCP origin trial live on the origin, verified by
-> registering and aborting a tool at runtime. Lighthouse agentic-browsing scores
-> 100 and passes webmcp-schema-validity and webmcp-registered-tools.
-> evals/segregation.evals.json runs against the live page in smoke mode.
+> Chrome 151 with the WebMCP origin trial live on the origin, no flag. Verified
+> through document.modelContext directly: getTools, executeTool, and tools
+> unregistering by AbortSignal as page state changes. Lighthouse agentic-browsing
+> scores 100. webmcp-evals runs against the live page in smoke mode.
 
 ---
 
