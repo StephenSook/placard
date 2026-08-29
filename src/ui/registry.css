@@ -1,0 +1,152 @@
+/**
+ * The tool registry strip.
+ *
+ * Material logic: this is the TRAILER DECK, the one dark surface in the app.
+ * The registry describes the machine's state rather than the law, so it does
+ * not belong on paper. The material contrast is the label: paper is the
+ * regulation, deck is the machine.
+ */
+
+.registry {
+  background: var(--deck);
+  color: var(--deck-ink);
+  border-radius: var(--r-lg);
+  padding: 18px var(--pad) 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.registry__lead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.registry__heading {
+  font-size: var(--t-small);
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  font-weight: 700;
+  color: var(--deck-ink);
+}
+
+.registry__count {
+  font-size: var(--t-nano);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--deck-ink-soft);
+}
+
+.registry__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  background: var(--deck-rule);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+
+.registry__item {
+  display: grid;
+  grid-template-columns: 12px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  background: var(--deck-raised);
+  transition: background var(--t-quick) linear;
+}
+
+.registry__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--r-pill);
+  background: var(--deck-rule);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  transition: background var(--t-quick) linear, box-shadow var(--t-quick) linear;
+}
+
+.registry__name {
+  font-size: var(--t-small);
+  color: var(--deck-ink-soft);
+  transition: color var(--t-quick) linear;
+}
+
+.registry__state {
+  font-size: var(--t-nano);
+  letter-spacing: 0.12em;
+  color: var(--deck-ink-soft);
+  opacity: 0.75;
+}
+
+/* ── absent ──────────────────────────────────────────────────────────────── */
+
+.registry__item.is-absent .registry__name {
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--deck-rule);
+  opacity: 0.55;
+}
+
+/* ── live ────────────────────────────────────────────────────────────────── */
+
+.registry__item.is-live .registry__dot {
+  background: var(--cleared);
+  box-shadow: 0 0 0 3px rgba(0, 132, 61, 0.22);
+}
+.registry__item.is-live .registry__name {
+  color: var(--deck-ink);
+}
+.registry__item.is-live .registry__state {
+  color: var(--cleared);
+  opacity: 1;
+}
+
+/* ── the gated one ───────────────────────────────────────────────────────── */
+/* commit_manifest is drawn differently because it IS the argument. When it
+   arrives the whole row lights and lifts once. */
+
+.registry__item.is-gated {
+  position: relative;
+}
+.registry__item.is-gated::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: var(--deck-rule);
+  transition: background var(--t-quick) linear;
+}
+.registry__item.is-gated.is-absent .registry__state {
+  color: var(--refused);
+  opacity: 0.85;
+}
+.registry__item.is-gated.is-live {
+  background: #23301f;
+  animation: registryArrive var(--t-stamp) var(--ease-stamp) both;
+}
+.registry__item.is-gated.is-live::after {
+  background: var(--cleared);
+}
+
+@keyframes registryArrive {
+  from { transform: translateX(-6px); opacity: 0.4; }
+  to   { transform: none; opacity: 1; }
+}
+
+.registry__note {
+  margin: 0;
+  font-size: var(--t-micro);
+  line-height: 1.55;
+  color: var(--deck-ink-soft);
+  max-width: 62ch;
+}
+.registry__note strong {
+  color: var(--deck-ink);
+  font-weight: 600;
+}

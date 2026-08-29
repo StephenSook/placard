@@ -1,0 +1,54 @@
+/* The states preview surface. Deliberately plain: it frames the components
+   under review and must not compete with them. */
+
+.preview {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding: 56px 28px 96px;
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+
+.preview__head { display: flex; flex-direction: column; gap: 10px; max-width: 62ch; }
+
+.preview__eyebrow {
+  font-size: var(--t-nano);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0;
+}
+
+.preview__title {
+  font-size: var(--t-hero);
+  letter-spacing: -0.035em;
+  text-transform: uppercase;
+}
+
+.preview__lead { margin: 0; color: var(--ink-soft); font-size: var(--t-lead); }
+
+.preview__loading { color: var(--ink-faint); font-size: var(--t-small); }
+
+.preview__scene { display: flex; flex-direction: column; gap: 14px; }
+
+.preview__caption {
+  margin: 0;
+  font-size: var(--t-small);
+  line-height: 1.55;
+  color: var(--ink-soft);
+  max-width: 78ch;
+  padding-left: 14px;
+  border-left: 2px solid var(--paper-edge);
+}
+
+.preview__pair {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: var(--gap);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .preview__pair { grid-template-columns: 1fr; }
+}

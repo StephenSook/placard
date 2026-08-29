@@ -1,0 +1,166 @@
+/**
+ * Design tokens.
+ *
+ * THE ONE RULE THIS SYSTEM IS BUILT ON: the only saturated colours in this
+ * interface are the placard colours specified in 49 CFR 172 Subpart F. Colour
+ * here is regulated data, not decoration. Everything else is achromatic paper
+ * and ink. When something is orange on this page it is orange because the
+ * regulation says explosives are orange.
+ *
+ * The ground, the radii scale and the type rhythm are measured from a
+ * reference site rather than guessed, by scripts/capture-reference.ts. Its
+ * ground reads rgb(244, 233, 225). The subject here is shipping papers and
+ * trailer decks, and warm paper is what a shipping paper is printed on, so the
+ * reference and the subject agree.
+ *
+ * Typefaces, all open source and SELF-HOSTED so the page makes zero
+ * third-party requests, which is what the script-src 'self' policy and the
+ * whole security argument rest on:
+ *   Archivo        wide industrial grotesque, the register of signage
+ *   Public Sans    the typeface of the US Web Design System, so an app about
+ *                  federal regulation is set in the government's own face
+ *   IBM Plex Mono  identification numbers, cell codes, hashes, tabular figures
+ */
+
+:root {
+  /* ── ground and ink ──────────────────────────────────────────────────── */
+  --paper: #f4e9e1;          /* the app ground, measured from the reference */
+  --paper-deep: #ebdfd5;     /* recessed wells */
+  --paper-edge: #ded0c4;     /* hairlines on paper */
+  --card: #fffdfb;           /* raised cards */
+  --ink: #14110e;            /* primary text */
+  --ink-soft: #5d554d;       /* secondary text */
+  --ink-faint: #97897c;      /* tertiary, captions */
+
+  /* the trailer deck: the one dark material, used only for vehicle bays,
+     so the contrast between deck and paper says "truck" versus "law" */
+  --deck: #1b1916;
+  --deck-raised: #262320;
+  --deck-rule: #3a352f;
+  --deck-ink: #ece5dd;
+  --deck-ink-soft: #9c9188;
+
+  /* ── 49 CFR 172 Subpart F placard colours ────────────────────────────── */
+  /* These are the regulated ones. Do not add to this list and do not use
+     them for anything that is not the hazard class they name. */
+  --hz-explosive: #f26b21;   /* Class 1 */
+  --hz-flammable: #d8232a;   /* 2.1, 3, 4.1, 4.2 */
+  --hz-nonflam: #00843d;     /* 2.2 */
+  --hz-wet: #0057b8;         /* 4.3 */
+  --hz-oxidizer: #ffd100;    /* 5.1, 5.2 */
+  --hz-toxic: #ffffff;       /* 6.1, white field, black text */
+  --hz-radioactive: #ffd100; /* 7, yellow upper field */
+  --hz-corrosive: #101010;   /* 8, black lower field */
+
+  /* ── verdict states, drawn from the placard set, never invented ──────── */
+  --refused: var(--hz-flammable);
+  --cleared: var(--hz-nonflam);
+  --caution: var(--hz-oxidizer);
+
+  /* ── type ────────────────────────────────────────────────────────────── */
+  --font-display: "Archivo", "Helvetica Neue", sans-serif;
+  --font-body: "Public Sans", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  /* measured rhythm, rounded to a usable scale */
+  --t-hero: clamp(2.75rem, 6.2vw, 4.75rem);   /* ~76px at the top end */
+  --t-display: clamp(1.75rem, 3vw, 2.2rem);
+  --t-title: 1.5rem;
+  --t-lead: 1.125rem;
+  --t-body: 1rem;
+  --t-small: 0.875rem;
+  --t-micro: 0.75rem;
+  --t-nano: 0.6875rem;
+
+  /* ── geometry ────────────────────────────────────────────────────────── */
+  --r-xs: 4px;
+  --r-sm: 10px;
+  --r-md: 20px;
+  --r-lg: 30px;
+  --r-pill: 9999px;
+
+  --gap: 14px;
+  --pad: 24px;
+  --rail-w: 168px;
+
+  /* ── motion ──────────────────────────────────────────────────────────── */
+  /* One orchestrated moment carries this interface: the stamp. Everything
+     else is quiet. */
+  --ease-stamp: cubic-bezier(0.2, 1.5, 0.35, 1);
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --t-stamp: 240ms;
+  --t-quick: 140ms;
+}
+
+/* Honour a stated preference for reduced motion. The stamp is the one piece
+   of orchestrated motion here and it must not be the reason someone cannot
+   use a compliance tool. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body, #root { height: 100%; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: var(--t-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* The page opens as a blank shipping-paper field and content stamps onto it,
+   which is the reference site's entry behaviour applied to this subject. */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.rise { animation: rise 420ms var(--ease-out) both; }
+
+h1, h2, h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.022em;
+  line-height: 1.02;
+  margin: 0;
+}
+
+/* Tabular figures everywhere a number can be compared to another number. */
+.mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* Visible focus, always. A keyboard user must never lose their place in a
+   tool where the consequence of a mistake is a federal violation. */
+:where(a, button, input, [tabindex]):focus-visible {
+  outline: 3px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: var(--r-xs);
+}
+
+/* Screen-reader-only text, used to carry the meaning that colour alone
+   would otherwise carry (WCAG 1.4.1). */
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
