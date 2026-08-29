@@ -1,0 +1,44 @@
+# Every gate a reviewer would run, run on every push, each on a bare exit path.
+#
+# `verify:data` is deliberately part of CI rather than a local convenience. It
+# is the check that every clause this project quotes is a verbatim substring of
+# the committed corpus, so a citation that drifts must fail the build rather
+# than reach a reader.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      # Types first: a type error makes every later failure harder to read.
+      - name: Typecheck
+        run: npm run typecheck
+
+      # The corpus gate. Prints a receipt of what it checked, so a pass that
+      # examined nothing is distinguishable from a pass that did the work.
+      - name: Corpus and citation integrity
+        run: npm run verify:data
+
+      - name: Tests
+        run: npm test
+
+      - name: Build
+        run: npm run build

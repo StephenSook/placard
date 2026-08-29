@@ -55,3 +55,12 @@
   for = "/data/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+# Client-side routing. `/states` is a real surface rather than a fragment, so
+# a deep link and a refresh on it have to serve the app rather than a 404.
+# This is last in the file because Netlify applies redirects in order and a
+# catch-all must never shadow a real file.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

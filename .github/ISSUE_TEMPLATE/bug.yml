@@ -1,0 +1,62 @@
+name: Bug report
+description: Something behaves differently from what the README or the regulation says.
+title: "bug: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Security issues do not belong here. See SECURITY.md for the private route.
+
+        If you believe the app reached the WRONG REGULATORY CONCLUSION, that is
+        the most valuable report this project can receive. Please include the
+        materials involved and the clause you expected, so the disagreement can
+        be settled against the corpus rather than against opinion.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What the app did, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: How to reproduce
+      description: The manifest, the vehicle split, and the checkbox state.
+      placeholder: |
+        1. Paste: UN1830 sulfuric acid, UN1748 calcium hypochlorite
+        2. Put both on vehicle 1
+        3. Tick "physical barriers separate incompatible items"
+    validations:
+      required: true
+  - type: input
+    id: clause
+    attributes:
+      label: Governing clause, if you know it
+      placeholder: "49 CFR 177.848(e)(3)"
+  - type: dropdown
+    id: surface
+    attributes:
+      label: Where
+      options:
+        - The page, by hand
+        - Through an agent, using the WebMCP tools
+        - npm test or npm run verify:data
+        - The corpus itself, in data/
+    validations:
+      required: true
+  - type: input
+    id: agent
+    attributes:
+      label: Agent and browser, if the report involves the tool surface
+      placeholder: "ChatGPT in-app browser, GPT-5.6 Sol / Chrome 149"
+  - type: checkboxes
+    id: confirm
+    attributes:
+      label: Before filing
+      options:
+        - label: I searched existing issues.
+          required: true
+        - label: I understand this project is not legal advice and is not the official CFR.
+          required: true

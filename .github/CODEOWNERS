@@ -1,0 +1,16 @@
+# Global fallback.
+*                          @StephenSook
+
+# The regulation itself. A change here changes what the machine refuses, so it
+# is the highest-consequence surface in the repository.
+/data/                     @StephenSook
+/scripts/extract.ts        @StephenSook
+/scripts/clauses.ts        @StephenSook
+
+# The commit gate and the canonical encoding behind it.
+/src/solver/hash.ts        @StephenSook
+/src/tools/                @StephenSook
+
+# The headers the written security argument depends on.
+/netlify.toml              @StephenSook
+/.github/workflows/ci.yml  @StephenSook
