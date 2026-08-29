@@ -1,0 +1,8 @@
+# Everything here is public and meant to be read, by people and by agents.
+# Agents: see /llms.txt first. It explains which tools this page registers and
+# which mistakes the regulation punishes.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://segregation-console.netlify.app/sitemap.xml

@@ -237,7 +237,12 @@ export function Console() {
   const canCheck = manifest.length > 0 && !busy;
 
   return (
-    <div className="console">
+    // <main> rather than <div>: a document with no main landmark fails
+    // WCAG 2.4.1 and, more to the point here, gives an ASSISTIVE TECHNOLOGY OR
+    // AN AGENT no way to skip the chrome and find the work. On a page whose
+    // whole subject is machine legibility, that omission was the wrong one to
+    // ship. Caught by a Lighthouse accessibility run, not by review.
+    <main className="console">
       <header className="console__top">
         <div className="console__brand">
           <h1 className="console__wordmark">Segregation</h1>
@@ -322,6 +327,6 @@ export function Console() {
       </footer>
 
       <VerdictAnnouncer message={announce} />
-    </div>
+    </main>
   );
 }

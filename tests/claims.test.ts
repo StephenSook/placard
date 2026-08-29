@@ -183,3 +183,75 @@ describe("the built output really is free of inline script and style", () => {
     expect(html).not.toMatch(/\sstyle="/);
   });
 });
+
+describe("the well-known files the SPA catch-all used to swallow", () => {
+  // /robots.txt, /llms.txt and /sitemap.xml all returned the application shell
+  // until real files existed, because the catch-all rewrite answered them.
+  // Lighthouse read the HTML as markdown and failed both robots-txt and
+  // llms-txt. Static files win over redirects, so shipping them is the fix.
+  it("ships an llms.txt with the H1 and links the audit requires", () => {
+    const f = join(ROOT, "public", "llms.txt");
+    expect(existsSync(f)).toBe(true);
+    const t = readFileSync(f, "utf8");
+    expect(t).toMatch(/^# .+/m);                    // at least one H1
+    expect(t.match(/\]\(https?:\/\//g)?.length ?? 0).toBeGreaterThan(2);
+    expect(t).not.toMatch(/<!doctype html>/i);      // never the app shell
+  });
+
+  it("ships a robots.txt and a sitemap.xml", () => {
+    const r = readFileSync(join(ROOT, "public", "robots.txt"), "utf8");
+    expect(r).toMatch(/^User-agent:/m);
+    expect(r).toMatch(/^Allow:|^Disallow:/m);
+    expect(r).not.toMatch(/<!doctype html>/i);
+    const s = readFileSync(join(ROOT, "public", "sitemap.xml"), "utf8");
+    expect(s).toMatch(/<urlset/);
+  });
+});
+
+describe("colour tokens meet WCAG 1.4.3", () => {
+  // A Lighthouse run found --ink-faint at 2.84:1 on paper. Captions, rail
+  // labels and unit text all used it. Asserted here so the token cannot drift
+  // back light without a test going red.
+  const relLum = (hex: string) => {
+    const n = hex.replace("#", "");
+    const ch = [0, 2, 4].map((i) => parseInt(n.slice(i, i + 2), 16) / 255);
+    const f = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+    return 0.2126 * f(ch[0]!) + 0.7152 * f(ch[1]!) + 0.0722 * f(ch[2]!);
+  };
+  const ratio = (a: string, b: string) => {
+    const [x, y] = [relLum(a), relLum(b)].sort((p, q) => q - p) as [number, number];
+    return (x + 0.05) / (y + 0.05);
+  };
+  const tokens = readFileSync(join(ROOT, "src", "ui", "tokens.css"), "utf8");
+  const tok = (name: string): string => {
+    const m = new RegExp(`--${name}:\\s*(#[0-9a-fA-F]{6})`).exec(tokens);
+    if (!m) throw new Error(`token --${name} not found, so this checked nothing`);
+    return m[1]!;
+  };
+
+  it("body-text tokens clear 4.5:1 on both paper grounds", () => {
+    for (const ink of ["ink", "ink-soft", "ink-faint"]) {
+      for (const ground of ["paper", "paper-deep"]) {
+        const r = ratio(tok(ink), tok(ground));
+        expect(r, `--${ink} on --${ground} is ${r.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+
+  it("deck-text tokens clear 4.5:1 on both deck grounds", () => {
+    for (const ink of ["deck-ink", "deck-ink-soft"]) {
+      for (const ground of ["deck", "deck-raised"]) {
+        const r = ratio(tok(ink), tok(ground));
+        expect(r, `--${ink} on --${ground} is ${r.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
+      }
+    }
+  });
+});
+
+describe("landmarks", () => {
+  it("every routed surface renders a <main>", () => {
+    for (const f of ["src/Console.tsx", "src/Judge.tsx", "src/StatesPreview.tsx"]) {
+      expect(read(f), `${f} has no <main> landmark`).toMatch(/<main[\s>]/);
+    }
+  });
+});

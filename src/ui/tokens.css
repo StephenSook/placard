@@ -30,7 +30,13 @@
   --card: #fffdfb;           /* raised cards */
   --ink: #14110e;            /* primary text */
   --ink-soft: #5d554d;       /* secondary text */
-  --ink-faint: #97897c;      /* tertiary, captions */
+  /* Darkened from #97897c on 2026-08-29. The original measured 2.84:1 on
+     --paper and 2.59:1 on --paper-deep, so every caption, rail label and unit
+     set in it failed WCAG 1.4.3, which a Lighthouse accessibility run caught.
+     This is the LIGHTEST value preserving the warm hue that clears 4.5:1 on
+     BOTH grounds: 5.03 on paper, 4.59 on paper-deep. Fixed at the token rather
+     than at the three reported call sites, because the token was the defect. */
+  --ink-faint: #6d6156;      /* tertiary, captions */
 
   /* the trailer deck: the one dark material, used only for vehicle bays,
      so the contrast between deck and paper says "truck" versus "law" */
