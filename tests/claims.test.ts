@@ -309,6 +309,64 @@ describe("landmarks", () => {
   });
 });
 
+describe("published figures must match the fact sheet", () => {
+  /**
+   * THE GUARD THAT WAS MISSING, and its absence is how a headline number went
+   * stale in three files at once.
+   *
+   * Fixing the 177.848(e)(3) exception made the solver stricter, so the count of
+   * divergent configurations moved from 24 to 32. FACTS.md regenerates from the
+   * corpus and was correct immediately. The README, the Devpost draft and a
+   * source comment all still said 24, and nothing failed, because no test ever
+   * compared prose against the fact sheet.
+   *
+   * The live endpoints were right the whole time, which is the argument for
+   * computing a number rather than typing it. This closes the gap for the
+   * places that cannot be computed.
+   */
+  const facts = read("FACTS.md");
+  const factValue = (label: string): string => {
+    const m = new RegExp(`\\|\\s*${label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\s*\\|\\s*([0-9,]+)\\s*\\|`).exec(facts);
+    if (!m) throw new Error(`FACTS.md has no row "${label}", so this checked nothing`);
+    return m[1]!.replace(/,/g, "");
+  };
+
+  it("finds the divergence rows in FACTS.md", () => {
+    expect(factValue("Configurations examined (ordered pairs x barrier x single shipper)")).toMatch(/^\d+$/);
+    expect(factValue("Of those, configurations the full regulation forbids")).toMatch(/^\d+$/);
+  });
+
+  it("every prose surface states the SAME divergence figures as FACTS.md", () => {
+    const examined = factValue("Configurations examined (ordered pairs x barrier x single shipper)");
+    const cleared = factValue("Configurations the 177.848(d) table alone clears");
+    const forbids = factValue("Of those, configurations the full regulation forbids");
+    const num = (raw: string | undefined) => (raw ?? "").replace(/[,*\s]/g, "");
+
+    // Parse the CLAIM ITSELF rather than asking whether the right digits appear
+    // anywhere in the file. The first version of this test did the latter and
+    // survived putting the stale figure back, because the correct one happened
+    // to occur elsewhere in the document.
+    const surfaces = ["README.md", "submission/devpost-description.md"].filter((f) => FILES.includes(f));
+    let asserted = 0;
+
+    for (const f of surfaces) {
+      const text = read(f);
+      const mExamined = /\*{0,2}([\d,]+)\*{0,2}\s*\n?\s*configurations\*{0,2} were examined/.exec(text);
+      const mCleared = /table alone clears \*{0,2}([\d,]+)\*{0,2} of them/.exec(text);
+      const mForbids = /regulation forbids \*{0,2}([\d,]+)\*{0,2}/.exec(text);
+      if (!mExamined && !mCleared && !mForbids) continue;
+
+      if (mExamined) { asserted++; expect(num(mExamined[1]), `${f} examined`).toBe(examined); }
+      if (mCleared) { asserted++; expect(num(mCleared[1]), `${f} cleared`).toBe(cleared); }
+      if (mForbids) { asserted++; expect(num(mForbids[1]), `${f} forbids`).toBe(forbids); }
+    }
+
+    // Non-vacuity: if the sentences are reworded so none of the patterns match,
+    // this test would otherwise pass having compared nothing at all.
+    expect(asserted, "no divergence claim was parsed from any prose surface").toBeGreaterThanOrEqual(4);
+  });
+});
+
 describe("the demo manifest in the code matches the one in FACTS.md", () => {
   it("lists the same materials, so the fact sheet cannot drift from the product", () => {
     // These two disagreed: FACTS.md documented six entries including UN0360

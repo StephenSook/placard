@@ -10,7 +10,7 @@ The page opens on a number it recomputes while you are looking at it:
 
 **Across every ordered pair of the 18 hazard categories in the federal
 segregation table, in every barrier configuration, 1,296 cases. The table alone
-clears 792 of them. Of those, the full regulation forbids 24.**
+clears 792 of them. Of those, the full regulation forbids 32.**
 
 `/api/measure` runs the real solver on every request and returns all of it,
 including the examples, so you can check the arithmetic rather than take my word
@@ -282,7 +282,7 @@ npx webmcp-evals smoke -u https://segregation-console.netlify.app \
   -e evals/segregation.evals.json -v
 ```
 
-122 tests. Lighthouse on the live origin: agentic browsing 100, accessibility
+162 tests. Lighthouse on the live origin: agentic browsing 100, accessibility
 100, best practices 100, SEO 100, performance 98.
 
 Verified by hand in Chrome 151 against the live origin with no flag, driving

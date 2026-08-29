@@ -46,7 +46,7 @@ claim here is checkable from a URL:
 Over every ordered pair of the 18 hazard categories the segregation table
 indexes, in each barrier and single-shipper configuration, **1,296
 configurations** were examined. The table alone clears **792** of them. Of those,
-the full regulation forbids **24**, on two grounds the table does not express:
+the full regulation forbids **32**, on two grounds the table does not express:
 the 177.848(e)(3) corrosive-over-oxidizer block and 177.848 explosive
 compatibility.
 
