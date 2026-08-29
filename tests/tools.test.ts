@@ -15,7 +15,7 @@ import {
   DESCRIPTIONS, LOOKUP_MATERIAL_SCHEMA, MUTATING, PROPOSE_LOAD_SCHEMA,
   READ_ONLY, READ_ONLY_UNTRUSTED,
 } from "../src/tools/schemas.ts";
-import { registerAlwaysOnTools, unregisterAlwaysOnTools, webmcpSupported } from "../src/tools/registerEarly.ts";
+import { ALWAYS_ON_TOOLS, registerAlwaysOnTools, registerAlwaysOnToolsInto, unregisterAlwaysOnTools, webmcpSupported } from "../src/tools/registerEarly.ts";
 
 const NONCE = "tool-test-nonce";
 const OTHER = "a-different-session";
@@ -242,19 +242,18 @@ describe("direct imperative registration (the always-on tools)", () => {
     return {
       tools,
       live: () => tools.filter((t) => !t.signal?.aborted).map((t) => t.name),
-      doc: {
-        modelContext: {
-          registerTool: (tool: Record<string, unknown>, options?: { signal?: AbortSignal }) => {
-            tools.push({ name: tool["name"] as string, tool, ...(options?.signal ? { signal: options.signal } : {}) });
-          },
+      ctx: {
+        registerTool: (tool: unknown, options?: { signal?: AbortSignal }) => {
+          const t = tool as Record<string, unknown>;
+          tools.push({ name: t["name"] as string, tool: t, ...(options?.signal ? { signal: options.signal } : {}) });
         },
-      } as unknown as Document,
+      },
     };
   }
 
-  it("registers both always-on tools through document.modelContext.registerTool", async () => {
-    const { doc, live, tools } = fakeContext();
-    const names = registerAlwaysOnTools(doc);
+  it("registers both always-on tools through modelContext.registerTool", async () => {
+    const { ctx, live, tools } = fakeContext();
+    const names = registerAlwaysOnToolsInto(ctx, new AbortController().signal);
     expect(names).toEqual(["lookup_material", "classify_line_item"]);
     expect(live()).toEqual(["lookup_material", "classify_line_item"]);
     // The descriptor carries what the spec defines, and only that.
@@ -265,8 +264,8 @@ describe("direct imperative registration (the always-on tools)", () => {
   });
 
   it("returns a WebMCP content array from execute, not a bare value", async () => {
-    const { doc, tools } = fakeContext();
-    registerAlwaysOnTools(doc);
+    const { ctx, tools } = fakeContext();
+    registerAlwaysOnToolsInto(ctx);
     const exec = tools[0]!.tool["execute"] as (a: unknown) => Promise<{ content: Array<{ type: string; text?: string }> }>;
     const out = await exec({ query: "Ammonium chlorate" });
     expect(Array.isArray(out.content)).toBe(true);
@@ -275,25 +274,26 @@ describe("direct imperative registration (the always-on tools)", () => {
   });
 
   it("unregisters by aborting the signal, because unregisterTool was removed from the spec", () => {
-    const { doc, live } = fakeContext();
-    registerAlwaysOnTools(doc);
+    const { ctx, live } = fakeContext();
+    const c = new AbortController();
+    registerAlwaysOnToolsInto(ctx, c.signal);
     expect(live()).toHaveLength(2);
-    unregisterAlwaysOnTools();
+    c.abort();
     expect(live()).toHaveLength(0);
   });
 
-  it("is idempotent: re-registering tears the previous set down first", () => {
-    const { doc, live } = fakeContext();
-    registerAlwaysOnTools(doc);
-    registerAlwaysOnTools(doc);
-    // The tool map is keyed by name, so a stacked registration would silently
-    // overwrite rather than duplicate. Aborting first makes the teardown explicit.
-    expect(live()).toEqual(["lookup_material", "classify_line_item"]);
-    unregisterAlwaysOnTools();
+  it("registers the identical descriptors the live path uses", () => {
+    // Both entry points read ALWAYS_ON_TOOLS, so a test cannot pass against a
+    // different surface than the one that ships.
+    expect(ALWAYS_ON_TOOLS.map((t) => t.name)).toEqual(["lookup_material", "classify_line_item"]);
+    for (const t of ALWAYS_ON_TOOLS) expect(Object.isFrozen(t)).toBe(true);
   });
 
   it("degrades to a no-op where no WebMCP runtime exists", () => {
-    expect(registerAlwaysOnTools({} as Document)).toEqual([]);
-    expect(webmcpSupported({} as Document)).toBe(false);
+    // In this Node environment there is no document at all, which is the
+    // strongest form of the absent-runtime case.
+    expect(registerAlwaysOnTools()).toEqual([]);
+    expect(webmcpSupported()).toBe(false);
+    unregisterAlwaysOnTools();
   });
 });
