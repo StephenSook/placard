@@ -1,0 +1,31 @@
+{
+  "name": "Placard, 49 CFR 177.848 load segregation",
+  "short_name": "Placard",
+  "description": "Adjudicates a proposed hazmat truck load against 49 CFR 177.848 and quotes the clause that refuses it.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4e9e1",
+  "theme_color": "#1b1916",
+  "orientation": "any",
+  "categories": ["utilities", "productivity"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "The signature refusal",
+      "short_name": "Refusal",
+      "description": "Sulfuric acid over calcium hypochlorite with a barrier, refused by 177.848(e)(3)",
+      "url": "/?load=UN1830,UN1748&barriers=1&check=1"
+    },
+    {
+      "name": "Check this project in three minutes",
+      "short_name": "Judge",
+      "url": "/judge"
+    }
+  ]
+}

@@ -367,6 +367,43 @@ describe("published figures must match the fact sheet", () => {
   });
 });
 
+describe("the app is installable and its manifest is honest", () => {
+  // Installable on purpose and WITHOUT a service worker on purpose. A stale
+  // cache serving a judge an old build of the scored URL is a worse outcome
+  // than having no offline shell.
+  const manifest = JSON.parse(read("public/manifest.webmanifest")) as {
+    name: string; start_url: string; icons: Array<{ src: string; sizes: string }>;
+    shortcuts?: Array<{ url: string }>;
+  };
+
+  it("every icon the manifest names actually exists", () => {
+    expect(manifest.icons.length).toBeGreaterThan(1);
+    for (const i of manifest.icons) {
+      const f = join(ROOT, "public", i.src.replace(/^\//, ""));
+      expect(existsSync(f), `manifest names ${i.src} which is not in public/`).toBe(true);
+    }
+  });
+
+  it("index.html links the manifest and the iOS icon", () => {
+    const html = read("index.html");
+    expect(html).toMatch(/rel="manifest"/);
+    expect(html).toMatch(/rel="apple-touch-icon"/);
+  });
+
+  it("ships NO service worker, which is a decision rather than an omission", () => {
+    const sw = FILES.filter((f) => /service-?worker|\bsw\.[jt]s$/.test(f));
+    expect(sw, `a service worker appeared: ${sw.join(", ")}`).toEqual([]);
+    expect(read("index.html")).not.toMatch(/serviceWorker\.register/);
+  });
+
+  it("its shortcut URLs are real routes this app answers", () => {
+    for (const sc of manifest.shortcuts ?? []) {
+      const path = sc.url.split("?")[0]!;
+      expect(["/", "/judge", "/states"], `shortcut points at ${path}`).toContain(path);
+    }
+  });
+});
+
 describe("the published eval command is the one that actually passes", () => {
   /**
    * I published a command in three places and had never run it. It needed

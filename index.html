@@ -35,6 +35,19 @@
       registered the region before an announcement or the announcement is
       silently dropped.
     -->
+  
+    <!-- Installable, deliberately WITHOUT a service worker. Add to Home Screen
+         gives an icon and standalone chrome on both platforms at zero cost. A
+         service worker would add an offline shell nobody asked for and a real
+         hazard: a stale cache serving a judge an old build of the very URL
+         being scored. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png" />
+    <meta name="theme-color" content="#1b1916" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Placard" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   </head>
   <body>
     <div id="root"></div>
