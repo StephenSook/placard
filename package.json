@@ -17,7 +17,8 @@
     "extract": "tsx scripts/extract.ts",
     "verify:data": "tsx scripts/verify-data.ts",
     "capture:reference": "tsx scripts/capture-reference.ts",
-    "facts": "tsx scripts/fact-sheet.ts"
+    "facts": "tsx scripts/fact-sheet.ts",
+    "provenance": "tsx scripts/provenance.ts"
   },
   "dependencies": {
     "@fontsource/archivo": "^5.3.0",
@@ -28,6 +29,7 @@
     "use-webmcp-tool": "^0.2.0"
   },
   "devDependencies": {
+    "@netlify/functions": "^6.0.0",
     "@types/node": "^26.4.0",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",

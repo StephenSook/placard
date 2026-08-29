@@ -5,6 +5,7 @@ exactly which federal rule each pair breaks, and the shipping paper cannot be ex
 load actually passes.
 
 **Live:** https://segregation-console.netlify.app
+**Check it in three minutes:** https://segregation-console.netlify.app/judge
 **Component states:** https://segregation-console.netlify.app/states
 
 WebMCP is enabled on that origin by a registered Chrome origin trial, so **no browser flag is
@@ -25,6 +26,48 @@ examined nothing is indistinguishable from one that works:
 
 ```
 PASS  checked 10 hashes, 24 verbatim clauses (4700 characters), 493 table cells, 3293 table entries
+```
+
+---
+
+## Checkable without an account, a key, or running anything
+
+The challenge rules say judges are not required to test the project. So every
+claim here is checkable from a URL:
+
+| Surface | What it answers |
+|---|---|
+| [`/judge`](https://segregation-console.netlify.app/judge) | A numbered three-minute itinerary. Each step states a claim, gives the one click that checks it, and names what would falsify it. |
+| [`/api/measure`](https://segregation-console.netlify.app/api/measure) | The headline number, recomputed from the committed corpus per request. |
+| [`/api/forbidden-audit`](https://segregation-console.netlify.app/api/forbidden-audit) | The 256 Forbidden entries, with the steps to verify the count against ecfr.gov yourself. |
+
+### The headline number, and what it is not
+
+Over every ordered pair of the 18 hazard categories the segregation table
+indexes, in each barrier and single-shipper configuration, **1,296
+configurations** were examined. The table alone clears **792** of them. Of those,
+the full regulation forbids **24**, on two grounds the table does not express:
+the 177.848(e)(3) corrosive-over-oxidizer block and 177.848 explosive
+compatibility.
+
+That is a measurement of **the size of the gap an agent reasons across** when it
+treats the table as the whole rule. It is **not** a benchmark of any model's
+accuracy, and no language model was run to produce it. A model-versus-tool
+comparison would need an API key this project does not have, would be
+unreproducible for anyone without one, and would measure the model rather than
+the regulation. This number measures the regulation, anyone can recompute it in a
+second, and it cannot move unless 49 CFR moves.
+
+The endpoint ships that caveat in its own response, under `honest_limits`, rather
+than only in the README.
+
+### Agent evaluations, no API key
+
+Smoke mode executes the expected tool calls against the live page with no LLM:
+
+```bash
+npx webmcp-evals smoke -u https://segregation-console.netlify.app \
+  -e evals/segregation.evals.json -v
 ```
 
 ---

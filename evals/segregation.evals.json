@@ -1,0 +1,106 @@
+[
+  {
+    "name": "Forbidden material is found BY NAME, because the regulation gives it no identification number",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "A supplier wants to ship ammonium chlorate. Look it up and tell me its hazard class."
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "lookup_material",
+        "arguments": { "query": { "$contains": "chlorate" } }
+      }
+    ]
+  },
+  {
+    "name": "Free text from a supplier email is classified through the untrusted-content tool",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Our supplier emailed: '2 drums sulphuric acid soln 60%'. What is it?"
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "classify_line_item",
+        "arguments": { "text": { "$contains": "acid" } }
+      }
+    ]
+  },
+  {
+    "name": "The signature refusal: table says O, a barrier is asserted, and 177.848(e)(3) still refuses",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Put UN1830 sulfuric acid and UN1748 calcium hypochlorite on one truck. We have physical barriers between them. Check whether that is legal."
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "check_segregation",
+        "arguments": {
+          "vehicles": { "$any": true }
+        }
+      }
+    ]
+  },
+  {
+    "name": "An illegal single-vehicle load is split across vehicles by the solver, not by the model",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "I have UN1090 acetone, UN1830 sulfuric acid and UN1748 calcium hypochlorite. Find me a legal way to split them across at most two trucks."
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "propose_load",
+        "arguments": {
+          "items": { "$any": true },
+          "maxVehicles": { "$gte": 1 }
+        }
+      }
+    ]
+  },
+  {
+    "name": "A material with no identification number can still be placed on a load",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Check a load containing ammonium chlorate by name together with UN1090 acetone."
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "check_segregation",
+        "arguments": { "vehicles": { "$any": true } }
+      }
+    ]
+  },
+  {
+    "name": "Committing requires the approval token the check issued, never a bare assertion that it passed",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "The load passed. Export the shipping paper."
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "commit_manifest",
+        "arguments": {
+          "approvalToken": { "$type": "string" },
+          "vehicles": { "$any": true }
+        }
+      }
+    ]
+  }
+]

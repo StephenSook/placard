@@ -14,9 +14,11 @@
  */
 import { Console } from "./Console.tsx";
 import { StatesPreview } from "./StatesPreview.tsx";
+import { Judge } from "./Judge.tsx";
 
 export function App() {
   const path = typeof window === "undefined" ? "/" : window.location.pathname;
   if (path.startsWith("/states")) return <StatesPreview />;
+  if (path.startsWith("/judge")) return <Judge />;
   return <Console />;
 }
