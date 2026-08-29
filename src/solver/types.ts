@@ -22,8 +22,13 @@ export type PhysicalState = "liquid" | "solid" | "gas" | "unknown";
 
 /** A line item as the operator or the agent supplies it. */
 export type LineItem = {
-  /** UN, NA or ID number. Null for a Forbidden material, which has none. */
-  id: string | null;
+  /**
+   * UN, NA or ID number. Optional and nullable, because a Forbidden material
+   * has none at all: under 172.101(d)(1) it may not be offered for transport,
+   * so the table assigns it no identification number. A caller may therefore
+   * identify an item by name alone, and must be able to.
+   */
+  id?: string | null;
   /** Proper shipping name, used when there is no id. */
   name?: string;
   /** Operator-supplied. 177.848(d) covers Class 8 LIQUIDS only, so this matters. */
