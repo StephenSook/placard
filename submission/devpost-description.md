@@ -51,6 +51,14 @@ Ask an agent to do this and it will read the segregation table, because the
 segregation table is the thing that looks like the answer. That is the failure I
 built this to make visible.
 
+## Why it is called Placard
+
+The hazard placard is the most recognisable object in this whole domain. The
+diamond on the side of the truck is how a firefighter arriving at a wreck knows
+what is burning.
+
+256 entries in the 172.101 table do not have one, and cannot.
+
 ## The thing that should worry you
 
 256 entries in the 172.101 table are designated Forbidden.
@@ -111,6 +119,13 @@ choose it, because from where the agent stands it does not exist.
 That is a property of WebMCP specifically. An out-of-process MCP server does not
 know what your page currently believes. This one does, because it is the page.
 
+There is a second half to that which I only found by driving the real client.
+Registration follows the PAGE's verdict, not the agent's call. An agent that
+speculatively calls `check_segregation` on some other, legal load gets a PASS and
+an approval token back, and `commit_manifest` still does not appear, because the
+load on the page has not changed. The agent cannot talk the tool into existence.
+It has to actually fix the truck.
+
 ## How it creates a better user experience
 
 The officer and the agent work the same page and go through the same solver, so
@@ -163,13 +178,14 @@ document.modelContext.registerTool({
 }, { signal: controller.signal });
 ```
 
-| Tool | Annotations | Registered when |
-|---|---|---|
-| `lookup_material` | `readOnlyHint` | always, at mount |
-| `classify_line_item` | `readOnlyHint`, `untrustedContentHint` | always, at mount |
-| `propose_load` | `readOnlyHint` | the manifest is non-empty |
-| `check_segregation` | `readOnlyHint` | the manifest is non-empty |
-| `commit_manifest` | mutating | only while the load passes |
+```
+TOOL                 ANNOTATIONS                        REGISTERED WHEN
+lookup_material      readOnlyHint                       always, at mount
+classify_line_item   readOnlyHint untrustedContentHint  always, at mount
+propose_load         readOnlyHint                       manifest is non-empty
+check_segregation    readOnlyHint                       manifest is non-empty
+commit_manifest      mutating                           ONLY while the load passes
+```
 
 Unregistration is AbortSignal driven, which is the current spec: `unregisterTool`
 was removed in April 2026 and `provideContext` in March.
@@ -268,6 +284,12 @@ npx webmcp-evals smoke -u https://segregation-console.netlify.app \
 
 122 tests. Lighthouse on the live origin: agentic browsing 100, accessibility
 100, best practices 100, SEO 100, performance 98.
+
+Verified by hand in Chrome 151 against the live origin with no flag, driving
+`document.modelContext` directly: `getTools` returns 2 tools at mount and 4 once
+a manifest is loaded, `executeTool` on `check_segregation` with a barrier
+asserted returns REFUSED carrying 177.848(e)(3) verbatim, and `commit_manifest`
+is absent throughout.
 
 ## Challenges
 
