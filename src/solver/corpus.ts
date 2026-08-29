@@ -74,28 +74,128 @@ for (const e of HMT) {
 const synonymIndex = new Map<string, string>();
 for (const s of SYNONYMS) synonymIndex.set(s.alias.toLowerCase(), s.target.toLowerCase());
 
+/**
+ * ORTHOGRAPHIC NORMALISATION, and the reason it exists is not user typos.
+ *
+ * The 172.101 table is NOT internally consistent about British and American
+ * spelling. It contains "Nicotine sulphate, solid" (UN3445), "Titanium
+ * disulphide" (UN3174) and "Caesium hydroxide" (UN2682) alongside ninety
+ * entries spelled with -sulf- and two spelled Cesium. One row, UN1407, is
+ * literally named "Cesium or Caesium".
+ *
+ * So an index that matches names literally loses real materials in BOTH
+ * directions. A US shipper searching "nicotine sulfate" misses UN3445. A
+ * European shipper searching "sulphuric acid" misses UN1830. Neither of them
+ * typed anything wrong, and an empty result reads as "not regulated", which is
+ * the same failure mode as the 256 Forbidden entries that carry no
+ * identification number.
+ *
+ * Every rule here is a pure orthographic variant of the SAME word, never a
+ * synonym of a different substance. Deliberately excluded: glycerol to
+ * glycerin, because the table carries both as DISTINCT entries, so rewriting
+ * one to the other would move a query onto a different material. That is the
+ * line: normalise spelling, never meaning.
+ *
+ * A test asserts this mapping is injective over the corpus, meaning no two
+ * distinct entry names collapse to one key. It currently holds at 2,574
+ * distinct names to 2,574 distinct keys.
+ */
+const ORTHOGRAPHY: ReadonlyArray<readonly [RegExp, string]> = [
+  [/sulph/g, "sulf"],        // sulphuric, sulphate, sulphide, sulphur
+  [/aluminium/g, "aluminum"],
+  [/caesium/g, "cesium"],
+];
+
+export function normalizeOrthography(s: string): string {
+  let t = s.toLowerCase().trim();
+  for (const [re, to] of ORTHOGRAPHY) t = t.replace(re, to);
+  // Collapse whitespace and strip the punctuation the table uses decoratively,
+  // so "Aluminum powder, coated" and "aluminium powder coated" agree.
+  return t.replace(/[),.;]/g, " ").replace(/\s+/g, " ").trim();
+}
+
+/** Name index keyed on the normalised form, so either spelling resolves. */
+const byNormalizedName = new Map<string, HmtEntry>();
+for (const e of HMT) {
+  const k = normalizeOrthography(e.name);
+  if (!byNormalizedName.has(k)) byNormalizedName.set(k, e);
+}
+
 /** Every row sharing a UN number. A UN number can carry several packing groups. */
 export function lookupByUn(un: string): HmtEntry[] {
   return byUn.get(un.toUpperCase().trim()) ?? [];
 }
 
 /**
- * Resolve a name, following the table's own ", see" pointers transitively.
- * Guarded against cycles and capped, because a malformed corpus must fail
- * loudly rather than hang the page.
+ * Every entry sharing a proper shipping name, after orthographic normalisation.
+ *
+ * This exists because a generic "n.o.s." name is NOT a unique identifier.
+ * "Articles, explosive, n.o.s." names NINETEEN entries in the 172.101 table,
+ * spanning divisions 1.4S, 1.4B, 1.4C, 1.4D, 1.4G, 1.1C, 1.1D, 1.1E, 1.1F,
+ * 1.2C, 1.2D, 1.2E, 1.2F, 1.3C, 1.3L, 1.1L, 1.2L, 1.4E and 1.4F.
  */
-export function lookupByName(name: string, maxHops = 5): HmtEntry | null {
+export function entriesByName(name: string): HmtEntry[] {
+  const exact = HMT.filter((e) => e.name.toLowerCase() === name.toLowerCase().trim());
+  if (exact.length) return exact;
+  const k = normalizeOrthography(name);
+  return HMT.filter((e) => normalizeOrthography(e.name) === k);
+}
+
+export type NameResolution =
+  | { kind: "resolved"; entry: HmtEntry }
+  /** The name is real but names several DIFFERENT hazard classes. */
+  | { kind: "ambiguous"; candidates: HmtEntry[]; classes: string[] }
+  | { kind: "not_found" };
+
+/**
+ * Resolve a proper shipping name, REFUSING when the name does not determine a
+ * hazard class.
+ *
+ * THIS IS A SAFETY BOUNDARY, and it was originally missing. The index used to
+ * take the first entry whose name matched. For "Articles, explosive, n.o.s."
+ * that returned UN0350, division 1.4B, and silently discarded eighteen other
+ * entries including 1.1C, 1.1D, 1.1E and 1.1F. Division 1.4 and division 1.1
+ * are different rows of the 177.848(d) matrix, so the arbitrary pick produced a
+ * verdict that was WRONG IN THE PERMISSIVE DIRECTION: a load cleared as 1.4
+ * when the material may have been 1.1.
+ *
+ * Scope, measured against the committed corpus: 2,121 names resolve to exactly
+ * one entry. 354 name entries that differ only by packing group, which share a
+ * class and therefore share a segregation verdict, so those still resolve. 88
+ * names span more than one hazard class and now refuse. None of the 256
+ * Forbidden materials is ambiguous, so the by-name path they depend on, being
+ * the only path they have, is untouched.
+ */
+export function resolveName(name: string, maxHops = 5): NameResolution {
   let key = name.toLowerCase().trim();
   const seen = new Set<string>();
   for (let i = 0; i <= maxHops; i++) {
-    const direct = byName.get(key);
-    if (direct) return direct;
+    const rows = entriesByName(key);
+    if (rows.length) {
+      const classes = [...new Set(rows.map((e) => e.class))];
+      if (classes.length > 1) return { kind: "ambiguous", candidates: rows, classes };
+      return { kind: "resolved", entry: rows[0]! };
+    }
     const target = synonymIndex.get(key);
-    if (!target || seen.has(target)) return null;
+    if (!target || seen.has(target)) return { kind: "not_found" };
     seen.add(key);
     key = target;
   }
-  return null;
+  return { kind: "not_found" };
+}
+
+/**
+ * Resolve a name, following the table's own ", see" pointers transitively.
+ * Guarded against cycles and capped, because a malformed corpus must fail
+ * loudly rather than hang the page.
+ *
+ * Returns null for an AMBIGUOUS name as well as for an unknown one. Callers
+ * that need to tell those apart, and any caller reporting to a human should,
+ * must use resolveName.
+ */
+export function lookupByName(name: string, maxHops = 5): HmtEntry | null {
+  const r = resolveName(name, maxHops);
+  return r.kind === "resolved" ? r.entry : null;
 }
 
 /** Every material the regulation forbids outright. 256 of them, none with a UN number. */

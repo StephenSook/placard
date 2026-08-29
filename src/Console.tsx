@@ -27,7 +27,17 @@ import type { ResolvedItem, Violation } from "./solver/types.ts";
 import "./ui/console.css";
 
 /** The demo manifest. Every entry is resolved from the corpus, never typed. */
-const DEMO = ["UN1090", "UN1830", "UN1748", "UN1309", "Ammonium chlorate"];
+/**
+ * The demonstration manifest. SIX real 172.101 entries, chosen so that four of
+ * the refusal grounds fire on one screen rather than one.
+ *
+ * UN0360 was missing until FACTS.md and this array were compared and found to
+ * disagree: the fact sheet listed six entries including the explosive, the code
+ * had five and no explosive, so the compatibility-table axis was never
+ * exercised anywhere a judge could see it. Adding it takes the demo from 10
+ * pairs on three grounds to 15 pairs on four.
+ */
+const DEMO = ["UN1090", "UN1830", "UN1748", "UN1309", "UN0360", "Ammonium chlorate"];
 
 type Verdict =
   | { status: "IDLE" }

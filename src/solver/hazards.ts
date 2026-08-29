@@ -17,7 +17,7 @@
  *    (177.848(e)(6)), and 717 of 3,293 entries carry more than one label code,
  *    so this fires on roughly 22 percent of materials.
  */
-import { lookupByUn, lookupByName, cite } from "./corpus.ts";
+import { lookupByUn, resolveName, cite } from "./corpus.ts";
 import type { HmtEntry } from "./corpus.ts";
 import type {
   Hazard, LineItem, MatrixKey, PhysicalState, PihZone, ResolvedItem, Citation,
@@ -123,8 +123,23 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
     // first, which is the lowest packing group and therefore the most severe.
     entry = rows[0]!;
   } else if (item.name) {
-    entry = lookupByName(item.name);
-    if (!entry) return { error: `"${item.name}" did not resolve to a 172.101 entry, directly or through a "see" pointer` };
+    const r = resolveName(item.name);
+    if (r.kind === "ambiguous") {
+      // Never pick one. A generic n.o.s. name can span nineteen divisions, and
+      // choosing among them silently produces a verdict for a material the
+      // operator did not describe. Ask for the identification number instead.
+      return {
+        error:
+          `"${item.name}" names ${r.candidates.length} entries in the 172.101 table spanning ` +
+          `hazard classes ${r.classes.join(", ")}. A proper shipping name of this kind does not ` +
+          `determine a hazard class, and the segregation verdict depends on which one it is. ` +
+          `Give the identification number instead: ` +
+          `${[...new Set(r.candidates.map((c) => c.un).filter(Boolean))].slice(0, 8).join(", ")}` +
+          (r.candidates.length > 8 ? ", and others" : ""),
+      };
+    }
+    if (r.kind === "not_found") return { error: `"${item.name}" did not resolve to a 172.101 entry, directly or through a "see" pointer` };
+    entry = r.entry;
   } else {
     return { error: "a line item needs an identification number or a proper shipping name" };
   }

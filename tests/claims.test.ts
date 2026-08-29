@@ -308,3 +308,19 @@ describe("landmarks", () => {
     }
   });
 });
+
+describe("the demo manifest in the code matches the one in FACTS.md", () => {
+  it("lists the same materials, so the fact sheet cannot drift from the product", () => {
+    // These two disagreed: FACTS.md documented six entries including UN0360
+    // while Console.tsx had five and no explosive, so the compatibility-table
+    // axis was never exercised on any surface a reader could see.
+    const facts = read("FACTS.md");
+    const demoLine = /const DEMO = \[([^\]]*)\]/.exec(read("src/Console.tsx"));
+    expect(demoLine, "DEMO array not found in Console.tsx").not.toBeNull();
+    const ids = [...demoLine![1]!.matchAll(/"([^"]+)"/g)].map((m) => m[1]!);
+    expect(ids.length).toBeGreaterThan(4);
+    for (const id of ids) {
+      expect(facts, `FACTS.md does not list demo item ${id}`).toContain(id);
+    }
+  });
+});

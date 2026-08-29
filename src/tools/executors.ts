@@ -15,7 +15,7 @@
  */
 import {
   HMT, lookupByUn, lookupByName, forbiddenEntries, resolveItem,
-  checkLoad, verifyApproval, proposePartition, cite,
+  checkLoad, verifyApproval, proposePartition, cite, normalizeOrthography,
 } from "../solver/index.ts";
 import type { Citation, LineItem, LoadProposal, VehicleProposal } from "../solver/types.ts";
 
@@ -93,10 +93,18 @@ export function lookupMaterial(input: { query: string }): LookupResult {
 
 // ── classify_line_item ───────────────────────────────────────────────────────
 
-/** Cheap token overlap. Deliberately not fuzzy-clever: the human confirms. */
+/**
+ * Cheap token overlap. Deliberately not fuzzy-clever: the human confirms.
+ *
+ * Both sides pass through normalizeOrthography first, so a line written
+ * "2 drums sulphuric acid soln 60%" scores against "Sulfuric acid with more
+ * than 51 percent acid". Without it that line matched Azidodithiocarbonic acid
+ * and Butyric acid on the shared token "acid", and the correct entry did not
+ * appear in the candidate list at all.
+ */
 function score(entryName: string, text: string): number {
-  const a = new Set(norm(entryName).split(/[^a-z0-9]+/).filter((t) => t.length > 2));
-  const b = new Set(norm(text).split(/[^a-z0-9]+/).filter((t) => t.length > 2));
+  const a = new Set(normalizeOrthography(norm(entryName)).split(/[^a-z0-9]+/).filter((t) => t.length > 2));
+  const b = new Set(normalizeOrthography(norm(text)).split(/[^a-z0-9]+/).filter((t) => t.length > 2));
   if (a.size === 0 || b.size === 0) return 0;
   let hit = 0;
   for (const t of a) if (b.has(t)) hit++;

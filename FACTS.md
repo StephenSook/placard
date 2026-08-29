@@ -102,6 +102,35 @@ This measures the SIZE OF THE GAP an agent reasons across when it treats the
 table as the whole rule. It is not a measurement of any model's accuracy, and no
 language model was run to produce it.
 
+## Name resolution, and where a proper shipping name is NOT an identifier
+
+Derived here from the committed corpus. A proper shipping name looks like a key
+and is not one.
+
+| Claim | Value |
+|---|---:|
+| Names resolving to exactly one 172.101 entry | 2121 |
+| Names whose entries differ only by packing group, so the class is shared | 354 |
+| **Names spanning MORE THAN ONE hazard class, which the solver refuses** | **88** |
+| Widest such name, by distinct classes | `articles explosive n o s` at 19 |
+| Forbidden materials that are name-ambiguous | 0 |
+
+The last row matters because none of the 256 Forbidden entries has an
+identification number, so a name is the ONLY way to reach them. It is
+0, so refusing ambiguous names costs nothing there.
+
+## British and American spelling in the federal table
+
+The 172.101 table is not internally consistent, so an index that matches names
+literally loses real materials in both directions.
+
+| Claim | Value |
+|---|---:|
+| Entries spelled with British `-sulph-` | 3 |
+| Entries spelled with American `-sulf-` | 90 |
+| Entries spelled `Caesium` | 5 |
+| Entries spelled `Cesium` | 2 |
+
 ## Figures that are NOT derived here and must be sourced in place
 
 These are real and citable but come from outside the corpus, so every use must
