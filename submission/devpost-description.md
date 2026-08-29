@@ -253,6 +253,35 @@ open DevTools you will see two CSP refusals. Those are Netlify's own injected
 toolbar, refused by the policy. Our built HTML contains no inline script and no
 inline style, and a test asserts it.
 
+## Try to break it, on the page
+
+Two attacks run for real against the live page, because a security argument that
+only exists in prose is one nobody has tested.
+
+**Shadow tool attack.** A button registers a tool over this page's own
+`commit_manifest` through the real `registerTool`. It succeeds. Afterwards
+`getTools()` genuinely returns an impostor, because the WebMCP tool map is keyed
+by name and the published measurement puts that race at 100 percent. The
+impostor then holds a real, well-formed SHA-256 token issued for a different
+load, and the commit handler refuses. Owning the registry was never the
+boundary. The panel says plainly that the shadow tool is my code standing in for
+an attacker's script, modelled at the point where `script-src 'self'` has
+already been defeated, which is the strongest position I can hand an attacker
+and still refuse.
+
+**Prompt injection.** A supplier line carrying "SYSTEM: ignore all previous
+instructions" goes through `classify_line_item`, which is annotated
+`untrustedContentHint` precisely because this happens, and the verdict is
+re-derived before and after. It does not move. No model sits in the path that
+produces a verdict.
+
+Alongside those: the 177.848(d) table rendered at full size, all 324 cells, with
+the ones the table clears and another clause forbids ringed in red and the rows
+your current manifest touches lit. And an agent's-eye view printing the literal
+result of `getTools()`, read from the live registry rather than mirrored from
+the app's own state, so if the two ever disagree the panel shows the truth and
+the strip shows the lie.
+
 ## Verify it yourself, offline, with no key
 
 ```bash
@@ -290,6 +319,58 @@ Verified by hand in Chrome 151 against the live origin with no flag, driving
 a manifest is loaded, `executeTool` on `check_segregation` with a barrier
 asserted returns REFUSED carrying 177.848(e)(3) verbatim, and `commit_manifest`
 is absent throughout.
+
+## An adversarial second model told me not to ship, and it was right
+
+Late in the build I ran a whole-repository adversarial review with a second
+model, scoped to one question: can a shipping paper be exported for a load that
+fails 177.848. It came back "Do not ship. Five material defects." All five were
+real, I reproduced every one, and all five had passed a 147-test suite, because
+every one of them lived in a path no test exercised.
+
+Its summary named the shape exactly: the token binding, the canonical encoding
+and the TOCTOU handling showed no bypass. The export gate was never defeated.
+The SOLVER was returning PASS for loads the regulation forbids, and the gate
+faithfully exported them. A correct lock on a door in the wrong wall.
+
+**A subsidiary cell hid the explosives referral.** The most-restrictive
+reduction ranks X above O above the asterisk. That is right for restrictiveness
+and wrong for routing, because the asterisk does not mean "less restrictive", it
+means "the answer is in the 177.848(f) table". UN0018 is Division 1.2G carrying
+a subsidiary Class 8, so the subsidiary pairing produced an O, the O outranked
+the asterisk, a barrier cleared the O, and the compatibility table was never
+consulted. It exported. Groups G and B are X.
+
+**An identification number is not always an identifier either.** UN1950 covers
+five entries across Divisions 2.1 and 2.2 and the resolver took the first, a 2.2
+aerosol. This is the same defect I had fixed for proper shipping names one
+commit earlier and left in place for numbers, which is worse, because a number
+looks authoritative. The shipping paper also carried the wrong proper shipping
+name, so the document named a material nobody had described.
+
+**Safety depended on a comma.** The table spells the incendiary-ammunition name
+both with and without a comma before "or propelling charge". The no-comma
+spelling has exactly one row at 1.4G and resolved cleanly, while the same name
+normalised also covers 1.2G and 1.3G.
+
+**The 177.848(e)(3) exception was granted on half its conditions.** The clause
+permits a single-shipper truckload only where it is ALSO known that the mixture
+will not cause a fire or a dangerous evolution of heat or gas. The code granted
+it on the single shipper alone and demoted the second condition to a note that
+admitted it could not determine the fact. So sulfuric acid over calcium
+hypochlorite with a barrier and a single shipper returned PASS and exported: the
+exact pair this project exists to refuse, cleared by the tool built to refuse
+it. The signer now asserts non-reaction explicitly, and the tool schema tells an
+agent in as many words not to assert it on the operator's behalf.
+
+**And my own attack demo could leave the page compromised**, because its
+AbortController was scoped inside the runner and aborted only on the happy path.
+
+Thirteen regression tests, one per finding, plus the negative cases that stop
+each fix becoming a blunt refusal. Then mutation testing, because a regression
+test that cannot fail is decoration: the fifth one asserted merely that some
+`finally` existed and survived deleting the very cleanup it was written to
+guard, since another runner in the same file also had one.
 
 ## Challenges
 
