@@ -251,6 +251,17 @@ export function coerceVehicles(input: unknown): WireVehicle[] | null {
     const raw = v as Record<string, unknown>;
     if (!Array.isArray(raw.items)) return null;
     if (!raw.items.every((x) => typeof x === "string")) return null;
+    // A malformed ASSERTION refuses rather than being dropped.
+    //
+    // Dropping it looked safe, because dropping an assertion can only make the
+    // verdict stricter. It is not safe, because the CALLER cannot tell. A
+    // request carrying singleShipper: "true" returned a regulatory PASS with an
+    // approval token and isMalformed false, so an agent had no way to learn
+    // that the field it sent was ignored. Silence about a rejected input is the
+    // same defect as silence about an unresolvable material.
+    for (const k of ["barriersPresent", "singleShipper", "nonReactionAsserted"] as const) {
+      if (raw[k] !== undefined && typeof raw[k] !== "boolean") return null;
+    }
     out.push({
       items: raw.items as string[],
       ...(typeof raw.barriersPresent === "boolean" ? { barriersPresent: raw.barriersPresent } : {}),

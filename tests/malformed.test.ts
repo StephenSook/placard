@@ -93,10 +93,25 @@ describe("coerceVehicles", () => {
     }
   });
 
-  it("drops assertion flags that are not booleans rather than coercing them", () => {
-    // "true" as a string must not become true. An assertion about the physical
-    // world has to be made deliberately, not inferred from a truthy value.
-    const r = coerceVehicles([{ items: ["UN1090"], singleShipper: "true" }]);
-    expect(r).toEqual([{ items: ["UN1090"] }]);
+  it("REFUSES a non-boolean assertion rather than dropping it", () => {
+    // This test used to assert the opposite, that a bad assertion was silently
+    // dropped, on the reasoning that dropping only makes the verdict stricter.
+    // That is true and it is not the point: the CALLER could not tell. A
+    // request with singleShipper: "true" returned a regulatory PASS with an
+    // approval token and isMalformed false, so an agent had no way to learn its
+    // field was ignored. Silence about a rejected input is the same defect as
+    // silence about an unresolvable material.
+    expect(coerceVehicles([{ items: ["UN1090"], singleShipper: "true" }])).toBeNull();
+    expect(coerceVehicles([{ items: ["UN1090"], nonReactionAsserted: 1 }])).toBeNull();
+    // and a genuinely absent field is still fine
+    expect(coerceVehicles([{ items: ["UN1090"] }])).toEqual([{ items: ["UN1090"] }]);
+  });
+
+  it("a request with a bad assertion is marked malformed, not passed", async () => {
+    const r = await checkSegregation(
+      { vehicles: [{ items: ["UN1090"], singleShipper: "true" as never }] }, NONCE,
+    );
+    expect(isMalformed(r)).toBe(true);
+    expect(r.status).toBe("REFUSED");
   });
 });

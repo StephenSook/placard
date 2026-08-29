@@ -111,21 +111,46 @@ export function Console() {
    * button and by the URL loader below, so a link and a click cannot produce
    * different state.
    */
-  const resolveRefs = useCallback((refs: string[]): ResolvedItem[] =>
-    refs
-      .map((q) => {
-        const f = lookupMatches(lookupMaterial({ query: q }))[0];
-        if (!f) return null;
-        const r = resolveItem(f.id ? { id: f.id } : { name: f.name });
-        return "error" in r ? null : r;
-      })
-      .filter((x): x is ResolvedItem => x !== null),
-  []);
+  /**
+   * Resolve references into a manifest, REPORTING what could not be resolved.
+   *
+   * The previous version took `lookupMaterial(...)[0]`, re-resolved that
+   * candidate by its identification number, and filtered every failure out.
+   * Both halves were wrong and both produced a SAFER load than the one asked
+   * for, which is the dangerous direction for a silent change.
+   *
+   * Taking the first candidate bypassed the ambiguous-name refusal entirely:
+   * "Articles, explosive, n.o.s." became UN0350 at 1.4B and then passed with
+   * acetone and a barrier, while the equally valid candidate UN0354 makes that
+   * pair an X. Filtering failures meant `UN1090,NOT-A-MATERIAL` silently became
+   * an acetone-only load and committed a shipping paper for a manifest nobody
+   * submitted.
+   *
+   * Now it resolves each reference the way the solver does, and hands back
+   * whatever refused so the caller can say so out loud.
+   */
+  /** Same rule the tool layer uses, so a link and a tool call agree. */
+  const looksLikeIdentifier = (s: string) => /^(UN|NA|ID)\s?\d{4}$/i.test(s.trim());
+
+  const resolveRefs = useCallback(
+    (refs: string[]): { items: ResolvedItem[]; unresolved: Array<{ ref: string; reason: string }> } => {
+      const items: ResolvedItem[] = [];
+      const unresolved: Array<{ ref: string; reason: string }> = [];
+      for (const ref of refs) {
+        const r = resolveItem(looksLikeIdentifier(ref) ? { id: ref } : { name: ref });
+        if ("error" in r) unresolved.push({ ref, reason: r.error });
+        else items.push(r);
+      }
+      return { items, unresolved };
+    },
+    [],
+  );
 
   const loadDemo = useCallback(() => {
-    const resolved = resolveRefs(DEMO);
-    setManifest(resolved);
-    setBays([{ items: resolved, barriersPresent: false, singleShipper: false, nonReactionAsserted: false }]);
+    const { items, unresolved } = resolveRefs(DEMO);
+    setManifest(items);
+    setBays([{ items, barriersPresent: false, singleShipper: false, nonReactionAsserted: false }]);
+    if (unresolved.length) setAnnounce(`${unresolved.length} demonstration item(s) did not resolve: ${unresolved.map((u) => u.ref).join(", ")}`);
     invalidate();
   }, [invalidate, resolveRefs]);
 
@@ -242,10 +267,21 @@ export function Console() {
    * the evals, and it is worth having anyway: a link can now open the exact
    * refusal, so a judge sees the money shot without clicking anything.
    *
-   *   ?load=UN1830,UN1748        the manifest, by id or by name
+   *   ?load=UN1830,UN1748        the manifest, by id or by proper shipping name
    *   &check=1                   run the check on arrival
-   *   &barriers=1 &shipper=1 &nonreaction=1   the three assertions
    *   ?demo=1                    the six-item demonstration manifest
+   *
+   * IT DELIBERATELY CANNOT SET THE THREE ASSERTIONS, and an earlier version of
+   * this could, which was a real defect I introduced while fixing another one.
+   * barriersPresent, singleShipper and nonReactionAsserted are attestations a
+   * person makes about the physical world, and each of them can turn a refusal
+   * into a PASS. A link that sets them manufactures the operator's signature:
+   * `?load=UN1830,UN1748&barriers=1&shipper=1&nonreaction=1` returned PASS and
+   * COMMITTED with nobody having asserted anything.
+   *
+   * So the URL carries the LOAD and never the claims about it. The judge ticks
+   * the barrier themselves, which is a better demonstration anyway, because
+   * they perform the action and watch it fail to help.
    *
    * Runs once on mount. It never writes to the URL, so a person clicking around
    * is not fighting the address bar.
@@ -260,14 +296,21 @@ export function Console() {
       : (q.get("load") ?? "").split(",").map((x) => x.trim()).filter(Boolean);
     if (refs.length === 0) return;
 
-    const resolved = resolveRefs(refs);
+    const { items: resolved, unresolved } = resolveRefs(refs);
+    if (unresolved.length) {
+      // NEVER quietly load a subset. A shipping paper for a manifest nobody
+      // submitted is the worst thing this page could produce.
+      setUrlProblem(unresolved);
+    }
     if (resolved.length === 0) return;
     setManifest(resolved);
+    // Every assertion starts false. See the note above: a URL may describe a
+    // load, never attest to one.
     setBays([{
       items: resolved,
-      barriersPresent: q.get("barriers") === "1",
-      singleShipper: q.get("shipper") === "1",
-      nonReactionAsserted: q.get("nonreaction") === "1",
+      barriersPresent: false,
+      singleShipper: false,
+      nonReactionAsserted: false,
     }]);
     setAgentViewRevision((n) => n + 1);
     if (q.get("check") === "1") setPendingCheck(true);
@@ -276,6 +319,7 @@ export function Console() {
   // The check has to run AFTER the bays state lands, so it is deferred one
   // render rather than called inline, where it would read the empty load.
   const [pendingCheck, setPendingCheck] = useState(false);
+  const [urlProblem, setUrlProblem] = useState<Array<{ ref: string; reason: string }>>([]);
   useEffect(() => {
     if (!pendingCheck || manifest.length === 0) return;
     setPendingCheck(false);
@@ -362,6 +406,24 @@ export function Console() {
           screens a sticky strip carries the STATUS and scrolls to the card.
           It is a link, never a copy: two renderings of a verdict is two things
           to keep in sync, and the second one eventually lies. */}
+      {urlProblem.length > 0 && (
+        <div className="console__urlProblem" role="alert">
+          <strong>
+            {urlProblem.length} item{urlProblem.length === 1 ? "" : "s"} from the link did not
+            resolve and {urlProblem.length === 1 ? "was" : "were"} NOT loaded.
+          </strong>
+          <ul>
+            {urlProblem.map((u) => (
+              <li key={u.ref}><code>{u.ref}</code>: {u.reason}</li>
+            ))}
+          </ul>
+          <p>
+            The manifest below is therefore not the one the link asked for. Nothing has been
+            silently substituted, and any verdict shown covers only what actually loaded.
+          </p>
+        </div>
+      )}
+
       {verdict.status !== "IDLE" && (
         <button
           type="button"

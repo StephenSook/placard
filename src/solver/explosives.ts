@@ -54,8 +54,20 @@ export function resolveCompatibility(input: Iterable<CompatibilityGroup>): Fixed
     break;
   }
 
-  // 177.848(g)(3)(i): group L travels only with an identical explosive, so L
-  // in company with anything else at all is a conflict.
+  // 177.848(g)(3)(i): group L travels only with an IDENTICAL explosive, so L in
+  // company with anything else at all is a conflict, INCLUDING a second,
+  // different group L material.
+  //
+  // The input is de-duplicated into a Set on entry, which is right for the
+  // rewrite rules and wrong here: two different L explosives collapse to one
+  // "L" and `groups.size > 1` cannot see them. Verified: UN0380 with UN0248
+  // returned PASS and COMMITTED, though the regulation permits L only with an
+  // identical explosive and these are two different ones. Multiplicity is
+  // therefore counted from the ORIGINAL input rather than from the Set.
+  const lCount = [...input].filter((g) => g === "L").length;
+  if (lCount > 1) {
+    return { ok: false, reason: "compatibility group L may only be carried with an identical explosive, and this load carries more than one group L material", citation: cite("g3i-group-L") };
+  }
   if (groups.has("L") && groups.size > 1) {
     return { ok: false, reason: "compatibility group L may only be carried with an identical explosive", citation: cite("g3i-group-L") };
   }

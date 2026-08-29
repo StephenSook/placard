@@ -57,8 +57,24 @@ export function worstCell(a: ResolvedItem, b: ResolvedItem): { code: string; via
  * decide "cannot react dangerously" from the table, so this returns a flag for
  * the human rather than silently clearing the pair.
  */
-function sameClassCarveOutApplies(a: ResolvedItem, b: ResolvedItem): boolean {
-  return a.hazardClass === b.hazardClass && a.hazards.some((h) => h.subsidiary);
+function sameClassCarveOutApplies(a: ResolvedItem, b: ResolvedItem, v: VehicleProposal): boolean {
+  // TWO defects lived in the previous one-liner, and the second is worse.
+  //
+  // It granted the exception UNCONDITIONALLY. 177.848(e)(6) permits same-class
+  // materials to travel together despite a secondary hazard only IF they cannot
+  // react dangerously with each other, and nothing in the table decides that.
+  // The old code turned an O cell into a note and continued, so the conditional
+  // exception was not conditional on anything. Same shape as the (e)(3) defect
+  // and the same fix: the signer asserts it or it does not apply.
+  //
+  // And it was ORDER DEPENDENT, because it asked only whether `a` carried a
+  // subsidiary hazard. Verified: UN3516 then UN1581 returned PASS and COMMITTED
+  // while UN1581 then UN3516 refused, on the identical pair. A verdict that
+  // depends on the order two items were typed in is not a verdict, and it broke
+  // the permutation invariant this solver claims elsewhere.
+  if (a.hazardClass !== b.hazardClass) return false;
+  if (!a.hazards.some((h) => h.subsidiary) && !b.hazards.some((h) => h.subsidiary)) return false;
+  return v.nonReactionAsserted === true;
 }
 
 export function checkVehicle(items: ResolvedItem[], v: VehicleProposal, vehicleIndex: number): { violations: Violation[]; notes: string[]; comparisons: number } {
@@ -215,8 +231,8 @@ export function checkVehicle(items: ResolvedItem[], v: VehicleProposal, vehicleI
       }
 
       if (worst.code === "O") {
-        if (sameClassCarveOutApplies(a, b)) {
-          notes.push(`${a.name} and ${b.name} are both class ${a.hazardClass}. 177.848(e)(6) allows same-class materials to travel together despite a secondary hazard IF they cannot react dangerously with each other. That judgement is not in the table; the signer must confirm it.`);
+        if (sameClassCarveOutApplies(a, b, v)) {
+          notes.push(`${a.name} and ${b.name} are both class ${a.hazardClass}. 177.848(e)(6) allows same-class materials to travel together despite a secondary hazard only where they cannot react dangerously with each other, and this load asserts that explicitly. The assertion is a fact about the chemistry that no table decides, and the signer owns it under 172.204.`);
           continue;
         }
         if (v.barriersPresent !== true) {

@@ -181,3 +181,19 @@
 @media (prefers-reduced-motion: reduce) {
   .console__stickyVerdict { position: static; }
 }
+
+/* A link that named something unresolvable. Loud on purpose: quietly loading a
+   SUBSET of the requested manifest, and then adjudicating that subset, would
+   produce a verdict for a load nobody asked about. */
+.console__urlProblem {
+  background: var(--refused);
+  color: #fff;
+  border-radius: var(--r-sm);
+  padding: 0.9rem 1.1rem;
+  margin-bottom: var(--gap);
+  font-size: var(--t-small);
+  line-height: 1.55;
+}
+.console__urlProblem ul { margin: 0.5rem 0; padding-left: 1.1rem; }
+.console__urlProblem code { font-family: var(--font-mono); }
+.console__urlProblem p { margin: 0.4rem 0 0; }
