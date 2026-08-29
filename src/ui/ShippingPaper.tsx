@@ -1,0 +1,90 @@
+/**
+ * THE SHIPPING PAPER. The deliverable, and the only thing on this page that
+ * leaves it.
+ *
+ * Rendered on paper at full width because it IS the document: this is the
+ * artifact the officer signs, and the one that cannot be produced until the
+ * load provably passes. It carries the basic description sequence 49 CFR
+ * 172.202(a) requires, in the order the regulation requires it: identification
+ * number, proper shipping name, hazard class or division, packing group.
+ *
+ * It also carries the certification the signer is actually taking on. That
+ * text is on screen rather than buried, because 172.204 makes signing a
+ * regulated act and the person doing it becomes a hazmat employee under
+ * subpart H. Hiding it would misrepresent what the button does.
+ */
+import "./paper.css";
+
+type Line = {
+  identificationNumber?: string | null;
+  properShippingName?: string;
+  hazardClass?: string;
+  packingGroup?: string | null;
+  labelCodes?: string[];
+  error?: string;
+};
+type Vehicle = { vehicle: number; barriersPresent: boolean; singleShipper: boolean; lines: Line[] };
+
+export function ShippingPaper({ paper, onClose }: { paper: unknown; onClose: () => void }) {
+  const vehicles = (Array.isArray(paper) ? paper : []) as Vehicle[];
+
+  return (
+    <section className="paper" aria-labelledby="paper-heading">
+      <header className="paper__head">
+        <div>
+          <p className="paper__eyebrow mono">Exported</p>
+          <h2 id="paper-heading" className="paper__title">Shipping paper</h2>
+        </div>
+        <button type="button" className="pill" onClick={onClose}>Close</button>
+      </header>
+
+      {vehicles.map((v) => (
+        <article key={v.vehicle} className="paper__vehicle">
+          <h3 className="paper__vn mono">
+            Vehicle {v.vehicle}
+            {v.barriersPresent && <span className="paper__flag">barriers asserted</span>}
+            {v.singleShipper && <span className="paper__flag">single shipper</span>}
+          </h3>
+
+          <table className="paper__table">
+            <caption className="sr-only">
+              Basic description for vehicle {v.vehicle}, in the sequence required by 49 CFR 172.202(a)
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col">Identification number</th>
+                <th scope="col">Proper shipping name</th>
+                <th scope="col">Hazard class or division</th>
+                <th scope="col">Packing group</th>
+              </tr>
+            </thead>
+            <tbody>
+              {v.lines.map((l, i) =>
+                l.error ? (
+                  <tr key={i}><td colSpan={4} className="paper__err">{l.error}</td></tr>
+                ) : (
+                  <tr key={i}>
+                    <td className="mono">{l.identificationNumber ?? "none"}</td>
+                    <td>{l.properShippingName}</td>
+                    <td className="mono">{l.hazardClass}</td>
+                    <td className="mono">{l.packingGroup ?? "n/a"}</td>
+                  </tr>
+                )
+              )}
+            </tbody>
+          </table>
+        </article>
+      ))}
+
+      <footer className="paper__cert">
+        <p className="paper__certTitle mono">Shipper certification, 49 CFR 172.204</p>
+        <p>
+          Signing this certifies that the materials are properly classified, described, packaged,
+          marked and labeled, and are in proper condition for transportation. The person who signs
+          becomes a hazmat employee under 49 CFR 172 subpart H and retains that responsibility. This
+          page does not sign anything and is not legal advice.
+        </p>
+      </footer>
+    </section>
+  );
+}

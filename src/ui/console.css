@@ -1,0 +1,117 @@
+/* The console layout.
+ *
+ * The reference site's composition: a persistent left rail, a wide work
+ * column, and a right column that carries the state. Generous warm paper
+ * gutters between everything, and nothing floating on a shadow. */
+
+.console {
+  max-width: 1420px;
+  margin: 0 auto;
+  padding: 28px 22px 64px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap);
+}
+
+.console__top {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr);
+  align-items: end;
+  gap: 28px;
+  padding: 6px 4px 10px;
+}
+
+.console__wordmark {
+  font-size: var(--t-hero);
+  text-transform: uppercase;
+  letter-spacing: -0.045em;
+  line-height: 0.9;
+}
+
+.console__standard {
+  margin: 4px 0 0;
+  font-size: var(--t-micro);
+  letter-spacing: 0.18em;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+}
+
+.console__lead {
+  margin: 0 0 6px;
+  font-size: var(--t-lead);
+  line-height: 1.45;
+  color: var(--ink-soft);
+  max-width: 62ch;
+}
+
+.console__grid {
+  display: grid;
+  grid-template-columns: var(--rail-w) minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: var(--gap);
+  align-items: start;
+}
+
+.console__work { display: flex; flex-direction: column; gap: var(--gap); min-width: 0; }
+.console__verdict { display: flex; flex-direction: column; gap: var(--gap); min-width: 0; position: sticky; top: var(--gap); }
+
+.console__act { display: flex; gap: 8px; flex-wrap: wrap; }
+.console__check { font-size: var(--t-small); padding: 12px 20px; }
+
+/* The commit control is drawn in the cleared colour and is present ONLY when
+   the load passes, mirroring the agent's registry exactly. A disabled but
+   visible button would undercut the whole argument. */
+.console__commit {
+  font-size: var(--t-small);
+  padding: 12px 20px;
+  border-color: var(--cleared);
+  color: var(--cleared);
+  animation: commitArrive var(--t-stamp) var(--ease-stamp) both;
+}
+.console__commit:hover { background: var(--cleared); border-color: var(--cleared); color: #fff; }
+
+@keyframes commitArrive {
+  from { opacity: 0; transform: translateY(6px) scale(0.97); }
+  to   { opacity: 1; transform: none; }
+}
+
+.console__notes {
+  list-style: none;
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  background: var(--paper-deep);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: var(--t-micro);
+  line-height: 1.5;
+  color: var(--ink-soft);
+}
+.console__notes li { padding-left: 14px; position: relative; }
+.console__notes li::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 7px;
+  width: 5px; height: 5px;
+  border-radius: var(--r-pill);
+  background: var(--caution);
+}
+
+.console__foot {
+  margin-top: 10px;
+  padding: 0 4px;
+  font-size: var(--t-nano);
+  color: var(--ink-faint);
+  line-height: 1.5;
+  max-width: 72ch;
+}
+.console__foot p { margin: 0; }
+
+@media (max-width: 1180px) {
+  .console__grid { grid-template-columns: var(--rail-w) minmax(0, 1fr); }
+  .console__verdict { grid-column: 1 / -1; position: static; }
+}
+@media (max-width: 1000px) {
+  .console__grid { grid-template-columns: 1fr; }
+  .console__top { grid-template-columns: 1fr; align-items: start; gap: 12px; }
+}

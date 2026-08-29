@@ -297,3 +297,57 @@ describe("direct imperative registration (the always-on tools)", () => {
     unregisterAlwaysOnTools();
   });
 });
+
+describe("a material without an identification number is never dropped", () => {
+  /**
+   * THE REGRESSION THIS FILE EXISTS FOR.
+   *
+   * A Forbidden material has NO identification number, because under
+   * 172.101(d)(1) it may not be offered for transportation at all. Any code
+   * that keys a load on UN numbers therefore drops the single most dangerous
+   * item on the manifest, silently, and reports a clean or lesser verdict.
+   *
+   * That is the exact defect this project exists to expose, and it appeared
+   * twice in our own code: once in the tool schema, which required
+   * ^(UN|NA|ID)[0-9]{4}$ and so made 256 materials inexpressible to the agent,
+   * and once in the console, which filtered the wire payload on item.id.
+   * Both passed typecheck and both produced a page that looked correct.
+   */
+  it("accepts a proper shipping name where no identification number exists", async () => {
+    const v = await checkSegregation({ vehicles: [{ items: ["Ammonium chlorate"] }] }, NONCE);
+    expect(v.status).toBe("REFUSED");
+    if (v.status !== "REFUSED") return;
+    expect(v.violations[0]!.ground).toBe("FORBIDDEN_MATERIAL");
+    expect(v.violations[0]!.regulation[0]!.section).toBe("49 CFR 173.21(a)");
+  });
+
+  it("keeps the Forbidden material in a mixed load rather than silently dropping it", async () => {
+    const withForbidden = await checkSegregation(
+      { vehicles: [{ items: ["UN1090", "Ammonium chlorate"] }] },
+      NONCE
+    );
+    expect(withForbidden.status).toBe("REFUSED");
+    if (withForbidden.status !== "REFUSED") return;
+    // The unary Forbidden refusal must be present, not swallowed by pairwise checks.
+    expect(withForbidden.violations.some((x) => x.ground === "FORBIDDEN_MATERIAL")).toBe(true);
+  });
+
+  it("proposes a load referenced by name and reports it back by name", () => {
+    const r = proposeLoad({ items: ["UN1090", "Acetal"], maxVehicles: 2 });
+    expect(r.status).toBe("PROPOSED");
+    if (r.status !== "PROPOSED") return;
+    const flat = r.vehicles.flatMap((v) => v.items);
+    expect(flat).toContain("UN1090");
+    // A name-referenced item comes back addressable, never as an empty string.
+    expect(flat.every((x) => typeof x === "string" && x.length > 0)).toBe(true);
+  });
+
+  it("the item schema does NOT require an identification number", () => {
+    // A schema that required a UN pattern would make the 256 Forbidden
+    // entries inexpressible. Assert the pattern is gone, in both schemas.
+    const blob = JSON.stringify([PROPOSE_LOAD_SCHEMA, CHECK_SEGREGATION_SCHEMA, COMMIT_MANIFEST_SCHEMA]);
+    expect(blob).not.toContain("(UN|NA|ID)");
+    // The approval token pattern must still be strict, though.
+    expect(COMMIT_MANIFEST_SCHEMA.properties.approvalToken.pattern).toBe("^[a-f0-9]{64}$");
+  });
+});

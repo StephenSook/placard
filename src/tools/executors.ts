@@ -138,7 +138,9 @@ export function classifyLineItem(input: { text: string }) {
 export function proposeLoad(input: {
   items: string[]; maxVehicles: number; barriersPresent?: boolean; singleShipper?: boolean;
 }) {
-  const items: LineItem[] = input.items.map((id) => ({ id }));
+  const items: LineItem[] = input.items.map((ref) =>
+    looksLikeId(ref) ? { id: ref.replace(/\s/g, "").toUpperCase() } : { name: ref }
+  );
   const r = proposePartition(items, {
     maxVehicles: input.maxVehicles,
     ...(input.barriersPresent !== undefined ? { barriersPresent: input.barriersPresent } : {}),
@@ -162,7 +164,7 @@ export function proposeLoad(input: {
   }
   return {
     status: "PROPOSED" as const,
-    vehicles: r.load.vehicles.map((v, i) => ({ vehicle: i + 1, items: v.items.map((x) => x.id) })),
+    vehicles: r.load.vehicles.map((v, i) => ({ vehicle: i + 1, items: v.items.map((x) => x.id ?? x.name ?? "") })),
     vehiclesUsed: r.vehiclesUsed,
     conflictsAvoided: r.conflicts.length,
     note: "This is a proposal. Run check_segregation on it to obtain an approval token; nothing can be exported without one.",
@@ -171,10 +173,20 @@ export function proposeLoad(input: {
 
 // ── check_segregation ────────────────────────────────────────────────────────
 
+/** An identification number as the 172.101 table writes it. */
+const looksLikeId = (s: string) => /^(UN|NA|ID)\s?\d{4}$/i.test(s.trim());
+
+/**
+ * Turn wire references into line items. A reference is EITHER an
+ * identification number or a proper shipping name, because a Forbidden
+ * material has no identification number and must still be checkable.
+ */
 export function toLoad(vehicles: Array<{ items: string[]; barriersPresent?: boolean; singleShipper?: boolean }>): LoadProposal {
   return {
     vehicles: vehicles.map((v): VehicleProposal => ({
-      items: v.items.map((id) => ({ id })),
+      items: v.items.map((ref) =>
+        looksLikeId(ref) ? { id: ref.replace(/\s/g, "").toUpperCase() } : { name: ref }
+      ),
       ...(v.barriersPresent !== undefined ? { barriersPresent: v.barriersPresent } : {}),
       ...(v.singleShipper !== undefined ? { singleShipper: v.singleShipper } : {}),
     })),

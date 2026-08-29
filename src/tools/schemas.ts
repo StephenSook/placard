@@ -26,8 +26,24 @@
  * privacy leakage through over-parameterization).
  */
 
-/** A UN, NA or ID number as the 172.101 table writes it. */
-const ID_PATTERN = "^(UN|NA|ID)[0-9]{4}$";
+/**
+ * How a material is named in a tool call.
+ *
+ * NOT a UN-number pattern. A material designated Forbidden in column 3 of the
+ * 172.101 table has NO identification number, because under 172.101(d)(1) it
+ * may not be offered for transportation at all. A schema that required a UN
+ * number would make the 256 most dangerous materials in the table
+ * inexpressible to the agent, which is the same defect this project exists to
+ * expose, reproduced one layer up.
+ */
+const MATERIAL_REF = {
+  type: "string",
+  minLength: 1,
+  maxLength: 200,
+  description:
+    "An identification number such as UN1090, or a proper shipping name. Materials designated " +
+    "Forbidden have no identification number and must be given by name.",
+} as const;
 
 export const READ_ONLY = Object.freeze({ readOnlyHint: true });
 export const READ_ONLY_UNTRUSTED = Object.freeze({ readOnlyHint: true, untrustedContentHint: true });
@@ -77,8 +93,8 @@ const VEHICLE_SCHEMA = Object.freeze({
       type: "array",
       minItems: 0,
       maxItems: 60,
-      items: { type: "string", pattern: ID_PATTERN },
-      description: "Identification numbers of the materials loaded in this vehicle.",
+      items: MATERIAL_REF,
+      description: "The materials loaded in this vehicle, by identification number or proper shipping name.",
     },
     barriersPresent: {
       type: "boolean",
@@ -105,8 +121,8 @@ export const PROPOSE_LOAD_SCHEMA = Object.freeze({
       type: "array",
       minItems: 1,
       maxItems: 60,
-      items: { type: "string", pattern: ID_PATTERN },
-      description: "Identification numbers of every material to be shipped.",
+      items: MATERIAL_REF,
+      description: "Every material to be shipped, by identification number or proper shipping name.",
     },
     maxVehicles: {
       type: "integer",

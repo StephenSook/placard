@@ -79,6 +79,12 @@ export type Citation = {
 export type Violation = {
   code:
     | "FORBIDDEN_MATERIAL"
+    /** The line item did not resolve against the 172.101 table at all. This is
+     *  deliberately NOT reported as FORBIDDEN_MATERIAL: a material the table
+     *  does not contain and a material the table forbids are different facts,
+     *  and reporting a lookup failure as a federal prohibition is a lie in the
+     *  safer direction, which is still a lie. */
+    | "UNRESOLVED_MATERIAL"
     | "PROHIBITED_TOGETHER"
     | "SEPARATION_REQUIRED"
     | "CORROSIVE_OVER_OXIDIZER"

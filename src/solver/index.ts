@@ -42,8 +42,8 @@ export async function checkLoad(load: LoadProposal, nonce: string): Promise<Chec
       const r = resolveItem(item);
       if ("error" in r) {
         violations.push({
-          code: "FORBIDDEN_MATERIAL", items: [ii], vehicle: vi,
-          message: `Could not resolve line item ${ii + 1}: ${r.error}. A load cannot be cleared on a material the table does not identify.`,
+          code: "UNRESOLVED_MATERIAL", items: [ii], vehicle: vi,
+          message: `Could not resolve line item ${ii + 1}: ${r.error}. A load cannot be cleared on a material the table does not identify, and this is a lookup failure rather than a finding that the material is forbidden.`,
           citations: [],
         });
         return;

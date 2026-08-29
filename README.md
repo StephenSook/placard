@@ -1,0 +1,141 @@
+# Hazmat load segregation, 49 CFR 177.848
+
+Paste a chemical manifest and watch an agent load a truck legally: it proposes, the page shows
+exactly which federal rule each pair breaks, and the shipping paper cannot be exported until the
+load actually passes.
+
+**Live:** https://segregation-console.netlify.app
+**Component states:** https://segregation-console.netlify.app/states
+
+WebMCP is enabled on that origin by a registered Chrome origin trial, so **no browser flag is
+needed**. Open it in ChatGPT's in-app browser or in Chrome 149 or later and the tools are there.
+
+---
+
+## Two commands, no account, no API key
+
+```bash
+npm ci
+npm run verify:data   # re-hash the corpus, prove every quoted clause is verbatim
+npm test              # 89 tests: exhaustive, property, metamorphic, fixed point, gate
+```
+
+`verify:data` prints a receipt of what it actually checked, because a gate that passes having
+examined nothing is indistinguishable from one that works:
+
+```
+PASS  checked 10 hashes, 24 verbatim clauses (4700 characters), 493 table cells, 3293 table entries
+```
+
+---
+
+## What this is
+
+A shipping-compliance officer has a pallet of chemicals and one truck. 49 CFR 177.848 says some of
+those chemicals may not ride together. The rule is an 18 by 18 matrix whose cells are not binary,
+plus an explosives compatibility table that **rewrites itself** as you load, plus narrative
+prohibitions that are stricter than the matrix, plus a subsidiary-hazard rule that fires on 717 of
+3,293 table entries.
+
+The agent does what agents are good at: reading messy free text and searching the space of ways to
+split a load across vehicles. The page does what agents are demonstrably unreliable at: applying
+the regulation exactly. When it refuses, it quotes the governing clause word for word.
+
+## Four independent grounds for refusal, and only one of them is the matrix
+
+An agent reasoning from the segregation table alone clears loads that three of these forbid.
+
+| Ground | Source |
+|---|---|
+| The material is Forbidden outright and has no identification number | `173.21(a)`, `172.101(d)(1)` |
+| The 18 by 18 matrix, most restrictive across both hazard sets | `177.848(d)`, `(e)(6)` |
+| Narrative prohibitions **stricter than** the matrix | `177.848(c)` |
+| Corrosive over oxidizer, which no barrier rescues | `177.848(e)(3)` |
+
+### The demonstration
+
+**Sulfuric acid and calcium hypochlorite.** The table cell is `O`, which reads as "separate them
+and they may travel together". Tick the barrier box and the page **still refuses**, because
+177.848(e)(3) blocks Class 8 liquids above or adjacent to Class 4 or 5 materials notwithstanding
+the methods of separation employed.
+
+**Ammonium chlorate.** It has no UN number at all, because under 172.101(d)(1) a Forbidden material
+may not be offered for transportation, so the table assigns it none. **256 entries are like this.**
+Any index keyed on an identification number returns nothing for all 256, and nothing reads as "not
+regulated". This corpus keeps them, and so does the tool surface: a material may be given to any
+tool by name.
+
+---
+
+## The WebMCP surface
+
+Five tools, all imperative and on the top-level document. ChatGPT's in-app browser supports neither
+the declarative HTML form API nor tools registered inside iframes, so a declarative gate would be
+invisible to it.
+
+| Tool | Annotations | Present when |
+|---|---|---|
+| `lookup_material` | `readOnlyHint` | always, registered at mount |
+| `classify_line_item` | `readOnlyHint`, `untrustedContentHint` | always, registered at mount |
+| `propose_load` | `readOnlyHint` | the manifest is non-empty |
+| `check_segregation` | `readOnlyHint` | the manifest is non-empty |
+| `commit_manifest` | mutating | **only while the load passes** |
+
+WebMCP defines exactly two annotations. `destructiveHint`, `idempotentHint` and `openWorldHint`
+belong to the wider MCP set and appear nowhere in the WebMCP Draft Community Group Report, so they
+appear nowhere here, and a test asserts it.
+
+### The gate has three layers and only one of them is the boundary
+
+- **Visible.** `commit_manifest` is absent from the agent's registry while the load does not pass.
+  This is the UX and the thing you watch change. It is **not** the security property: the WebMCP
+  tool map is keyed by tool name, so any same-origin script can register over it, and the spec
+  flags an unprotected unregister-then-reregister window.
+- **Load-bearing.** `commit_manifest`'s handler re-derives the verdict from a SHA-256 of the exact
+  contents it is about to export and refuses on any mismatch. A stale load, a mutated load and a
+  same-named shadow tool are therefore all uncommittable regardless of registration order.
+- **Structural.** A static single-origin site with zero third-party JavaScript and
+  `script-src 'self'`, so no foreign script is running to register anything.
+
+A test calls the commit handler **directly** on a failing load, which is exactly what a shadow tool
+could do, and it is still refused.
+
+---
+
+## The corpus
+
+Pinned to one eCFR snapshot, hash-manifested, and re-derivable:
+
+```bash
+npm run extract   # re-fetch and re-derive everything from the pinned date
+npm run facts     # regenerate FACTS.md, the only figures this project may claim
+```
+
+| | |
+|---|---:|
+| eCFR snapshot | `2026-08-27` |
+| Title 49 `latest_amended_on` | `2026-08-19` |
+| 172.101 physical rows | 3,687 |
+| Entries after resolving packing-group continuations | 3,293 |
+| **Forbidden entries, none with an identification number** | **256** |
+| Synonym pointer rows extracted from the table itself | 394 |
+| Entries with a subsidiary hazard | 717 |
+| 177.848(d) matrix | 18 by 18 = 324 cells |
+| Census | X 104, O 44, \* 25, blank 151 |
+| Verbatim clauses, each gate-checked as a substring of the source | 24 |
+
+Clauses are sliced from the pinned XML by literal anchors, and an anchor that matches zero or two
+times **fails the build** rather than shipping a confident quote of the wrong sentence.
+
+---
+
+## Legal
+
+49 CFR is a work of the United States Government and is not subject to copyright under 17 U.S.C.
+105. This project is **not** the official Code of Federal Regulations, is **not** legal advice, and
+uses no NARA seal or CFR logo. The eCFR is an editorial compilation; only GPO's own PDF and text
+versions have legal status. The person who signs the shipper certification retains responsibility
+under 49 CFR 172.204. No IMDG Code content and no standard incorporated by reference under
+49 CFR 171.7 is included. See `NOTICE` and `data/PROVENANCE.md`.
+
+Licensed under Apache-2.0. See `LICENSE`.

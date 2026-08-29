@@ -1,0 +1,89 @@
+/* The cell ticker.
+ *
+ * The reference site's marquee ribbon, carrying the verbatim 177.848(e)
+ * instructions instead of marketing phrases. Ink on paper rather than a
+ * saturated band: the saturated colours in this app are reserved for placard
+ * data, and a decorative red strip would spend one of them on nothing. */
+
+.ticker {
+  overflow: hidden;
+  border-radius: var(--r-pill);
+  background: var(--ink);
+  color: var(--paper);
+  padding: 9px 0;
+}
+
+.ticker__track {
+  display: flex;
+  width: max-content;
+  animation: tickerScroll 64s linear infinite;
+}
+
+/* Pause when someone is trying to read it, and when a keyboard user lands
+   inside it. */
+.ticker:hover .ticker__track,
+.ticker:focus-within .ticker__track {
+  animation-play-state: paused;
+}
+
+.ticker__strip {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ticker__item {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 0 26px;
+  white-space: nowrap;
+  font-size: var(--t-micro);
+  line-height: 1.4;
+}
+
+/* The separator between phrases, standing in for the reference's glyphs. */
+.ticker__item + .ticker__item::before {
+  content: "";
+  position: relative;
+  left: -26px;
+  width: 5px;
+  height: 5px;
+  border-radius: var(--r-pill);
+  background: var(--caution);
+  align-self: center;
+  flex: none;
+}
+
+.ticker__glyph {
+  font-weight: 700;
+  font-size: var(--t-body);
+  color: var(--caution);
+  min-width: 1ch;
+}
+
+.ticker__text { color: var(--paper); opacity: 0.94; }
+
+.ticker__cite {
+  font-size: var(--t-nano);
+  letter-spacing: 0.08em;
+  color: var(--paper);
+  opacity: 0.5;
+}
+
+@keyframes tickerScroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+/* No motion: the strip becomes a static, horizontally scrollable list. The
+   content is identical; only the delivery changes. */
+@media (prefers-reduced-motion: reduce) {
+  .ticker { overflow-x: auto; }
+  .ticker__track { animation: none; width: auto; }
+  /* Drop the duplicated copy so the same clauses do not appear twice. */
+  .ticker__track > div[aria-hidden="true"] { display: none; }
+}
