@@ -36,6 +36,28 @@ function shippedFiles(): string[] {
 const FILES = shippedFiles();
 const sourceFiles = FILES.filter((f) => /\.(ts|tsx|mts)$/.test(f));
 const read = (f: string) => readFileSync(join(ROOT, f), "utf8");
+
+/**
+ * Parse CSS into (selector, body) pairs, with COMMENTS STRIPPED FIRST.
+ *
+ * Written once and shared because the naive version bit three separate guards
+ * in this file: a `/** ... *\/` comment is matched as a selector by
+ * `([^{}]+)\{([^{}]*)\}`, and one of them then built a RegExp from it and threw
+ * "Nothing to repeat". A checker that crashes is not a checker that passes, but
+ * it is not one that works either.
+ */
+function cssRules(src: string): Array<{ selector: string; body: string }> {
+  const clean = src.replace(/\/\*[\s\S]*?\*\//g, "");
+  return [...clean.matchAll(/([^{}]+)\{([^{}]*)\}/g)].map((m) => ({
+    selector: m[1]!.trim(),
+    body: m[2]!,
+  }));
+}
+
+/** The BEM block a selector belongs to: `.attack__eyebrow` -> `.attack`. */
+const bemBlock = (selector: string) =>
+  selector.split(/[\s:>,]/)[0]!.split("__")[0]!.split("--")[0]!;
+
 const pkg = JSON.parse(read("package.json")) as {
   dependencies?: Record<string, string>;
   devDependencies?: Record<string, string>;
@@ -248,6 +270,50 @@ describe("colour tokens meet WCAG 1.4.3", () => {
   });
 });
 
+describe("a deck-ink element must carry its own deck ground", () => {
+  /**
+   * A colour token is only safe against the ground it was MEASURED on. The
+   * agent-view toggle used --deck-ink-soft, which is correct on the dark deck
+   * and measured 2.57:1 when the mobile layout collapsed that panel onto paper.
+   * The token was fine. The ground moved underneath it, and no amount of
+   * checking token pairs can see that.
+   *
+   * So: any rule that sets a deck ink colour must also set a background, or
+   * live inside a block that does.
+   */
+  it("every rule using a deck ink token supplies a background", () => {
+    const offenders: string[] = [];
+    let checked = 0;
+    for (const f of FILES.filter((x) => x.endsWith(".css"))) {
+      const src = read(f);
+      const rules = cssRules(src);
+      for (const { selector, body } of rules) {
+        if (!/color:\s*var\(--deck-ink/.test(body)) continue;
+        checked++;
+        // `background: transparent` is NOT a ground, and treating it as one is
+        // how the first version of this guard survived deleting the exact fix
+        // it was written to protect.
+        const hasGround = (b: string) =>
+          /background(-color)?:\s*(?!transparent|none|inherit|initial)\S/.test(b);
+        if (hasGround(body)) continue;
+        // Or the BEM BLOCK this element belongs to sets one. `.attack__eyebrow`
+        // is grounded by `.attack`, which is the normal and correct pattern;
+        // only an element whose whole block is transparent is at risk.
+        const block = bemBlock(selector);
+        // The BLOCK ROOT specifically, not any rule in the block. A SIBLING
+        // element having a background does not ground this one, and accepting
+        // that is how this guard survived two separate attempts to break it.
+        const grounded = rules.some(
+          (r) => r.selector.split(/[\s:>,]/)[0] === block && hasGround(r.body),
+        );
+        if (!grounded) offenders.push(`${f}: ${selector.slice(0, 60)} (block ${block})`);
+      }
+    }
+    expect(checked, "found no deck-ink rules, so this checked nothing").toBeGreaterThan(3);
+    expect(offenders, `deck ink on an unknown ground:\n${offenders.join("\n")}`).toEqual([]);
+  });
+});
+
 describe("opacity is never applied to type", () => {
   // THE TOKEN TEST ABOVE PASSED WHILE THE PAGE FAILED. Token values were fine;
   // the rendered colours were not, because a rule dimmed a whole card and the
@@ -267,10 +333,7 @@ describe("opacity is never applied to type", () => {
     const offenders: string[] = [];
     for (const f of cssFiles) {
       const src = read(f);
-      // Crude block split is enough: each `selector { ... }` body.
-      for (const m of src.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-        const selector = m[1]!.trim();
-        const body = m[2]!;
+      for (const { selector, body } of cssRules(src)) {
         if (/^\s*(from|to|\d+%)\s*$/.test(selector)) continue;   // keyframe steps
         const op = /(?:^|[\s;])opacity:\s*([0-9.]+)/.exec(body);
         if (!op || Number(op[1]) >= 1) continue;
@@ -292,11 +355,9 @@ describe("placard fills are never used as small type", () => {
   it("state text uses the -text variants, not the placard fill tokens", () => {
     // 49 CFR 172 subpart F picks these to be read as a large coloured field.
     // As 11px type on the dark deck they measure 3.25:1 and 3.12:1.
-    const registry = read("src/ui/registry.css");
-    for (const m of registry.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-      const body = m[2]!;
+    for (const { selector, body } of cssRules(read("src/ui/registry.css"))) {
       if (!/color:\s*var\(--(cleared|refused|caution)\)/.test(body)) continue;
-      expect.fail(`${m[1]!.trim()} uses a placard FILL as text; use --*-text`);
+      expect.fail(`${selector} uses a placard FILL as text; use --*-text`);
     }
   });
 });

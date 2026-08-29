@@ -1,7 +1,22 @@
 /* The agent's own view of the page. Deck, monospace, no decoration: this is
    meant to read as a console rather than as a designed surface. */
 
-.agentview { margin-top: 0.6rem; }
+/* CARRIES ITS OWN GROUND, and that is the whole point of this rule.
+   This panel uses deck ink tokens because it is a machine surface. It used to
+   inherit whatever background it landed on, and on mobile the verdict column
+   collapses onto PAPER, so --deck-ink-soft rendered at 2.57:1 against #f4e9e1
+   and the toggle became unreadable. The token was correct; the ground moved
+   underneath it.
+
+   A colour token is only safe against the ground it was measured on, so any
+   element using deck ink must supply a deck background rather than trust its
+   parent. A test asserts that. */
+.agentview {
+  margin-top: 0.6rem;
+  background: var(--deck);
+  border-radius: var(--r-sm);
+  padding: 0.6rem;
+}
 
 .agentview--none {
   font-size: var(--t-nano);

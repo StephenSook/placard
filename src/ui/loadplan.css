@@ -16,7 +16,12 @@
 .plan__sub { margin: 2px 0 0; font-size: var(--t-micro); color: var(--deck-ink-soft); }
 .plan__actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
-.pill--onDeck { border-color: var(--deck-rule); color: var(--deck-ink); }
+/* Carries its own deck ground. It sits on .plan and on .attack, both already
+   deck, so this is visually identical today. It exists so the button stays
+   readable if it is ever placed anywhere else, which is precisely the
+   assumption that broke the agent-view toggle when a breakpoint moved it onto
+   paper and its deck ink measured 2.57:1. */
+.pill--onDeck { background: var(--deck); border-color: var(--deck-rule); color: var(--deck-ink); }
 .pill--onDeck:hover { background: var(--deck-raised); color: var(--deck-ink); }
 .pill--solidLight { background: var(--paper); border-color: var(--paper); color: var(--ink); }
 .pill--solidLight:hover { background: var(--card); border-color: var(--card); color: var(--ink); }
