@@ -49,9 +49,13 @@ export function tables(xml: string): string[] {
 export function rows(xml: string, opts: { includeTh?: boolean } = {}): string[][] {
   const cellRe = opts.includeTh ? /<T[DH][^>]*>([\s\S]*?)<\/T[DH]>/g : /<TD[^>]*>([\s\S]*?)<\/TD>/g;
   const out: string[][] = [];
-  for (const [, tr] of xml.matchAll(/<TR>([\s\S]*?)<\/TR>/g)) {
+  for (const m of xml.matchAll(/<TR>([\s\S]*?)<\/TR>/g)) {
+    const tr = m[1];
+    if (tr === undefined) continue;
     const cells: string[] = [];
-    for (const [, c] of tr.matchAll(new RegExp(cellRe.source, "g"))) cells.push(cellText(c));
+    for (const c of tr.matchAll(new RegExp(cellRe.source, "g"))) {
+      cells.push(cellText(c[1] ?? ""));
+    }
     out.push(cells);
   }
   return out;

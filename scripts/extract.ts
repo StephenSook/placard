@@ -26,7 +26,7 @@
 import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
-import { cellText, rows, tables, plainText } from "./ecfr.ts";
+import { rows, tables } from "./ecfr.ts";
 
 // ── The pin ──────────────────────────────────────────────────────────────────
 // Change this date deliberately, never incidentally. Everything downstream
@@ -36,6 +36,7 @@ const API = "https://www.ecfr.gov/api/versioner/v1";
 
 const SECTIONS = [
   { part: "172", section: "172.101", slug: "172-101-hmt" },
+  { part: "172", section: "172.102", slug: "172-102-special-provisions" },
   { part: "173", section: "173.21", slug: "173-21-forbidden" },
   { part: "177", section: "177.848", slug: "177-848-segregation" },
   { part: "177", section: "177.835", slug: "177-835-explosives" },
@@ -124,18 +125,20 @@ function parseHmt(xml: string) {
   let lastName = "", lastClass = "", lastUn: string | null = null, lastSymbols = "";
 
   all.forEach((r, i) => {
-    const [sym, rawName, cls, id, pg, labels, sp, , , , qtyPax, qtyCargo, vLoc] = r;
+    const at = (n: number): string => r[n] ?? "";
+    const sym = at(0), rawName = at(1), cls = at(2), id = at(3), pg = at(4);
+    const labels = at(5), sp = at(6), qtyPax = at(10), qtyCargo = at(11), vLoc = at(12);
 
     // ", see X" with no id and no class is a pointer row: the table's own
     // synonym index. "X see also Y" on a row that HAS an id is a cross
     // reference on a real entry, not a redirect.
     const seeMatch = rawName.match(/^(.*?),\s+see\s+(.+)$/i);
     if (seeMatch && !id.trim() && !cls.trim()) {
-      synonyms.push({ alias: seeMatch[1].trim(), target: seeMatch[2].trim(), kind: "see" });
+      synonyms.push({ alias: (seeMatch[1] ?? "").trim(), target: (seeMatch[2] ?? "").trim(), kind: "see" });
       return;
     }
     const seeAlso = rawName.match(/^(.*?)\s+see also\s+(.+)$/i);
-    if (seeAlso) synonyms.push({ alias: seeAlso[1].trim(), target: seeAlso[2].trim(), kind: "see also" });
+    if (seeAlso) synonyms.push({ alias: (seeAlso[1] ?? "").trim(), target: (seeAlso[2] ?? "").trim(), kind: "see also" });
 
     const isVariant = !rawName.trim() && !cls.trim() && !id.trim();
     if (!isVariant) {
@@ -145,7 +148,7 @@ function parseHmt(xml: string) {
       lastSymbols = sym;
     }
 
-    const name = (seeAlso ? seeAlso[1].trim() : rawName) || lastName;
+    const name = (seeAlso ? (seeAlso[1] ?? "").trim() : rawName) || lastName;
     if (!name) return; // a genuinely empty row; none observed, guarded anyway
 
     const hazClass = cls || lastClass;
@@ -175,14 +178,14 @@ function parseSegregation(xml: string) {
   const t = tables(xml);
   if (t.length < 2) throw new Error(`177.848: expected 2 tables, found ${t.length}`);
 
-  const seg = rows(t[0], { includeTh: true });
-  const header = seg[0];
+  const seg = rows(t[0] ?? "", { includeTh: true });
+  const header = seg[0] ?? [];
   // Header is [ "Class or division", "", "Notes", ...18 class columns ]
   const columns = header.slice(3);
   const body = seg.slice(1);
 
   const segRows = body.map((r) => {
-    const label = r[0], division = r[1], note = r[2];
+    const label = r[0] ?? "", division = r[1] ?? "", note = r[2] ?? "";
     // 2.3 appears TWICE, as Zone A and Zone B. Keying on division alone
     // collapses them and silently destroys a row. Key on the label too.
     const zone = /Zone A/i.test(label) ? "A" : /Zone B/i.test(label) ? "B" : null;
@@ -196,10 +199,10 @@ function parseSegregation(xml: string) {
     };
   });
 
-  const comp = rows(t[1], { includeTh: true });
-  const groups = comp[0].slice(1);
+  const comp = rows(t[1] ?? "", { includeTh: true });
+  const groups = (comp[0] ?? []).slice(1);
   const matrix = Object.fromEntries(
-    comp.slice(1).map((r) => [r[0], Object.fromEntries(groups.map((g, i) => [g, r[1 + i] ?? ""]))])
+    comp.slice(1).map((r) => [r[0] ?? "", Object.fromEntries(groups.map((g, i) => [g, r[1 + i] ?? ""]))])
   );
 
   return { columns, segRows, groups, matrix };
@@ -208,7 +211,7 @@ function parseSegregation(xml: string) {
 function census(segRows: ReturnType<typeof parseSegregation>["segRows"], columns: string[]) {
   const c: Record<string, number> = { X: 0, O: 0, "*": 0, blank: 0 };
   for (const r of segRows) for (const col of columns) {
-    const v = r.cells[col];
+    const v: string | undefined = r.cells[col];
     if (v === undefined) throw new Error(`missing cell: row ${r.key}, column ${col}`);
     c[v === "" ? "blank" : v] = (c[v === "" ? "blank" : v] ?? 0) + 1;
   }
@@ -226,8 +229,15 @@ async function main() {
   for (const s of SECTIONS) xml[s.slug] = await fetchSection(s.part, s.section, s.slug);
   const prov = await titleProvenance();
 
+  // Fail closed: a missing section is a broken extraction, not a default.
+  const must = (slug: string): string => {
+    const x = xml[slug];
+    if (!x) throw new Error(`section ${slug} was never fetched`);
+    return x;
+  };
+
   // 172.101
-  const hmt = parseHmt(xml["172-101-hmt"]);
+  const hmt = parseHmt(must("172-101-hmt"));
   const forbidden = hmt.entries.filter((e) => e.forbidden);
   const variants = hmt.entries.filter((e) => e.packingGroupVariant);
   const withUn = hmt.entries.filter((e) => e.un);
@@ -235,7 +245,7 @@ async function main() {
   const modeExcluded = hmt.entries.filter((e) => e.symbols.airOnly || e.symbols.vesselOnly);
 
   // 177.848
-  const seg = parseSegregation(xml["177-848-segregation"]);
+  const seg = parseSegregation(must("177-848-segregation"));
   const cen = census(seg.segRows, seg.columns);
   const total = Object.values(cen).reduce((a, b) => a + b, 0);
 
@@ -265,7 +275,7 @@ async function main() {
     return { name, sha256: sha256(body), bytes: Buffer.byteLength(body) };
   };
 
-  const manifest = [
+  const manifest: Array<{ name: string; sha256: string; bytes: number }> = [
     write("hmt.json", { source: `49 CFR 172.101, eCFR ${SNAPSHOT}`, count: hmt.entries.length, entries: hmt.entries }),
     write("synonyms.json", { source: `49 CFR 172.101 pointer rows, eCFR ${SNAPSHOT}`, count: hmt.synonyms.length, synonyms: hmt.synonyms }),
     write("segregation_table.json", {

@@ -14,7 +14,7 @@ no account, no API key and no network.
 | Endpoint | `https://www.ecfr.gov/api/versioner/v1/full/2026-08-27/title-49.xml?part=&section=` |
 | Authentication | none required |
 
-Sections pulled: `172.101`, `173.21`, `177.848`, `177.835`.
+Sections pulled: `172.101`, `172.102`, `173.21`, `177.848`, `177.835`.
 
 ## Legal status
 
@@ -99,6 +99,7 @@ shasum -a 256 -c data/SHA256SUMS
 | `raw/177-835-explosives@2026-08-27.xml` | 9,586 | `3e6dd4f884535b30b8cf4f0e001f9c533b5a8b482fac9aa4cdff24b1c9565736` |
 | `raw/177-848-segregation@2026-08-27.xml` | 35,705 | `b227fdffaabec275a185933fb419f1ed4706d5dd8e7af2ab13f73794c8b236ed` |
 | `raw/173-21-forbidden@2026-08-27.xml` | 11,984 | `aaf0b3b81ec56b17f85878d902ae90bad9f579eb01e97ba04d07c0536facaf3c` |
+| `raw/172-102-special-provisions@2026-08-27.xml` | 183,872 | `21d55d2ff2ea6e070c079fe24a8a8c84b073910dc4dc3fcbec29401bab321c9e` |
 | `raw/172-101-hmt@2026-08-27.xml` | 2,920,078 | `3c69730904a09dbea4adc96b44d0a8298f86eda9efb4f184def25e4ed52a6ab1` |
 | `hmt.json` | 2,275,271 | `2ce32a2e81aaec8cb25d015a6c9df7ce3026a17810c0b106181750a4d9a3d026` |
 | `synonyms.json` | 48,075 | `8db6792a3fcc3cc5f13217304890514b56bc13d3ede2d383ea556b6c77c73d14` |
