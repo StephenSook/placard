@@ -90,6 +90,16 @@ export type Divergence = {
   /** Divergent as a share of the configurations the table alone cleared. */
   divergentShareOfCleared: number;
   byGround: Record<string, number>;
+  /**
+   * The CATEGORY pairs that diverge, as matrix keys rather than material names.
+   *
+   * Separate from `examples` on purpose. `examples` is capped and carries the
+   * real material names for a human to read; this is the complete set, keyed the
+   * way the 177.848(d) table is indexed, so a renderer can ring the exact cells.
+   * The matrix panel originally tried to derive these from `examples` and rang
+   * nothing at all, because it was comparing matrix keys against chemical names.
+   */
+  divergentPairs: Array<[MatrixKey, MatrixKey]>;
   examples: Array<{
     a: string; b: string; cell: string; barriersPresent: boolean;
     singleShipper: boolean; code: string; clause: string;
@@ -109,6 +119,8 @@ export function measureDivergence(): Divergence {
   let examined = 0, cleared = 0, refused = 0, divergent = 0;
   const byGround: Record<string, number> = {};
   const examples: Divergence["examples"] = [];
+  const divergentPairs: Array<[MatrixKey, MatrixKey]> = [];
+  const seenPair = new Set<string>();
 
   const resolvedCache = new Map<MatrixKey, ResolvedItem>();
   const resolved = (k: MatrixKey): ResolvedItem | null => {
@@ -147,6 +159,8 @@ export function measureDivergence(): Divergence {
             divergent++;
             const v = violations[0]!;
             byGround[v.code] = (byGround[v.code] ?? 0) + 1;
+            const pk = `${ka}::${kb}`;
+            if (!seenPair.has(pk)) { seenPair.add(pk); divergentPairs.push([ka, kb]); }
             if (examples.length < 12) {
               examples.push({
                 a: a.name, b: b.name, cell: cell === "" ? "(blank)" : cell,
@@ -170,6 +184,7 @@ export function measureDivergence(): Divergence {
     divergent,
     divergentShareOfCleared: cleared === 0 ? 0 : Number((divergent / cleared).toFixed(4)),
     byGround,
+    divergentPairs,
     examples,
   };
 }

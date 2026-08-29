@@ -31,8 +31,12 @@ export function MatrixPanel({ highlight }: { highlight?: ReadonlyArray<MatrixKey
   // Computed once. The divergent pairs are the ones the table clears and the
   // full regulation refuses, which is the entire argument of this project.
   const divergentPairs = useMemo(() => {
+    // Keyed on MATRIX KEYS, not material names. An earlier version read these
+    // out of `examples`, whose a and b are chemical names, so the set never
+    // matched a single cell and the panel silently ringed nothing while
+    // claiming in its own caption that it did.
     const d = measureDivergence();
-    return new Set(d.examples.map((e) => `${e.a}::${e.b}`));
+    return new Set(d.divergentPairs.map(([a, b]) => `${a}::${b}`));
   }, []);
 
   const lit = new Set(highlight ?? []);

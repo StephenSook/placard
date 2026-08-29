@@ -10,7 +10,7 @@ import { describe, it, expect } from "vitest";
 import {
   CATEGORIES, measureDivergence, measureForbidden, representatives, tableAloneClears,
 } from "../src/evidence/divergence.ts";
-import { HMT } from "../src/solver/corpus.ts";
+import { HMT, segregationCell } from "../src/solver/corpus.ts";
 import { resolveItem } from "../src/solver/hazards.ts";
 import type { MatrixKey, ResolvedItem } from "../src/solver/types.ts";
 
@@ -92,6 +92,20 @@ describe("measureDivergence", () => {
     expect(d.divergent).toBeLessThanOrEqual(d.tableAloneClears);
     for (const e of d.examples) {
       expect(tableAloneClears(e.cell === "(blank)" ? "" : e.cell, e.barriersPresent)).toBe(true);
+    }
+  });
+
+  it("exposes divergent pairs as MATRIX KEYS a renderer can actually match", () => {
+    // The matrix panel rings these cells. It originally derived them from
+    // `examples`, whose a and b are chemical NAMES, so it matched nothing and
+    // ringed nothing while its own caption claimed otherwise. Keys, not names.
+    expect(d.divergentPairs.length).toBeGreaterThan(0);
+    for (const [a, b] of d.divergentPairs) {
+      expect(CATEGORIES, `${a} is not a matrix key`).toContain(a);
+      expect(CATEGORIES, `${b} is not a matrix key`).toContain(b);
+      // Each named pair must really be one the table clears.
+      const cell = segregationCell(a, b);
+      expect(["", "O", "*"], `${a}/${b} is cell ${cell}, which the table does not clear`).toContain(cell);
     }
   });
 
