@@ -39,7 +39,7 @@ independent refusal axes and three of them are not in it.
 - [Measured divergence between the table and the regulation](https://segregation-console.netlify.app/api/measure)
 - [The Forbidden-materials audit](https://segregation-console.netlify.app/api/forbidden-audit)
 - [Every verdict state side by side](https://segregation-console.netlify.app/states)
-- [Source, tests and the pinned corpus](https://github.com/StephenSook/hazmat-segregation-console)
+- [Source, tests and the pinned corpus](https://github.com/StephenSook/placard)
 
 ## Honest limits
 

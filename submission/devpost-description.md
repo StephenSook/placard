@@ -256,8 +256,8 @@ inline style, and a test asserts it.
 ## Verify it yourself, offline, with no key
 
 ```bash
-git clone https://github.com/StephenSook/hazmat-segregation-console
-cd hazmat-segregation-console && npm ci
+git clone https://github.com/StephenSook/placard
+cd placard && npm ci
 npm run verify:data
 npm test
 ```

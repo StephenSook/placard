@@ -19,7 +19,7 @@ import { useEffect, useState } from "react";
 import { PROVENANCE } from "./evidence/provenance.ts";
 import "./ui/judge.css";
 
-const REPO = "https://github.com/StephenSook/hazmat-segregation-console";
+const REPO = "https://github.com/StephenSook/placard";
 
 type Measure = {
   headline: {
@@ -174,7 +174,7 @@ export function Judge() {
 
         <Step n={5} title="Reproduce all of it offline, with no key">
           <pre className="jcode mono">{`git clone ${REPO}
-cd hazmat-segregation-console
+cd placard
 npm ci
 npm run verify:data   # re-hashes the corpus, proves every quoted clause verbatim
 npm test              # exhaustive, property, metamorphic, fixed point, gate`}</pre>
@@ -209,7 +209,7 @@ npm test              # exhaustive, property, metamorphic, fixed point, gate`}</
         <dl className="jprov">
           <div><dt className="mono">eCFR snapshot</dt><dd className="mono">{PROVENANCE.ecfr_snapshot}</dd></div>
           <div><dt className="mono">Title 49 amended</dt><dd className="mono">{PROVENANCE.title_49_latest_amended_on}</dd></div>
-          <div><dt className="mono">Repository</dt><dd><a href={REPO} rel="noreferrer">StephenSook/hazmat-segregation-console</a></dd></div>
+          <div><dt className="mono">Repository</dt><dd><a href={REPO} rel="noreferrer">StephenSook/placard</a></dd></div>
         </dl>
         <p className="jlegal">
           49 CFR is a work of the United States Government, not subject to copyright under 17 U.S.C.

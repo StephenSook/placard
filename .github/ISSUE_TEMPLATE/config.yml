@@ -1,11 +1,11 @@
 blank_issues_enabled: false
 contact_links:
   - name: Report a security vulnerability, privately
-    url: https://github.com/StephenSook/hazmat-segregation-console/security/policy
+    url: https://github.com/StephenSook/placard/security/policy
     about: Do not file security issues publicly.
   - name: What this project does NOT do
-    url: https://github.com/StephenSook/hazmat-segregation-console#legal
+    url: https://github.com/StephenSook/placard#legal
     about: The limits are documented. Your report may already be one of them.
   - name: The corpus and where it came from
-    url: https://github.com/StephenSook/hazmat-segregation-console/blob/main/data/PROVENANCE.md
+    url: https://github.com/StephenSook/placard/blob/main/data/PROVENANCE.md
     about: Snapshot date, amendment date, and the hash manifest.

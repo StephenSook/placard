@@ -44,7 +44,7 @@ number, and put the restraint in the second clause rather than the first.
 > https://segregation-console.netlify.app
 
 **28256 Public code repo**
-> https://github.com/StephenSook/hazmat-segregation-console
+> https://github.com/StephenSook/placard
 
 **28259 Level of learning** (dropdown)
 > Significant

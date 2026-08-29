@@ -3,7 +3,7 @@
 ## Reporting
 
 Report a vulnerability privately through GitHub Security Advisories:
-https://github.com/StephenSook/hazmat-segregation-console/security/advisories/new
+https://github.com/StephenSook/placard/security/advisories/new
 
 Please do not open a public issue for a security problem.
 
