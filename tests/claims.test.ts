@@ -169,3 +169,17 @@ describe("no third-party JavaScript, which the security argument depends on", ()
     expect(external.map((m) => m[0])).toEqual([]);
   });
 });
+
+describe("the built output really is free of inline script and style", () => {
+  it("has no inline <script>, no <style> block and no style= attribute", () => {
+    // SECURITY.md tells a reader that the only CSP refusals on the live site
+    // come from the host's injected HUD, never from us. That is only true while
+    // this holds, so it is asserted rather than promised.
+    const built = join(ROOT, "dist", "index.html");
+    if (!existsSync(built)) return; // dist is a build artifact, absent on a fresh clone
+    const html = readFileSync(built, "utf8");
+    expect(html).not.toMatch(/<script(?![^>]*\bsrc=)[^>]*>/);
+    expect(html).not.toMatch(/<style[\s>]/);
+    expect(html).not.toMatch(/\sstyle="/);
+  });
+});

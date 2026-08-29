@@ -43,6 +43,23 @@ Also in scope:
   clause, and it will be treated with the same seriousness as a memory-safety
   issue would be in other software.
 
+## A known, deliberate console message
+
+Open DevTools on the live site and you will see two Content Security Policy
+refusals. They are not ours and they are not a defect.
+
+Netlify injects a heads-up-display script and an inline style at its edge, after
+the build. Our `script-src 'self'; style-src 'self'` policy refuses both, so
+neither ever executes. Nothing in this repository is inline: the built
+`index.html` contains zero inline `<script>` blocks, zero `<style>` blocks and
+zero `style=` attributes, and a test asserts the page loads no cross-origin
+script.
+
+We are leaving it visible rather than adding a hash or `unsafe-inline` to
+silence it. The whole security argument here is that no foreign script runs on
+this origin, and the honest way to demonstrate that is to let the policy be seen
+refusing one. Netlify documents no way to disable the injection.
+
 ## Out of scope
 
 - Missing headers on preview deploys. Only the production origin is claimed.
