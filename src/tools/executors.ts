@@ -189,7 +189,10 @@ const looksLikeId = (s: string) => /^(UN|NA|ID)\s?\d{4}$/i.test(s.trim());
  * identification number or a proper shipping name, because a Forbidden
  * material has no identification number and must still be checkable.
  */
-export function toLoad(vehicles: Array<{ items: string[]; barriersPresent?: boolean; singleShipper?: boolean }>): LoadProposal {
+/** The shape a vehicle takes on the wire, between the agent and the solver. */
+export type WireVehicle = { items: string[]; barriersPresent?: boolean; singleShipper?: boolean };
+
+export function toLoad(vehicles: WireVehicle[]): LoadProposal {
   return {
     vehicles: vehicles.map((v): VehicleProposal => ({
       items: v.items.map((ref) =>

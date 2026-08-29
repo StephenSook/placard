@@ -1,0 +1,47 @@
+/* The agent's own view of the page. Deck, monospace, no decoration: this is
+   meant to read as a console rather than as a designed surface. */
+
+.agentview { margin-top: 0.6rem; }
+
+.agentview--none {
+  font-size: var(--t-nano);
+  color: var(--deck-ink-soft);
+  margin: 0.6rem 0 0;
+}
+
+.agentview__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: transparent;
+  border: 1px solid var(--deck-rule);
+  border-radius: var(--r-pill);
+  color: var(--deck-ink-soft);
+  font-size: var(--t-nano);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+}
+.agentview__toggle:hover { color: var(--deck-ink); border-color: var(--deck-ink-soft); }
+.agentview__toggle:focus-visible { outline: 2px solid var(--deck-ink); outline-offset: 2px; }
+
+.agentview__count {
+  background: var(--deck-raised);
+  border-radius: var(--r-pill);
+  padding: 0.05rem 0.45rem;
+  color: var(--deck-ink);
+}
+
+.agentview__json {
+  margin: 0.6rem 0 0;
+  padding: 0.85rem;
+  background: var(--deck-raised);
+  border-radius: var(--r-sm);
+  color: var(--deck-ink);
+  font-size: var(--t-nano);
+  line-height: 1.55;
+  max-height: 20rem;
+  overflow: auto;
+  white-space: pre;
+}

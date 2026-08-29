@@ -39,9 +39,31 @@ export type WebMCPTool = {
   execute: (args: never) => Promise<WebMCPResult> | WebMCPResult;
 };
 export type WebMCPResult = { content: Array<{ type: string; text?: string }>; isError?: boolean };
+
+/**
+ * What `getTools()` actually hands back, verified by driving Chrome 151 against
+ * the deployed origin rather than read off a spec draft.
+ *
+ * Two things about this surface cost real time and are worth writing down.
+ * A descriptor does NOT expose `execute`, so `descriptor.execute(...)` throws.
+ * And `executeTool` takes the DESCRIPTOR plus its arguments as a JSON STRING,
+ * not an object: passing an object fails with "Failed to parse input
+ * arguments", which reads like a schema error and is not one. The tell is that
+ * `inputSchema` comes back as a string too.
+ */
+export type RegisteredTool = {
+  name: string;
+  description?: string;
+  inputSchema?: string;
+  annotations?: { readOnlyHint?: boolean; untrustedContentHint?: boolean };
+  origin?: string;
+  title?: string;
+};
+
 export type ModelContext = {
   registerTool: (tool: WebMCPTool, options?: { signal?: AbortSignal }) => Promise<void> | void;
-  getTools?: () => Promise<unknown[]>;
+  getTools?: () => Promise<RegisteredTool[]>;
+  executeTool?: (tool: RegisteredTool, argumentsJson: string) => Promise<WebMCPResult>;
 };
 
 declare global {

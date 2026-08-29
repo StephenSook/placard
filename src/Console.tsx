@@ -20,10 +20,13 @@ import { LoadPlanPanel, type Bay } from "./ui/LoadPlanPanel.tsx";
 import { VerdictCard, VerdictAnnouncer } from "./ui/VerdictCard.tsx";
 import { ToolRegistryStrip } from "./ui/ToolRegistryStrip.tsx";
 import { ShippingPaper } from "./ui/ShippingPaper.tsx";
+import { AttackPanel } from "./ui/AttackPanel.tsx";
+import { MatrixPanel } from "./ui/MatrixPanel.tsx";
+import { AgentView } from "./ui/AgentView.tsx";
 import { useHazmatTools, useSessionNonce } from "./tools/useHazmatTools.ts";
 import { buildShippingPaper, lookupMaterial, proposeLoad, toLoad } from "./tools/executors.ts";
 import { checkLoad, resolveItem, verifyApproval } from "./solver/index.ts";
-import type { ResolvedItem, Violation } from "./solver/types.ts";
+import type { MatrixKey, ResolvedItem, Violation } from "./solver/types.ts";
 import "./ui/console.css";
 
 /** The demo manifest. Every entry is resolved from the corpus, never typed. */
@@ -49,6 +52,23 @@ export function Console() {
   const [manifest, setManifest] = useState<ResolvedItem[]>([]);
   const [bays, setBays] = useState<Bay[]>([{ items: [], barriersPresent: false, singleShipper: false }]);
   const [verdict, setVerdict] = useState<Verdict>({ status: "IDLE" });
+  // Bumped on every verdict change so the agent view re-reads the live
+  // registry. Not derived from `verdict` itself, because the registry settles
+  // an effect tick later than the verdict does.
+  const [agentViewRevision, setAgentViewRevision] = useState(0);
+
+  /**
+   * The matrix rows and columns this manifest actually touches, so the table
+   * below lights the cells the operator is currently standing on rather than
+   * asking them to find their own row among eighteen.
+   */
+  const litKeys = useMemo(
+    () =>
+      manifest.flatMap((r) =>
+        r.hazards.map((h) => h.matrixKey).filter((k): k is MatrixKey => k !== null),
+      ),
+    [manifest],
+  );
   const [paper, setPaper] = useState<unknown>(null);
   const [announce, setAnnounce] = useState("");
   const [busy, setBusy] = useState(false);
@@ -57,6 +77,7 @@ export function Console() {
    *  leave the agent's registry the moment the load changes. */
   const invalidate = useCallback(() => {
     setVerdict({ status: "IDLE" });
+    setAgentViewRevision((n) => n + 1);
     setPaper(null);
   }, []);
 
@@ -183,9 +204,11 @@ export function Console() {
     const v = await checkLoad(toLoad(toWire()), nonce);
     if (v.status === "PASS") {
       setVerdict({ status: "PASS", token: v.approvalToken, checked: v.checked, notes: v.notes });
+      setAgentViewRevision((n) => n + 1);
       setAnnounce("The load passes. The shipping paper can now be exported.");
     } else {
       setVerdict({ status: "REFUSED", violations: v.violations, checked: v.checked, notes: v.notes });
+      setAgentViewRevision((n) => n + 1);
       const first = v.violations[0];
       setAnnounce(first ? `Refused. ${first.message}` : "Refused.");
     }
@@ -205,6 +228,7 @@ export function Console() {
     } else {
       setAnnounce(`Refused at commit. ${ok.reason}`);
       setVerdict({ status: "IDLE" });
+      setAgentViewRevision((n) => n + 1);
     }
     setBusy(false);
   }, [verdict, toWire, nonce]);
@@ -324,10 +348,24 @@ export function Console() {
             all={registry.all}
             supported={registry.supported}
           />
+
+          {/* The same fact in the agent's own words, read from the LIVE
+              registry rather than mirrored from this component's state, so a
+              disagreement between the two is visible instead of hidden. */}
+          <AgentView revision={agentViewRevision} />
         </div>
       </div>
 
       {paper !== null && <ShippingPaper paper={paper} onClose={() => setPaper(null)} />}
+
+      {/* The security argument, executed rather than asserted. It sits below the
+          product because it is for a reviewer rather than an operator, and it
+          runs against whatever load is currently on the page. */}
+      <AttackPanel vehicles={toWire()} nonce={nonce} />
+
+      {/* The regulation this whole page is arguing about, drawn at full size,
+          with the cells it clears and the regulation forbids ringed. */}
+      <MatrixPanel highlight={litKeys} />
 
       <footer className="console__foot">
         <p>

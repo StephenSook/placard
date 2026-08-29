@@ -80,6 +80,29 @@ export function ManifestPanel({ items, onAdd, onRemove, onLoadDemo }: ManifestPa
         <button type="submit" className="pill pill--solid">Add</button>
       </form>
 
+      {/* Three examples, each demonstrating a different way a proper shipping
+          name fails to be an identifier. They are here rather than in the
+          documentation because a reader will try one and will not read the
+          documentation. */}
+      <ul className="manifest__examples">
+        {[
+          { q: "Articles, explosive, n.o.s.", why: "one name, 19 divisions" },
+          { q: "sulphuric acid", why: "British spelling" },
+          { q: "Ammonium chlorate", why: "Forbidden, no UN number" },
+        ].map((ex) => (
+          <li key={ex.q}>
+            <button
+              type="button"
+              className="manifest__example"
+              onClick={() => { setQuery(ex.q); setError(null); }}
+            >
+              <span className="mono">{ex.q}</span>
+              <em>{ex.why}</em>
+            </button>
+          </li>
+        ))}
+      </ul>
+
       {error && (
         <p className="manifest__error" role="alert">{error}</p>
       )}

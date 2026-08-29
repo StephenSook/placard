@@ -115,3 +115,33 @@
 .pill--solid { background: var(--ink); color: var(--paper); }
 .pill--solid:hover { background: var(--ink-soft); border-color: var(--ink-soft); }
 .pill:disabled { opacity: 0.45; cursor: default; }
+
+/* Try-these examples. Deliberately quiet: they are an invitation, not a
+   control, and they must not compete with the input itself. */
+.manifest__examples {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.6rem 0 0;
+  padding: 0;
+}
+
+.manifest__example {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  padding: 0.3rem 0.65rem;
+  border: 1px dashed var(--paper-edge);
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: var(--t-micro);
+  cursor: pointer;
+  transition: border-color 140ms var(--ease-out), background 140ms var(--ease-out);
+}
+.manifest__example:hover { background: var(--paper-deep); border-color: var(--ink-faint); }
+.manifest__example:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.manifest__example em { font-style: normal; color: var(--ink-faint); }
+
+@media (prefers-reduced-motion: reduce) { .manifest__example { transition: none; } }

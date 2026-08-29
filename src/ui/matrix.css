@@ -1,0 +1,113 @@
+/* The federal table, rendered as a table. Paper, because it is the regulation.
+   Dense on purpose: 324 cells is the point, and shrinking it to fit would hide
+   how much an operator is holding in their head. */
+
+.matrix {
+  background: var(--paper);
+  border-radius: var(--r-md);
+  padding: var(--pad);
+  box-shadow: inset 0 0 0 1px var(--paper-edge);
+  margin-top: var(--gap);
+}
+
+.matrix__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--gap);
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.matrix__eyebrow {
+  font-size: var(--t-nano);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 0.3rem;
+}
+
+.matrix__title {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: var(--t-display);
+  line-height: 1;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+
+.matrix__legend { display: grid; gap: 0.3rem; margin: 0; }
+.matrix__legendItem { display: flex; align-items: center; gap: 0.5rem; }
+.matrix__legendItem dd { margin: 0; font-size: var(--t-micro); color: var(--ink-soft); }
+.matrix__legendItem dt { width: 22px; height: 22px; display: grid; place-items: center; border-radius: var(--r-xs); font-size: var(--t-micro); }
+
+/* Wide content scrolls inside its own container. The page never scrolls sideways. */
+.matrix__scroll { overflow-x: auto; padding-bottom: 0.5rem; }
+
+.matrix__table { border-collapse: collapse; font-size: var(--t-nano); }
+
+.matrix__corner { width: 190px; }
+
+.matrix__colhead {
+  height: 118px;
+  vertical-align: bottom;
+  padding: 0 0 6px;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+/* Rotated column labels, the way the printed table reads. */
+.matrix__colLabel {
+  display: block;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: var(--t-nano);
+}
+
+.matrix__rowhead {
+  text-align: left;
+  font-weight: 400;
+  color: var(--ink);
+  padding: 0 10px 0 0;
+  max-width: 190px;
+  line-height: 1.25;
+  font-size: var(--t-nano);
+}
+
+.mcell {
+  width: 26px;
+  height: 26px;
+  text-align: center;
+  border: 1px solid var(--paper-edge);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  position: relative;
+  cursor: default;
+}
+.mcell:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; z-index: 2; }
+
+/* Never colour alone: the letter is always printed. Colour is reinforcement. */
+.mcell--X     { background: #efd9d9; color: #6b1418; }
+.mcell--O     { background: #f6ead0; color: #6b4a14; }
+.mcell--star  { background: #dfe6ef; color: #1b3a5c; }
+.mcell--blank { background: var(--card); color: transparent; }
+
+/* The 24 the table clears and the regulation forbids. */
+.mcell--divergent { box-shadow: inset 0 0 0 2px var(--refused); }
+.mcell--lit       { outline: 3px solid var(--ink); outline-offset: -3px; z-index: 1; }
+
+.matrix__readout {
+  margin: 0.9rem 0 0;
+  font-size: var(--t-micro);
+  color: var(--ink-soft);
+  min-height: 1.4em;
+}
+
+.matrix__note {
+  margin: 0.5rem 0 0;
+  font-size: var(--t-micro);
+  color: var(--ink-faint);
+  max-width: 48rem;
+  line-height: 1.6;
+}
