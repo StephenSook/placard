@@ -195,12 +195,27 @@ npm test              # exhaustive, property, metamorphic, fixed point, gate`}</
         <Step n={6} title="Run the agent evaluations without an API key">
           <p>
             Smoke mode executes the expected tool calls against the live page directly, with no LLM
-            and no key, so the tool surface is checkable deterministically.
+            and no key, so the tool surface is checkable deterministically. All six cases pass.
           </p>
-          <pre className="jcode mono">{`npx webmcp-evals smoke -u https://segregation-console.netlify.app \\
+          <pre className="jcode mono">{`brew install --cask google-chrome@canary
+
+npx webmcp-evals smoke \\
+  -u "https://segregation-console.netlify.app/?load=UN1090&check=1" \\
   -e evals/segregation.evals.json -v`}</pre>
+          <p className="jwhy">
+            <strong>Two things that are not obvious.</strong> The harness hardcodes the Canary
+            channel and exposes no flag to change it. And the URL carries state deliberately: three
+            of the five tools only exist while the page holds a manifest, and{" "}
+            <code>commit_manifest</code> only exists while the load passes, which is the whole point
+            of this project. Smoke mode opens a fresh page per case, so a bare URL registers two
+            tools and four cases fail with "tool is not available". That was the real result until I
+            ran it, and fixing it properly is why the page reads its state from the URL at all.
+          </p>
           <a className="jbtn jbtn--ghost" href={`${REPO}/blob/main/evals/segregation.evals.json`} rel="noreferrer">
             The eval suite
+          </a>
+          <a className="jbtn jbtn--ghost" href="/?load=UN1830,UN1748&barriers=1&check=1">
+            Open the signature refusal directly
           </a>
         </Step>
       </ol>

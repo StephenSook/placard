@@ -367,6 +367,44 @@ describe("published figures must match the fact sheet", () => {
   });
 });
 
+describe("the published eval command is the one that actually passes", () => {
+  /**
+   * I published a command in three places and had never run it. It needed
+   * Chrome Canary, which was not installed, so it failed before it started; and
+   * once it ran it scored 2 of 6, because smoke mode opens a fresh page per
+   * case and three of the five tools only exist once the page holds state.
+   *
+   * The working command carries that state in the URL. This asserts every
+   * surface publishes THAT one, so the instruction cannot drift back to the
+   * bare URL that silently scores 2 of 6.
+   */
+  const surfaces = ["README.md", "submission/devpost-description.md", "src/Judge.tsx"]
+    .filter((f) => FILES.includes(f));
+
+  it("checks every surface that publishes it", () => {
+    expect(surfaces.length).toBe(3);
+  });
+
+  for (const f of surfaces) {
+    it(`${f} carries the state-bearing URL INSIDE the command, not just nearby`, () => {
+      const text = read(f);
+      if (!text.includes("webmcp-evals smoke")) return;
+
+      // Extract the command itself. Checking the whole file would pass on the
+      // prose that EXPLAINS the URL, which is exactly how the first version of
+      // this test survived reverting the command to the bare form.
+      const i = text.indexOf("webmcp-evals smoke");
+      const cmd = text.slice(i, i + 220);
+
+      expect(cmd, `${f} publishes a bare URL that scores 2 of 6:\n${cmd}`)
+        .toMatch(/load=UN1090&(amp;)?check=1/);
+      // The Canary requirement may live in the surrounding prose, since it is a
+      // prerequisite rather than part of the command.
+      expect(text.toLowerCase(), `${f} does not mention the Canary requirement`).toContain("canary");
+    });
+  }
+});
+
 describe("the demo manifest in the code matches the one in FACTS.md", () => {
   it("lists the same materials, so the fact sheet cannot drift from the product", () => {
     // These two disagreed: FACTS.md documented six entries including UN0360

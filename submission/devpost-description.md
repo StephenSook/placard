@@ -324,9 +324,25 @@ material is poisonous by inhalation" appears four times.
 The agent surface has its own evaluations, runnable with no LLM and no key:
 
 ```bash
-npx webmcp-evals smoke -u https://segregation-console.netlify.app \
+npx webmcp-evals smoke \
+  -u "https://segregation-console.netlify.app/?load=UN1090&check=1" \
   -e evals/segregation.evals.json -v
 ```
+
+Two things about that command are not obvious and cost me an hour, so they are
+written down rather than left for you to discover:
+
+- **It needs Google Chrome Canary.** The harness hardcodes that channel and
+  exposes no flag to change it. `brew install --cask google-chrome@canary`.
+- **The URL carries state on purpose.** Three of the five tools only exist while
+  the page has a manifest, and `commit_manifest` only exists while the load
+  passes, which is the entire point of the project. Smoke mode opens a fresh
+  page per case, so a bare URL registers two tools and four cases fail with
+  "tool is not available". `?load=UN1090&check=1` puts the page in a passing
+  state, so all five are registered and all six cases run.
+
+That is 6 of 6. It was 2 of 6 until I actually ran it.
+
 
 162 tests. Lighthouse on the live origin: agentic browsing 100, accessibility
 100, best practices 100, SEO 100, performance 98.
