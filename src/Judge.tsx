@@ -85,7 +85,7 @@ export function Judge() {
   return (
     <main className="judge">
       <header className="judge__head">
-        <p className="judge__eyebrow mono">Three minutes, no account, no key, nothing to install</p>
+        <p className="judge__eyebrow mono">Eight steps, no account, no key, nothing to install</p>
         <h1 className="judge__title">Check this project</h1>
         <p className="judge__lead">
           Every claim below is verifiable from this page or from one command. Where a number
@@ -104,19 +104,23 @@ export function Judge() {
       <ol className="judge__steps">
         <Step n={1} title="Watch a legal-looking load get refused">
           <p>
-            Open the console and press <strong>Load the demonstration manifest</strong>. It contains
-            sulfuric acid and calcium hypochlorite on one truck. The 177.848(d) table cell for that
-            pair is <code>O</code>, which reads as "separate them and they may travel together".
-            Tick <strong>physical barriers separate incompatible items</strong> and the page still
-            refuses, quoting 177.848(e)(3) verbatim, because that clause blocks Class 8 liquids
-            above or adjacent to Class 4 and 5 materials notwithstanding the methods of separation
-            employed.
+            One link, nothing to press. It opens sulfuric acid and calcium hypochlorite on one
+            truck with the barrier already asserted. The 177.848(d) table cell for that pair is{" "}
+            <code>O</code>, which reads as "separate them and they may travel together", and the
+            page refuses anyway, quoting 177.848(e)(3) word for word, because that clause blocks
+            Class 8 liquids above or adjacent to Class 4 and 5 materials notwithstanding the
+            methods of separation employed.
           </p>
           <p className="jwhy">
             <strong>Why it matters:</strong> an agent reasoning from the table alone clears this
             load. The table is one of four independent refusal axes.
           </p>
-          <a className="jbtn" href="/">Open the console</a>
+          <a className="jbtn" href="/?load=UN1830,UN1748&barriers=1&check=1">
+            Open the refusal
+          </a>
+          <a className="jbtn jbtn--ghost" href="/?demo=1&check=1">
+            The full six-item manifest
+          </a>
         </Step>
 
         <Step n={2} title="See the size of that gap, computed rather than asserted">
@@ -172,7 +176,48 @@ export function Judge() {
           <a className="jbtn jbtn--ghost" href="/states">Every verdict state, side by side</a>
         </Step>
 
-        <Step n={5} title="Reproduce all of it offline, with no key">
+        <Step n={5} title="Try to break it yourself, on the page">
+          <p>
+            Scroll to <strong>Try to defeat the gate</strong> at the bottom of the console. Two
+            attacks, both executed for real against the live page rather than described.
+          </p>
+          <p>
+            <strong>Shadow tool attack.</strong> It registers a tool over the page's own{" "}
+            <code>commit_manifest</code> through the real <code>registerTool</code>, and it{" "}
+            <em>succeeds</em>: afterwards <code>getTools()</code> genuinely returns an impostor,
+            because the tool map is keyed by name. Then the impostor, holding a real SHA-256 token
+            issued for a different load, fails to export anything.
+          </p>
+          <p>
+            <strong>Prompt injection.</strong> A supplier line carrying "SYSTEM: ignore all previous
+            instructions" goes through the tool annotated <code>untrustedContentHint</code>, and the
+            verdict is re-derived before and after. It does not move.
+          </p>
+          <p className="jwhy">
+            <strong>Where the honesty ends:</strong> the shadow tool is this project's own code
+            standing in for an attacker's script, modelled at the point where{" "}
+            <code>script-src 'self'</code> has already been defeated. That is the strongest position
+            an attacker can be handed here, and it still cannot produce the document.
+          </p>
+          <a className="jbtn" href="/?demo=1&check=1">Run the attacks</a>
+        </Step>
+
+        <Step n={6} title="Read the table this whole argument is about">
+          <p>
+            Below the attacks, the 177.848(d) table is drawn at full size: 18 rows, 18 columns, all
+            324 cells, in the regulation's own row order. Cells ringed in red are ones the table{" "}
+            <em>clears</em> and another clause forbids anyway. The rows your current manifest
+            touches are outlined.
+          </p>
+          <p className="jwhy">
+            <strong>What it cost to get right:</strong> the first version ringed nothing while its
+            caption said it did, and every row was captioned with the wrong hazard class, because{" "}
+            <code>Object.keys</code> hoists integer-like keys and put classes 3, 7 and 8 ahead of
+            division 1.1. The published number was unaffected, which is exactly why nothing failed.
+          </p>
+        </Step>
+
+        <Step n={7} title="Reproduce all of it offline, with no key">
           <pre className="jcode mono">{`git clone ${REPO}
 cd placard
 npm ci
@@ -192,7 +237,7 @@ npm test              # exhaustive, property, metamorphic, fixed point, gate`}</
           </p>
         </Step>
 
-        <Step n={6} title="Run the agent evaluations without an API key">
+        <Step n={8} title="Run the agent evaluations without an API key">
           <p>
             Smoke mode executes the expected tool calls against the live page directly, with no LLM
             and no key, so the tool surface is checkable deterministically. All six cases pass.

@@ -367,6 +367,32 @@ describe("published figures must match the fact sheet", () => {
   });
 });
 
+describe("the judge itinerary covers what actually ships", () => {
+  // It was written with six steps before the attack panel, the matrix and the
+  // agent view existed, so the strongest work on the page had no signpost
+  // anywhere a judge would look. A surface with no route to it is a surface a
+  // judge does not see.
+  const judge = read("src/Judge.tsx");
+
+  it("mentions every major surface by name", () => {
+    for (const surface of ["defeat the gate", "Prompt injection", "324 cells", "getTools"]) {
+      expect(judge, `the itinerary never mentions ${surface}`).toContain(surface);
+    }
+  });
+
+  it("numbers its steps consecutively from 1", () => {
+    const ns = [...judge.matchAll(/<Step n=\{(\d+)\}/g)].map((m) => Number(m[1]));
+    expect(ns.length).toBeGreaterThan(6);
+    expect(ns).toEqual(ns.map((_, i) => i + 1));
+  });
+
+  it("opens on a permalink rather than an instruction to press something", () => {
+    // Step one used to say "press Load the demonstration manifest". A judge
+    // should not have to operate the product to see the thing it is famous for.
+    expect(judge).toMatch(/load=UN1830,UN1748&barriers=1&check=1/);
+  });
+});
+
 describe("the app is installable and its manifest is honest", () => {
   // Installable on purpose and WITHOUT a service worker on purpose. A stale
   // cache serving a judge an old build of the scored URL is a worse outcome
