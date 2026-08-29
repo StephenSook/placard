@@ -18,6 +18,8 @@ export { resolveCompatibility, checkGroups } from "./explosives.ts";
 export { approvalToken, loadDigest, canonical } from "./hash.ts";
 export { cite, CLAUSE_IDS, HMT, SEGREGATION, COMPATIBILITY, forbiddenEntries, lookupByUn, lookupByName, segregationCell, ROW_TO_COLUMN } from "./corpus.ts";
 export { checkVehicle, worstCell } from "./segregation.ts";
+export { proposePartition } from "./partition.ts";
+export type { PartitionOptions, PartitionResult } from "./partition.ts";
 
 export type CheckResult = Verdict & { digest: string };
 

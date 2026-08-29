@@ -76,3 +76,6 @@ lighthouse-report.*
 .idea/
 *.swp
 *.log
+
+# scratch: local experiments, mutation harnesses, smoke scripts
+/scratch/
