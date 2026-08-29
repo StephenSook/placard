@@ -12,7 +12,7 @@
  */
 import { useState } from "react";
 import { Placard } from "./Placard.tsx";
-import { lookupMaterial } from "../tools/executors.ts";
+import { lookupMaterial, lookupMatches } from "../tools/executors.ts";
 import type { ResolvedItem } from "../solver/types.ts";
 import "./manifest.css";
 
@@ -28,14 +28,15 @@ export function ManifestPanel({ items, onAdd, onRemove, onLoadDemo }: ManifestPa
   const [error, setError] = useState<string | null>(null);
 
   const suggestions =
-    query.trim().length >= 3 ? lookupMaterial({ query }).matches.slice(0, 5) : [];
+    query.trim().length >= 3 ? lookupMatches(lookupMaterial({ query })).slice(0, 5) : [];
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     const q = query.trim();
     if (!q) return;
     const r = lookupMaterial({ query: q });
-    if (r.matches.length === 0) {
+    const matches = lookupMatches(r);
+    if (matches.length === 0) {
       // Never let a miss read as "not regulated". Same rule as the tool.
       setError(r.note ?? "No entry matched.");
       return;

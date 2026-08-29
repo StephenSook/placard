@@ -24,7 +24,7 @@ import { AttackPanel } from "./ui/AttackPanel.tsx";
 import { MatrixPanel } from "./ui/MatrixPanel.tsx";
 import { AgentView } from "./ui/AgentView.tsx";
 import { useHazmatTools, useSessionNonce } from "./tools/useHazmatTools.ts";
-import { buildShippingPaper, lookupMaterial, proposeLoad, toLoad } from "./tools/executors.ts";
+import { buildShippingPaper, lookupMaterial, lookupMatches, proposeLoad, toLoad } from "./tools/executors.ts";
 import { checkLoad, resolveItem, verifyApproval } from "./solver/index.ts";
 import type { MatrixKey, ResolvedItem, Violation } from "./solver/types.ts";
 import "./ui/console.css";
@@ -82,7 +82,7 @@ export function Console() {
   }, []);
 
   const addItem = useCallback((query: string) => {
-    const found = lookupMaterial({ query }).matches[0];
+    const found = lookupMatches(lookupMaterial({ query }))[0];
     if (!found) return;
     const r = resolveItem(found.id ? { id: found.id } : { name: found.name });
     if ("error" in r) return;
@@ -114,7 +114,7 @@ export function Console() {
   const resolveRefs = useCallback((refs: string[]): ResolvedItem[] =>
     refs
       .map((q) => {
-        const f = lookupMaterial({ query: q }).matches[0];
+        const f = lookupMatches(lookupMaterial({ query: q }))[0];
         if (!f) return null;
         const r = resolveItem(f.id ? { id: f.id } : { name: f.name });
         return "error" in r ? null : r;

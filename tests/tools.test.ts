@@ -8,14 +8,21 @@
  */
 import { describe, it, expect } from "vitest";
 import {
-  lookupMaterial, classifyLineItem, proposeLoad, checkSegregation, commitManifest, buildShippingPaper, toLoad,
-} from "../src/tools/executors.ts";
+  lookupMaterial, classifyLineItem, proposeLoad, checkSegregation, commitManifest, buildShippingPaper, toLoad, isMalformed, type MalformedInput } from "../src/tools/executors.ts";
 import {
   CHECK_SEGREGATION_SCHEMA, CLASSIFY_LINE_ITEM_SCHEMA, COMMIT_MANIFEST_SCHEMA,
   DESCRIPTIONS, LOOKUP_MATERIAL_SCHEMA, MUTATING, PROPOSE_LOAD_SCHEMA,
   READ_ONLY, READ_ONLY_UNTRUSTED,
 } from "../src/tools/schemas.ts";
 import { ALWAYS_ON_TOOLS, registerAlwaysOnTools, registerAlwaysOnToolsInto, unregisterAlwaysOnTools, webmcpSupported } from "../src/tools/registerEarly.ts";
+
+/** Tests here pass well-formed arguments, so narrow past the argument-refusal
+ *  union once rather than at every assertion. A dedicated suite below covers
+ *  the malformed path. */
+const ok = <T,>(r: T): Exclude<T, MalformedInput> => {
+  if (isMalformed(r)) throw new Error(`unexpected argument refusal: ${r.reason}`);
+  return r as Exclude<T, MalformedInput>;
+};
 
 const NONCE = "tool-test-nonce";
 const OTHER = "a-different-session";
@@ -70,19 +77,19 @@ describe("schemas and annotations match the WebMCP spec, not MCP's wider set", (
 
 describe("lookup_material", () => {
   it("finds a Forbidden material by name and says why it has no identification number", () => {
-    const r = lookupMaterial({ query: "Ammonium chlorate" });
+    const r = ok(lookupMaterial({ query: "Ammonium chlorate" }));
     expect(r.matches[0]!.forbidden).toBe(true);
     expect(r.matches[0]!.id).toBeNull();
     expect(r.citation!.section).toBe("49 CFR 173.21(a)");
   });
 
   it("resolves an identification number", () => {
-    const r = lookupMaterial({ query: "UN1090" });
+    const r = ok(lookupMaterial({ query: "UN1090" }));
     expect(r.matches[0]!.name).toBe("Acetone");
   });
 
   it("resolves a synonym through the table's own see pointer", () => {
-    const r = lookupMaterial({ query: "Accellerene" });
+    const r = ok(lookupMaterial({ query: "Accellerene" }));
     expect(r.matches.length).toBeGreaterThan(0);
     expect(r.matches[0]!.name.toLowerCase()).toContain("nitrosodimethylaniline");
   });
@@ -90,7 +97,7 @@ describe("lookup_material", () => {
   it("never lets an empty result read as 'not regulated'", () => {
     // The whole failure this project exists to prevent: a lookup that returns
     // nothing, which a reader or an agent takes to mean the material is fine.
-    const r = lookupMaterial({ query: "zzzzz not a chemical zzzzz" });
+    const r = ok(lookupMaterial({ query: "zzzzz not a chemical zzzzz" }));
     expect(r.matches).toHaveLength(0);
     expect(r.note).toMatch(/does NOT mean the material is unregulated/);
     expect(r.note).toMatch(/256/);
@@ -130,7 +137,7 @@ describe("classify_line_item", () => {
 
 describe("propose_load", () => {
   it("names the conflicting materials when no arrangement exists", () => {
-    const r = proposeLoad({ items: ["UN1830", "UN1748"], maxVehicles: 1 });
+    const r = ok(proposeLoad({ items: ["UN1830", "UN1748"], maxVehicles: 1 }));
     expect(r.status).toBe("IMPOSSIBLE");
     if (r.status === "IMPOSSIBLE") {
       expect(r.conflictingSet.length).toBe(2);
@@ -139,22 +146,22 @@ describe("propose_load", () => {
   });
 
   it("returns a split that check_segregation then passes", async () => {
-    const r = proposeLoad({ items: ["UN1090", "UN1830", "UN1748", "UN1309"], maxVehicles: 2 });
+    const r = ok(proposeLoad({ items: ["UN1090", "UN1830", "UN1748", "UN1309"], maxVehicles: 2 }));
     expect(r.status).toBe("PROPOSED");
     if (r.status !== "PROPOSED") return;
-    const v = await checkSegregation({ vehicles: r.vehicles.map((x) => ({ items: x.items as string[] })) }, NONCE);
+    const v = ok(await checkSegregation({ vehicles: r.vehicles.map((x) => ({ items: x.items as string[] })) }, NONCE));
     expect(v.status).toBe("PASS");
   });
 
   it("tells the agent a proposal is not an authorisation", () => {
-    const r = proposeLoad({ items: ["UN1090"], maxVehicles: 1 });
+    const r = ok(proposeLoad({ items: ["UN1090"], maxVehicles: 1 }));
     if (r.status === "PROPOSED") expect(r.note).toMatch(/nothing can be exported without one/);
   });
 });
 
 describe("check_segregation", () => {
   it("returns verbatim regulation on a refusal, not a paraphrase", async () => {
-    const v = await checkSegregation({ vehicles: [{ items: ["UN1830", "UN1748"], barriersPresent: true }] }, NONCE);
+    const v = ok(await checkSegregation({ vehicles: [{ items: ["UN1830", "UN1748"], barriersPresent: true }] }, NONCE));
     expect(v.status).toBe("REFUSED");
     if (v.status !== "REFUSED") return;
     const reg = v.violations[0]!.regulation[0]!;
@@ -314,7 +321,7 @@ describe("a material without an identification number is never dropped", () => {
    * Both passed typecheck and both produced a page that looked correct.
    */
   it("accepts a proper shipping name where no identification number exists", async () => {
-    const v = await checkSegregation({ vehicles: [{ items: ["Ammonium chlorate"] }] }, NONCE);
+    const v = ok(await checkSegregation({ vehicles: [{ items: ["Ammonium chlorate"] }] }, NONCE));
     expect(v.status).toBe("REFUSED");
     if (v.status !== "REFUSED") return;
     expect(v.violations[0]!.ground).toBe("FORBIDDEN_MATERIAL");
@@ -322,10 +329,10 @@ describe("a material without an identification number is never dropped", () => {
   });
 
   it("keeps the Forbidden material in a mixed load rather than silently dropping it", async () => {
-    const withForbidden = await checkSegregation(
+    const withForbidden = ok(await checkSegregation(
       { vehicles: [{ items: ["UN1090", "Ammonium chlorate"] }] },
       NONCE
-    );
+    ));
     expect(withForbidden.status).toBe("REFUSED");
     if (withForbidden.status !== "REFUSED") return;
     // The unary Forbidden refusal must be present, not swallowed by pairwise checks.
@@ -333,7 +340,7 @@ describe("a material without an identification number is never dropped", () => {
   });
 
   it("proposes a load referenced by name and reports it back by name", () => {
-    const r = proposeLoad({ items: ["UN1090", "Acetal"], maxVehicles: 2 });
+    const r = ok(proposeLoad({ items: ["UN1090", "Acetal"], maxVehicles: 2 }));
     expect(r.status).toBe("PROPOSED");
     if (r.status !== "PROPOSED") return;
     const flat = r.vehicles.flatMap((v) => v.items);

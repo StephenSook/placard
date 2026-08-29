@@ -47,7 +47,10 @@ export type LookupResult = {
   citation?: Citation | undefined;
 };
 
-export function lookupMaterial(input: { query: string }): LookupResult {
+export function lookupMaterial(input: { query: string }): LookupResult | MalformedInput {
+  if (typeof input?.query !== "string" || input.query.trim() === "") {
+    return malformed("query must be a non-empty string, an identification number such as UN1090 or a proper shipping name.");
+  }
   const q = norm(input.query);
   if (!q) return { matches: [], note: "Empty query." };
 
@@ -112,6 +115,9 @@ function score(entryName: string, text: string): number {
 }
 
 export function classifyLineItem(input: { text: string }) {
+  if (typeof input?.text !== "string" || input.text.trim() === "") {
+    return { ...malformed("text must be a non-empty string."), candidates: [] as never[], confirmationRequired: true as const };
+  }
   const text = input.text;
   const idMatch = /\b(UN|NA|ID)\s?(\d{4})\b/i.exec(text);
   if (idMatch) {
@@ -146,6 +152,12 @@ export function classifyLineItem(input: { text: string }) {
 export function proposeLoad(input: {
   items: string[]; maxVehicles: number; barriersPresent?: boolean; singleShipper?: boolean;
 }) {
+  if (!isStringArray(input?.items) || input.items.length === 0) {
+    return malformed("items must be a non-empty array of strings, each an identification number or a proper shipping name.");
+  }
+  if (typeof input.maxVehicles !== "number" || !Number.isInteger(input.maxVehicles) || input.maxVehicles < 1) {
+    return malformed("maxVehicles must be an integer of at least 1.");
+  }
   const items: LineItem[] = input.items.map((ref) =>
     looksLikeId(ref) ? { id: ref.replace(/\s/g, "").toUpperCase() } : { name: ref }
   );
@@ -192,6 +204,63 @@ const looksLikeId = (s: string) => /^(UN|NA|ID)\s?\d{4}$/i.test(s.trim());
 /** The shape a vehicle takes on the wire, between the agent and the solver. */
 export type WireVehicle = { items: string[]; barriersPresent?: boolean; singleShipper?: boolean; nonReactionAsserted?: boolean };
 
+/**
+ * Narrow whatever a caller actually sent into vehicles we can reason about.
+ *
+ * A tool exposed to an agent must NEVER throw on malformed input. It refuses.
+ * `commit_manifest` used to call `.map` on whatever arrived, so a caller
+ * sending a non-array raised "t.map is not a function" out of the handler, and
+ * an exception is not a refusal: it carries no clause, no reason, and nothing a
+ * caller can act on. Found by webmcp-evals generating sample arguments from the
+ * published schema, which is exactly the fuzzing a real agent will do.
+ */
+/**
+ * The refusal every tool returns when its ARGUMENTS are wrong, as opposed to
+ * when the regulation refuses the load.
+ *
+ * These are different failures and they must not look the same. A regulatory
+ * refusal cites a clause. This one names the field, so an agent can correct the
+ * call and try again rather than being told nothing.
+ */
+export type MalformedInput = { status: "REFUSED"; reason: string; note: string };
+
+/** True when a tool result is an argument refusal rather than a real answer. */
+export const isMalformed = (r: unknown): r is MalformedInput =>
+  typeof r === "object" && r !== null && (r as { status?: unknown }).status === "REFUSED"
+  && typeof (r as { reason?: unknown }).reason === "string"
+  && (r as { reason: string }).reason.startsWith("malformed request:");
+
+/** Matches from a lookup, or an empty list when the arguments were refused. */
+export function lookupMatches(r: LookupResult | MalformedInput) {
+  return isMalformed(r) ? [] : r.matches;
+}
+const malformed = (reason: string): MalformedInput => ({
+  status: "REFUSED",
+  reason: `malformed request: ${reason}`,
+  note: "Nothing was evaluated and nothing was produced. Fix the arguments and call again.",
+});
+
+const isStringArray = (x: unknown): x is string[] =>
+  Array.isArray(x) && x.every((i) => typeof i === "string");
+
+export function coerceVehicles(input: unknown): WireVehicle[] | null {
+  if (!Array.isArray(input)) return null;
+  const out: WireVehicle[] = [];
+  for (const v of input) {
+    if (typeof v !== "object" || v === null) return null;
+    const raw = v as Record<string, unknown>;
+    if (!Array.isArray(raw.items)) return null;
+    if (!raw.items.every((x) => typeof x === "string")) return null;
+    out.push({
+      items: raw.items as string[],
+      ...(typeof raw.barriersPresent === "boolean" ? { barriersPresent: raw.barriersPresent } : {}),
+      ...(typeof raw.singleShipper === "boolean" ? { singleShipper: raw.singleShipper } : {}),
+      ...(typeof raw.nonReactionAsserted === "boolean" ? { nonReactionAsserted: raw.nonReactionAsserted } : {}),
+    });
+  }
+  return out;
+}
+
 export function toLoad(vehicles: WireVehicle[]): LoadProposal {
   return {
     vehicles: vehicles.map((v): VehicleProposal => ({
@@ -209,7 +278,11 @@ export async function checkSegregation(
   input: { vehicles: Array<{ items: string[]; barriersPresent?: boolean; singleShipper?: boolean }> },
   nonce: string
 ) {
-  const load = toLoad(input.vehicles);
+  const vehicles = coerceVehicles(input?.vehicles);
+  if (vehicles === null) {
+    return malformed("vehicles must be an array of objects, each with an items array of strings.");
+  }
+  const load = toLoad(vehicles);
   const v = await checkLoad(load, nonce);
   if (v.status === "PASS") {
     return {
@@ -245,7 +318,17 @@ export async function commitManifest(
   // the registry is a UX affordance plus defence in depth, never the
   // guarantee. The guarantee is that this function re-derives the verdict from
   // the exact bytes it is about to export.
-  const load = toLoad(input.vehicles);
+  const vehicles = coerceVehicles(input?.vehicles);
+  if (vehicles === null || typeof input?.approvalToken !== "string") {
+    return {
+      status: "REFUSED" as const,
+      reason:
+        "malformed request: vehicles must be an array of objects each carrying a string array " +
+        "of items, and approvalToken must be a string. Nothing was exported.",
+      note: "No shipping paper was produced. Re-run check_segregation on the arrangement you intend to ship.",
+    };
+  }
+  const load = toLoad(vehicles);
   const check = await verifyApproval(load, input.approvalToken, nonce);
   if (!check.ok) {
     return {
