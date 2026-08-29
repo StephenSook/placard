@@ -3,8 +3,14 @@
 https://segregation-console.netlify.app
 
 No account, no key, no login. WebMCP is enabled on that origin by a registered
-Chrome origin trial, so there is no browser flag to set either. Open it in
-ChatGPT's in-app browser or in Chrome 149 or later and the tools are there.
+Chrome origin trial, so there is no browser flag to set either. **Open it in
+Chrome 149 or later** and `document.modelContext` is live.
+
+One honest warning, because I tried it and it did not work the way the rules
+imply: asking ChatGPT to open the URL used its TEXT CRAWLER, which does not
+execute page JavaScript and therefore reports no tools. It said so itself. If
+you look for the tool surface there and find nothing, that is the crawler rather
+than the page, and Chrome shows you the real thing.
 
 The page opens on a number it recomputes while you are looking at it:
 
@@ -175,7 +181,9 @@ past hazmat.
 Five tools, all imperative, all on the top-level document. ChatGPT's in-app
 browser supports neither the declarative HTML form API nor tools registered
 inside iframes, so a declarative gate would be invisible to the client the rules
-name first.
+name first. That decision still holds even though I could not reach that client:
+the imperative top-level surface is the one that works everywhere, and a
+declarative gate would have been a bet on a path I cannot verify.
 
 ```js
 document.modelContext.registerTool({
