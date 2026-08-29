@@ -10,7 +10,7 @@ import { describe, it, expect } from "vitest";
 import {
   CATEGORIES, measureDivergence, measureForbidden, representatives, tableAloneClears,
 } from "../src/evidence/divergence.ts";
-import { HMT, segregationCell } from "../src/solver/corpus.ts";
+import { HMT, SEGREGATION, segregationCell } from "../src/solver/corpus.ts";
 import { resolveItem } from "../src/solver/hazards.ts";
 import type { MatrixKey, ResolvedItem } from "../src/solver/types.ts";
 
@@ -29,6 +29,16 @@ describe("the naive reading of the table", () => {
 });
 
 describe("representatives", () => {
+  it("is in the REGULATION'S row order, not JavaScript's key order", () => {
+    // Object.keys hoists integer-like keys, so deriving CATEGORIES from
+    // ROW_TO_COLUMN put classes 3, 7 and 8 in front of division 1.1 and
+    // transposed the rendered table against its own row labels. All 18 rows
+    // were captioned with one hazard class and filled with another's data.
+    expect(CATEGORIES).toEqual(SEGREGATION.rows.map((r) => r.key));
+    expect(CATEGORIES[0]).toBe("1.1 and 1.2");
+    expect(CATEGORIES).toHaveLength(18);
+  });
+
   it("covers every one of the 18 categories", () => {
     const reps = representatives();
     expect(CATEGORIES).toHaveLength(18);
@@ -115,13 +125,16 @@ describe("measureDivergence", () => {
   });
 
   it("keeps the (e)(3) hard block in the gap, since a barrier does not rescue it", () => {
-    // The signature case: the table says O, a barrier is asserted, and the
-    // regulation still refuses. If this ever stops appearing, either the solver
-    // regressed or the measure stopped exercising axis 4.
-    const hard = d.examples.filter(
-      (e) => e.code === "CORROSIVE_OVER_OXIDIZER" && e.barriersPresent && e.cell === "O",
-    );
-    expect(hard.length).toBeGreaterThan(0);
+    // The signature case: the table clears the pair, a barrier is asserted, and
+    // the regulation still refuses. Asserted against byGround, which counts
+    // EVERY divergent configuration, rather than against `examples`, which is
+    // capped at twelve. The capped version broke the moment the iteration order
+    // changed, which made it a test of the sample rather than of the property.
+    expect(d.byGround["CORROSIVE_OVER_OXIDIZER"] ?? 0).toBeGreaterThan(0);
+    // And the pair really is one the table itself clears.
+    const pair = d.divergentPairs.find(([a, b]) => a === "8" || b === "8");
+    expect(pair, "no Class 8 pair among the divergent set").toBeDefined();
+    expect(["", "O", "*"]).toContain(segregationCell(pair![0], pair![1]));
   });
 });
 

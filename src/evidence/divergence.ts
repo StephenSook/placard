@@ -30,14 +30,31 @@
  * actually exist in the regulation.
  */
 import {
-  HMT, ROW_TO_COLUMN, segregationCell, forbiddenEntries, type HmtEntry,
+  HMT, SEGREGATION, segregationCell, forbiddenEntries, type HmtEntry,
 } from "../solver/corpus.ts";
 import { resolveItem } from "../solver/hazards.ts";
 import { checkVehicle } from "../solver/segregation.ts";
 import type { MatrixKey, ResolvedItem, VehicleProposal } from "../solver/types.ts";
 
-/** The 18 categories the table indexes, in the regulation's own row order. */
-export const CATEGORIES = Object.keys(ROW_TO_COLUMN) as MatrixKey[];
+/**
+ * The 18 categories the table indexes, in THE REGULATION'S OWN ROW ORDER.
+ *
+ * Derived from SEGREGATION.rows rather than from Object.keys(ROW_TO_COLUMN),
+ * and that is not a style preference. JavaScript orders integer-like string
+ * keys FIRST and in ascending numeric order, so Object.keys on that record
+ * returns ["3", "7", "8", "1.1 and 1.2", ...]: classes 3, 7 and 8 leap to the
+ * front because they look like array indices, and every other key follows in
+ * insertion order.
+ *
+ * That silently transposed the rendered 177.848(d) table against its own row
+ * labels. Every one of the 18 rows was captioned with one hazard class and
+ * filled with another's data, so the panel told a reader that Explosives and
+ * Class 3 have no restriction between them when the row it had drawn was
+ * Flammable liquids. The count of divergent configurations was unaffected,
+ * because that iterates all ordered pairs, which is order-independent. The
+ * DISPLAY was wrong, and the display is what a person reads.
+ */
+export const CATEGORIES = SEGREGATION.rows.map((r) => r.key) as MatrixKey[];
 
 /**
  * What an agent reading ONLY the table would conclude for one pair.
@@ -161,7 +178,14 @@ export function measureDivergence(): Divergence {
             byGround[v.code] = (byGround[v.code] ?? 0) + 1;
             const pk = `${ka}::${kb}`;
             if (!seenPair.has(pk)) { seenPair.add(pk); divergentPairs.push([ka, kb]); }
-            if (examples.length < 12) {
+            // Cap PER GROUND rather than overall. Taking the first twelve
+            // meant the explosives cases, which come first in the regulation's
+            // row order, filled the list and the signature
+            // corrosive-over-oxidizer case disappeared from the published
+            // evidence entirely. A sample that omits a whole ground is not a
+            // sample of the finding.
+            const perGround = examples.filter((e) => e.code === v.code).length;
+            if (perGround < 6) {
               examples.push({
                 a: a.name, b: b.name, cell: cell === "" ? "(blank)" : cell,
                 barriersPresent, singleShipper, code: v.code,
