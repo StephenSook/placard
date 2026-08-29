@@ -15,6 +15,7 @@ import {
   DESCRIPTIONS, LOOKUP_MATERIAL_SCHEMA, MUTATING, PROPOSE_LOAD_SCHEMA,
   READ_ONLY, READ_ONLY_UNTRUSTED,
 } from "../src/tools/schemas.ts";
+import { registerAlwaysOnTools, unregisterAlwaysOnTools, webmcpSupported } from "../src/tools/registerEarly.ts";
 
 const NONCE = "tool-test-nonce";
 const OTHER = "a-different-session";
@@ -230,5 +231,69 @@ describe("the shipping paper", () => {
     expect(line["properShippingName"]).toBe("Acetone");
     expect(line["hazardClass"]).toBe("3");
     expect(line["packingGroup"]).toBe("II");
+  });
+});
+
+describe("direct imperative registration (the always-on tools)", () => {
+  // A stand-in for the WebMCP runtime. Proves the registration path without a
+  // browser, a flag, or an agent.
+  function fakeContext() {
+    const tools: Array<{ name: string; tool: Record<string, unknown>; signal?: AbortSignal }> = [];
+    return {
+      tools,
+      live: () => tools.filter((t) => !t.signal?.aborted).map((t) => t.name),
+      doc: {
+        modelContext: {
+          registerTool: (tool: Record<string, unknown>, options?: { signal?: AbortSignal }) => {
+            tools.push({ name: tool["name"] as string, tool, ...(options?.signal ? { signal: options.signal } : {}) });
+          },
+        },
+      } as unknown as Document,
+    };
+  }
+
+  it("registers both always-on tools through document.modelContext.registerTool", async () => {
+    const { doc, live, tools } = fakeContext();
+    const names = registerAlwaysOnTools(doc);
+    expect(names).toEqual(["lookup_material", "classify_line_item"]);
+    expect(live()).toEqual(["lookup_material", "classify_line_item"]);
+    // The descriptor carries what the spec defines, and only that.
+    const t = tools[0]!.tool;
+    expect(Object.keys(t).sort()).toEqual(["annotations", "description", "execute", "inputSchema", "name"]);
+    expect(t["annotations"]).toEqual({ readOnlyHint: true });
+    expect(tools[1]!.tool["annotations"]).toEqual({ readOnlyHint: true, untrustedContentHint: true });
+  });
+
+  it("returns a WebMCP content array from execute, not a bare value", async () => {
+    const { doc, tools } = fakeContext();
+    registerAlwaysOnTools(doc);
+    const exec = tools[0]!.tool["execute"] as (a: unknown) => Promise<{ content: Array<{ type: string; text?: string }> }>;
+    const out = await exec({ query: "Ammonium chlorate" });
+    expect(Array.isArray(out.content)).toBe(true);
+    expect(out.content[0]!.type).toBe("text");
+    expect(JSON.parse(out.content[0]!.text!).matches[0].forbidden).toBe(true);
+  });
+
+  it("unregisters by aborting the signal, because unregisterTool was removed from the spec", () => {
+    const { doc, live } = fakeContext();
+    registerAlwaysOnTools(doc);
+    expect(live()).toHaveLength(2);
+    unregisterAlwaysOnTools();
+    expect(live()).toHaveLength(0);
+  });
+
+  it("is idempotent: re-registering tears the previous set down first", () => {
+    const { doc, live } = fakeContext();
+    registerAlwaysOnTools(doc);
+    registerAlwaysOnTools(doc);
+    // The tool map is keyed by name, so a stacked registration would silently
+    // overwrite rather than duplicate. Aborting first makes the teardown explicit.
+    expect(live()).toEqual(["lookup_material", "classify_line_item"]);
+    unregisterAlwaysOnTools();
+  });
+
+  it("degrades to a no-op where no WebMCP runtime exists", () => {
+    expect(registerAlwaysOnTools({} as Document)).toEqual([]);
+    expect(webmcpSupported({} as Document)).toBe(false);
   });
 });

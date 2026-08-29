@@ -33,13 +33,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useWebMCP } from "use-webmcp-tool";
 import {
-  CHECK_SEGREGATION_SCHEMA, CLASSIFY_LINE_ITEM_SCHEMA, COMMIT_MANIFEST_SCHEMA,
-  DESCRIPTIONS, LOOKUP_MATERIAL_SCHEMA, MUTATING, PROPOSE_LOAD_SCHEMA,
-  READ_ONLY, READ_ONLY_UNTRUSTED,
+  CHECK_SEGREGATION_SCHEMA, COMMIT_MANIFEST_SCHEMA, DESCRIPTIONS,
+  MUTATING, PROPOSE_LOAD_SCHEMA, READ_ONLY,
 } from "./schemas.ts";
-import {
-  checkSegregation, classifyLineItem, commitManifest, lookupMaterial, proposeLoad,
-} from "./executors.ts";
+import { checkSegregation, commitManifest, proposeLoad } from "./executors.ts";
+import { registerAlwaysOnTools, unregisterAlwaysOnTools, webmcpSupported } from "./registerEarly.ts";
 
 export type Verdict = { status: "PASS" | "REFUSED" } | null;
 
@@ -88,8 +86,6 @@ export function useHazmatTools(
   const hasManifest = state.manifestSize > 0;
   const passes = state.verdict?.status === "PASS";
 
-  const execLookup = useCallback((a: { query: string }) => lookupMaterial(a), []);
-  const execClassify = useCallback((a: { text: string }) => classifyLineItem(a), []);
   const execPropose = useCallback(
     (a: { items: string[]; maxVehicles: number; barriersPresent?: boolean; singleShipper?: boolean }) => proposeLoad(a),
     []
@@ -107,26 +103,6 @@ export function useHazmatTools(
     },
     []
   );
-
-  const lookup = useWebMCP({
-    name: "lookup_material",
-    description: DESCRIPTIONS.lookup_material,
-    inputSchema: LOOKUP_MATERIAL_SCHEMA,
-    annotations: READ_ONLY,
-    execute: execLookup,
-  });
-
-  const classify = useWebMCP({
-    name: "classify_line_item",
-    description: DESCRIPTIONS.classify_line_item,
-    inputSchema: CLASSIFY_LINE_ITEM_SCHEMA,
-    // It ingests free text that may have come from a supplier email or a
-    // spreadsheet. The hint asks the agent to treat the result as untrusted;
-    // it is advisory only, which is exactly why the verdict is computed by a
-    // deterministic solver from the CONFIRMED entry and never from this text.
-    annotations: READ_ONLY_UNTRUSTED,
-    execute: execClassify,
-  });
 
   const propose = useWebMCP({
     name: "propose_load",
@@ -158,20 +134,26 @@ export function useHazmatTools(
     enabled: passes,
   });
 
+  // The two always-on tools register directly at mount, outside React's
+  // lifecycle, because they depend on nothing but the vendored corpus.
+  const [alwaysOn, setAlwaysOn] = useState<string[]>([]);
+  useEffect(() => {
+    setAlwaysOn(registerAlwaysOnTools());
+    return () => unregisterAlwaysOnTools();
+  }, []);
+
   const registered = useMemo(() => {
-    const on: string[] = [];
-    if (lookup.registered) on.push("lookup_material");
-    if (classify.registered) on.push("classify_line_item");
+    const on: string[] = [...alwaysOn];
     if (propose.registered) on.push("propose_load");
     if (check.registered) on.push("check_segregation");
     if (commit.registered) on.push("commit_manifest");
     return on;
-  }, [lookup.registered, classify.registered, propose.registered, check.registered, commit.registered]);
+  }, [alwaysOn, propose.registered, check.registered, commit.registered]);
 
-  const error = lookup.error ?? classify.error ?? propose.error ?? check.error ?? commit.error;
+  const error = propose.error ?? check.error ?? commit.error;
 
   return {
-    supported: lookup.supported,
+    supported: propose.supported || webmcpSupported(),
     registered,
     all: [...ALL_TOOLS],
     error,
