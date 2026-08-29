@@ -1,0 +1,35 @@
+{
+  "name": "webmcp-hazmat-console",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "license": "Apache-2.0",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "extract": "tsx scripts/extract.ts",
+    "verify:data": "tsx scripts/verify-data.ts",
+    "capture:reference": "tsx scripts/capture-reference.ts"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "use-webmcp-tool": "^0.2.0",
+    "gsap": "^3.13.0"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "fast-check": "^4.8.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3",
+    "vitest": "^2.1.8"
+  }
+}

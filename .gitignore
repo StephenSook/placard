@@ -1,0 +1,78 @@
+# ── Standing ~/dev convention ────────────────────────────────────────────────
+# One folder, one project. Code is built at THIS root, beside the research.
+# The research haul is the competitive moat and never reaches GitHub.
+# Stage named paths. Never `git add -A`. Verify with `git ls-files` before any push.
+
+# Research haul: 15 Phase 0 dossiers, teardowns, adjudications, build specs,
+# plus their extracted plain text. Competitive moat, never published.
+/research/
+
+# Private working material. recruitment-outreach-pack.md contains THIRD-PARTY
+# CONTACT DETAIL for real people at Georgia Tech and KSU and must never be
+# published. CREDITS-CLAIMED.md holds live sponsor credit codes. The rest carry
+# strategy and judge analysis.
+/private/
+
+# The pre-rebuild corpus, kept locally only so the rebuild can be diffed
+# against it. It is WRONG: 2,480 of 3,687 HMT rows, zero of the 256 Forbidden
+# entries, and a 17-row segregation matrix that should have 18.
+/data-legacy/
+
+# Design reference captures of third-party sites. Studied, not redistributed.
+/reference/captures/
+
+# Assistant config stays local (strategy-laden; never committed)
+/CLAUDE.md
+/AGENTS.md
+.claude/
+.playwright-mcp/
+
+# ── The corpus is TRACKED ON PURPOSE ─────────────────────────────────────────
+# /data/ holds the rebuilt 49 CFR corpus the public artifact depends on:
+#   hmt.json  synonyms.json  segregation_table.json  compatibility_table.json
+#   SHA256SUMS  PROVENANCE.md
+# All public domain under 17 USC 105. Never add a blanket *.json rule, and
+# never add /data/ here. The raw eCFR XML is the one exception below: it is
+# 2.9 MB, re-fetchable from a pinned URL, and hashed in SHA256SUMS.
+/data/raw/*.xml
+
+# Env + secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p8
+id_rsa
+service-account*.json
+
+# Deps + build
+node_modules/
+.next/
+out/
+dist/
+.turbo/
+*.tsbuildinfo
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+
+# Test + tooling output
+coverage/
+playwright-report/
+test-results/
+lighthouse-report.*
+
+# OS / IDE
+.DS_Store
+.AppleDouble
+._*
+.vscode/
+.idea/
+*.swp
+*.log
