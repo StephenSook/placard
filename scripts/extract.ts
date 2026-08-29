@@ -26,7 +26,8 @@
 import { createHash } from "node:crypto";
 import { mkdirSync, writeFileSync, readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
-import { rows, tables } from "./ecfr.ts";
+import { rows, tables, plainText } from "./ecfr.ts";
+import { CLAUSES } from "./clauses.ts";
 
 // ── The pin ──────────────────────────────────────────────────────────────────
 // Change this date deliberately, never incidentally. Everything downstream
@@ -47,6 +48,7 @@ const RAW = join(ROOT, "data", "raw");
 const DATA = join(ROOT, "data");
 
 const sha256 = (b: Buffer | string) => createHash("sha256").update(b).digest("hex");
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 async function fetchSection(part: string, section: string, slug: string): Promise<string> {
   const file = join(RAW, `${slug}@${SNAPSHOT}.xml`);
@@ -268,6 +270,32 @@ async function main() {
     process.exit(1);
   }
 
+  // ── verbatim clauses ─────────────────────────────────────────────────────
+  // Each anchor must match EXACTLY ONCE. Zero means the snapshot moved and the
+  // quote no longer exists; two means the anchor is ambiguous and could slice
+  // the wrong sentence. Both fail the build rather than shipping a bad quote.
+  const plain: Record<string, string> = {};
+  for (const sec of SECTIONS) plain[sec.slug] = plainText(must(sec.slug));
+
+  const clauses: Record<string, { section: string; text: string }> = {};
+  const clauseFail: string[] = [];
+  for (const c of CLAUSES) {
+    const hay = plain[c.slug];
+    if (!hay) { clauseFail.push(`${c.id}: section ${c.slug} not pinned`); continue; }
+    const starts = [...hay.matchAll(new RegExp(escapeRe(c.from), "g"))];
+    if (starts.length !== 1) { clauseFail.push(`${c.id}: "from" anchor matched ${starts.length} times, need exactly 1`); continue; }
+    const s0 = starts[0]!.index!;
+    const ends = [...hay.slice(s0).matchAll(new RegExp(escapeRe(c.to), "g"))];
+    if (ends.length < 1) { clauseFail.push(`${c.id}: "to" anchor not found after "from"`); continue; }
+    const text = hay.slice(s0, s0 + ends[0]!.index! + c.to.length).trim();
+    if (text.length < 20) { clauseFail.push(`${c.id}: extracted ${text.length} chars, implausibly short`); continue; }
+    clauses[c.id] = { section: c.section, text };
+  }
+  if (clauseFail.length) {
+    process.stderr.write("\nCLAUSE EXTRACTION FAILED\n" + clauseFail.map((f) => `  - ${f}\n`).join(""));
+    process.exit(1);
+  }
+
   // ── emit ─────────────────────────────────────────────────────────────────
   const write = (name: string, obj: unknown) => {
     const body = JSON.stringify(obj, null, 2) + "\n";
@@ -282,6 +310,7 @@ async function main() {
       source: `49 CFR 177.848(d), eCFR ${SNAPSHOT}`,
       columns: seg.columns, rows: seg.segRows, census: cen,
     }),
+    write("clauses.json", { source: `verbatim slices of the pinned eCFR sections`, count: Object.keys(clauses).length, clauses }),
     write("compatibility_table.json", {
       source: `49 CFR 177.848(f), eCFR ${SNAPSHOT}`,
       groups: seg.groups, matrix: seg.matrix,

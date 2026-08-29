@@ -1,0 +1,102 @@
+{
+  "source": "verbatim slices of the pinned eCFR sections",
+  "count": 24,
+  "clauses": {
+    "e1-blank": {
+      "section": "49 CFR 177.848(e)(1)",
+      "text": "The absence of any hazard class or division or a blank space in the table indicates that no restrictions apply."
+    },
+    "e2-X": {
+      "section": "49 CFR 177.848(e)(2)",
+      "text": "The letter \"X\" in the table indicates that these materials may not be loaded, transported, or stored together in the same transport vehicle or storage facility during the course of transportation."
+    },
+    "e3-O": {
+      "section": "49 CFR 177.848(e)(3)",
+      "text": "The letter \"O\" in the table indicates that these materials may not be loaded, transported, or stored together in the same transport vehicle or storage facility during the course of transportation unless separated in a manner that, in the event of leakage from packages under conditions normally incident to transportation, commingling of hazardous materials would not occur."
+    },
+    "e3-corrosive-hard-block": {
+      "section": "49 CFR 177.848(e)(3)",
+      "text": "Notwithstanding the methods of separation employed, Class 8 (corrosive) liquids may not be loaded above or adjacent to Class 4 (flammable) or Class 5 (oxidizing) materials; except that shippers may load truckload shipments of such materials together when it is known that the mixture of contents would not cause a fire or a dangerous evolution of heat or gas."
+    },
+    "e4-asterisk": {
+      "section": "49 CFR 177.848(e)(4)",
+      "text": "The \"*\" in the table indicates that segregation among different Class 1 (explosive) materials is governed by the compatibility table in paragraph (f) of this section."
+    },
+    "e5-note-A": {
+      "section": "49 CFR 177.848(e)(5)",
+      "text": "The note \"A\" in the second column of the table means that, notwithstanding the requirements of the letter \"X\", ammonium nitrate (UN1942) and ammonium nitrate fertilizer may be loaded or stored with Division 1.1 (explosive) or Division 1.5 materials, unless otherwise prohibited by § 177.835(c)."
+    },
+    "e6-subsidiary": {
+      "section": "49 CFR 177.848(e)(6)",
+      "text": "When the § 172.101 table or § 172.402 of this subchapter requires a package to bear a subsidiary hazard label, segregation appropriate to the subsidiary hazard must be applied when that segregation is more restrictive than that required by the primary hazard."
+    },
+    "e6-same-class-carveout": {
+      "section": "49 CFR 177.848(e)(6)",
+      "text": "However, hazardous materials of the same class may be stored together without regard to segregation required for any secondary hazard if the materials are not capable of reacting dangerously with each other"
+    },
+    "c-cyanide-acid": {
+      "section": "49 CFR 177.848(c)",
+      "text": "cyanides, cyanide mixtures or solutions may not be stored, loaded and transported with acids if a mixture of the materials would generate hydrogen cyanide;"
+    },
+    "c-42-vs-8": {
+      "section": "49 CFR 177.848(c)",
+      "text": "Division 4.2 materials may not be stored, loaded and transported with Class 8 liquids;"
+    },
+    "c-61pgI-zoneA": {
+      "section": "49 CFR 177.848(c)",
+      "text": "Division 6.1 Packing Group I, Hazard Zone A material may not be stored, loaded and transported with Class 3 material, Class 8 liquids, and Division 4.1, 4.2, 4.3, 5.1 or 5.2 materials."
+    },
+    "g5-fireworks": {
+      "section": "49 CFR 177.848(g)(v)",
+      "text": "\"5\" means Division 1.4S fireworks may not be loaded on the same transport vehicle with Division 1.1 or 1.2 (explosive) materials."
+    },
+    "g6-group-G": {
+      "section": "49 CFR 177.848(g)(vi)",
+      "text": "\"6\" means explosive articles in compatibility group G, other than fireworks and those requiring special handling, may be loaded, transported and stored with other explosive articles of compatibility groups C, D and E, provided that explosive substances (such as those not contained in articles) are not carried in the same transport vehicle."
+    },
+    "h-lower-division": {
+      "section": "49 CFR 177.848(h)",
+      "text": "explosives of the same compatibility group but of different divisions may be transported together provided that the whole shipment is transported as though its entire contents were of the lower numerical division (i.e., Division 1.1 being lower than Division 1.2)."
+    },
+    "g1-blank": {
+      "section": "49 CFR 177.848(g)(1)",
+      "text": "A blank space in the table indicates that no restrictions apply."
+    },
+    "g2-X": {
+      "section": "49 CFR 177.848(g)(2)",
+      "text": "The letter \"X\" in the table indicates that explosives of different compatibility groups may not be carried on the same transport vehicle."
+    },
+    "g3i-group-L": {
+      "section": "49 CFR 177.848(g)(3)(i)",
+      "text": "\"1\" means an explosive from compatibility group L shall only be carried on the same transport vehicle with an identical explosive."
+    },
+    "g3ii-CDE": {
+      "section": "49 CFR 177.848(g)(3)(ii)",
+      "text": "\"2\" means any combination of explosives from compatibility groups C, D, or E is assigned to compatibility group E."
+    },
+    "g3iii-CDE-N": {
+      "section": "49 CFR 177.848(g)(3)(iii)",
+      "text": "\"3\" means any combination of explosives from compatibility groups C, D, or E with those in compatibility group N is assigned to compatibility group D."
+    },
+    "g3iv-detonators": {
+      "section": "49 CFR 177.848(g)(3)(iv)",
+      "text": "\"4\" means see § 177.835(g) when transporting detonators."
+    },
+    "17321-a-forbidden": {
+      "section": "49 CFR 173.21(a)",
+      "text": "Materials that are designated \"Forbidden\" in Column 3 of the § 172.101 table."
+    },
+    "17321-e-packaging": {
+      "section": "49 CFR 173.21(e)",
+      "text": "A material in the same packaging, freight container, or overpack with another material, the mixing of which is likely to cause a dangerous evolution of heat, or flammable or poisonous gases or vapors, or to produce corrosive materials."
+    },
+    "sp1-zone-A": {
+      "section": "49 CFR 172.102, special provision 1",
+      "text": "This material is poisonous by inhalation (see § 171.8 of this subchapter) in Hazard Zone A (see § 173.116(a) or § 173.133(a) of this subchapter), and must be described as an inhalation hazard under the provisions of this subchapter."
+    },
+    "sp128-reclass": {
+      "section": "49 CFR 172.102, special provision 128",
+      "text": "Regardless of the provisions of § 172.101(c)(12), aluminum smelting by-products and aluminum remelting by-products described under this entry, meeting the definition of Class 8, Packing Group II and III may be classed as a Division 4.3 material and transported under this entry. The presence of a Class 8 hazard must be communicated as required by this part for subsidiary hazards."
+    }
+  }
+}

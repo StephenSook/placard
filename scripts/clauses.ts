@@ -1,0 +1,161 @@
+/**
+ * Verbatim clause extraction.
+ *
+ * Every regulation string this app shows a human is a slice of the committed
+ * eCFR XML taken by this file, never a sentence anyone retyped. That is what
+ * makes the citation-integrity test meaningful: `npm run verify:data` asserts
+ * each entry here still appears, byte for byte, in the pinned source.
+ *
+ * Anchors are literal substrings and each must match EXACTLY ONCE. A clause
+ * that matches zero times or twice fails the build rather than silently
+ * shifting to the wrong text when a future snapshot is pinned.
+ *
+ * Note the corpus contains an OCR-style typo in 177.848(e): "lnstructions",
+ * with a lowercase L. We match the actual bytes and do not correct them.
+ */
+
+export type ClauseSpec = {
+  id: string;
+  section: string;
+  /** Which pinned section file the text lives in. */
+  slug: string;
+  /** Literal substring where the quote begins. Must occur exactly once. */
+  from: string;
+  /** Literal substring where the quote ends, inclusive. Must occur exactly once after `from`. */
+  to: string;
+};
+
+export const CLAUSES: ClauseSpec[] = [
+  // ── 177.848(e), how to read the segregation table ──────────────────────────
+  {
+    id: "e1-blank", section: "49 CFR 177.848(e)(1)", slug: "177-848-segregation",
+    from: "The absence of any hazard class",
+    to: "indicates that no restrictions apply.",
+  },
+  {
+    id: "e2-X", section: "49 CFR 177.848(e)(2)", slug: "177-848-segregation",
+    from: 'The letter "X" in the table indicates that these materials may not be loaded',
+    to: "during the course of transportation.",
+  },
+  {
+    id: "e3-O", section: "49 CFR 177.848(e)(3)", slug: "177-848-segregation",
+    from: 'The letter "O" in the table indicates',
+    to: "commingling of hazardous materials would not occur.",
+  },
+  {
+    // The money shot: a barrier does not rescue this pairing.
+    id: "e3-corrosive-hard-block", section: "49 CFR 177.848(e)(3)", slug: "177-848-segregation",
+    from: "Notwithstanding the methods of separation employed",
+    to: "a dangerous evolution of heat or gas.",
+  },
+  {
+    id: "e4-asterisk", section: "49 CFR 177.848(e)(4)", slug: "177-848-segregation",
+    from: 'The "*" in the table indicates',
+    to: "in paragraph (f) of this section.",
+  },
+  {
+    id: "e5-note-A", section: "49 CFR 177.848(e)(5)", slug: "177-848-segregation",
+    from: 'The note "A" in the second column',
+    to: "unless otherwise prohibited by § 177.835(c).",
+  },
+  {
+    id: "e6-subsidiary", section: "49 CFR 177.848(e)(6)", slug: "177-848-segregation",
+    from: "When the § 172.101 table or § 172.402",
+    to: "more restrictive than that required by the primary hazard.",
+  },
+  {
+    id: "e6-same-class-carveout", section: "49 CFR 177.848(e)(6)", slug: "177-848-segregation",
+    from: "However, hazardous materials of the same class",
+    to: "reacting dangerously with each other",
+  },
+
+  // ── 177.848(c), narrative overrides STRICTER than the table ────────────────
+  {
+    id: "c-cyanide-acid", section: "49 CFR 177.848(c)", slug: "177-848-segregation",
+    from: "cyanides, cyanide mixtures or solutions",
+    to: "would generate hydrogen cyanide;",
+  },
+  {
+    id: "c-42-vs-8", section: "49 CFR 177.848(c)", slug: "177-848-segregation",
+    from: "Division 4.2 materials may not be stored",
+    to: "transported with Class 8 liquids;",
+  },
+  {
+    id: "c-61pgI-zoneA", section: "49 CFR 177.848(c)", slug: "177-848-segregation",
+    from: "Division 6.1 Packing Group I, Hazard Zone A material",
+    to: "4.1, 4.2, 4.3, 5.1 or 5.2 materials.",
+  },
+
+  // ── 177.848(g), the Class 1 rewriting rules ────────────────────────────────
+  {
+    id: "g5-fireworks", section: "49 CFR 177.848(g)(v)", slug: "177-848-segregation",
+    from: '"5" means Division 1.4S fireworks',
+    to: "Division 1.1 or 1.2 (explosive) materials.",
+  },
+  {
+    id: "g6-group-G", section: "49 CFR 177.848(g)(vi)", slug: "177-848-segregation",
+    from: '"6" means explosive articles in compatibility group G',
+    to: "carried in the same transport vehicle.",
+  },
+  {
+    id: "h-lower-division", section: "49 CFR 177.848(h)", slug: "177-848-segregation",
+    from: "explosives of the same compatibility group but of different divisions",
+    to: "Division 1.1 being lower than Division 1.2).",
+  },
+
+  {
+    id: "g1-blank", section: "49 CFR 177.848(g)(1)", slug: "177-848-segregation",
+    from: "A blank space in the table indicates that no restrictions apply.",
+    to: "A blank space in the table indicates that no restrictions apply.",
+  },
+  {
+    id: "g2-X", section: "49 CFR 177.848(g)(2)", slug: "177-848-segregation",
+    from: 'The letter "X" in the table indicates that explosives of different compatibility groups',
+    to: "may not be carried on the same transport vehicle.",
+  },
+  {
+    id: "g3i-group-L", section: "49 CFR 177.848(g)(3)(i)", slug: "177-848-segregation",
+    from: '"1" means an explosive from compatibility group L',
+    to: "with an identical explosive.",
+  },
+  {
+    id: "g3ii-CDE", section: "49 CFR 177.848(g)(3)(ii)", slug: "177-848-segregation",
+    from: '"2" means',
+    to: "is assigned to compatibility group E.",
+  },
+  {
+    id: "g3iii-CDE-N", section: "49 CFR 177.848(g)(3)(iii)", slug: "177-848-segregation",
+    from: '"3" means',
+    to: "is assigned to compatibility group D.",
+  },
+
+  {
+    id: "g3iv-detonators", section: "49 CFR 177.848(g)(3)(iv)", slug: "177-848-segregation",
+    from: '"4" means see § 177.835(g)',
+    to: "when transporting detonators.",
+  },
+
+  // ── 173.21, forbidden materials ────────────────────────────────────────────
+  {
+    id: "17321-a-forbidden", section: "49 CFR 173.21(a)", slug: "173-21-forbidden",
+    from: 'Materials that are designated "Forbidden"',
+    to: "in Column 3 of the § 172.101 table.",
+  },
+  {
+    id: "17321-e-packaging", section: "49 CFR 173.21(e)", slug: "173-21-forbidden",
+    from: "A material in the same packaging, freight container, or overpack",
+    to: "or to produce corrosive materials.",
+  },
+
+  // ── 172.102, the hazard zones the 2.3 rows depend on ───────────────────────
+  {
+    id: "sp1-zone-A", section: "49 CFR 172.102, special provision 1", slug: "172-102-special-provisions",
+    from: "This material is poisonous by inhalation (see § 171.8 of this subchapter) in Hazard Zone A",
+    to: "described as an inhalation hazard under the provisions of this subchapter.",
+  },
+  {
+    id: "sp128-reclass", section: "49 CFR 172.102, special provision 128", slug: "172-102-special-provisions",
+    from: "Regardless of the provisions of § 172.101(c)(12)",
+    to: "required by this part for subsidiary hazards.",
+  },
+];
