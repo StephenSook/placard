@@ -60,6 +60,19 @@
 # a deep link and a refresh on it have to serve the app rather than a 404.
 # This is last in the file because Netlify applies redirects in order and a
 # catch-all must never shadow a real file.
+# A missing build asset or corpus file must answer a real 404. Without these
+# two rules the catch-all below swallows them and returns the application shell
+# with status 200, which hides a broken build behind a page that looks loaded.
+[[redirects]]
+  from = "/assets/*"
+  to = "/404.html"
+  status = 404
+
+[[redirects]]
+  from = "/data/*"
+  to = "/404.html"
+  status = 404
+
 [[redirects]]
   from = "/*"
   to = "/index.html"

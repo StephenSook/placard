@@ -8,6 +8,11 @@ updates:
       time: "06:00"
       timezone: America/New_York
     open-pull-requests-limit: 5
+    ignore:
+      # Major bumps are proposed against a frozen, judged artifact. Security
+      # updates still come through; a breaking upgrade does not.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     labels: [dependencies]
     commit-message:
       prefix: "deps"
@@ -17,6 +22,11 @@ updates:
     schedule:
       interval: weekly
       day: monday
+    ignore:
+      # Major bumps are proposed against a frozen, judged artifact. Security
+      # updates still come through; a breaking upgrade does not.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     labels: [dependencies, ci]
     commit-message:
       prefix: "ci(deps)"
