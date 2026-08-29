@@ -1,0 +1,17 @@
+{
+  "physicalRows": 3687,
+  "entries": 3293,
+  "forbidden": 256,
+  "packingGroupVariants": 524,
+  "withUnNumber": 3003,
+  "synonymPointers": 394,
+  "seeAlso": 6,
+  "multiLabel": 717,
+  "modeExcludedFromPart177": 24,
+  "census": {
+    "X": 104,
+    "O": 44,
+    "*": 25,
+    "blank": 151
+  }
+}

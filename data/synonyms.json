@@ -1,0 +1,2006 @@
+{
+  "source": "49 CFR 172.101 pointer rows, eCFR 2026-08-27",
+  "count": 400,
+  "synonyms": [
+    {
+      "alias": "Accellerene",
+      "target": "p-Nitrosodimethylaniline",
+      "kind": "see"
+    },
+    {
+      "alias": "Accumulators, electric",
+      "target": "Batteries, wet etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Accumulators, pressurized, pneumatic or hydraulic (containing non-flamable gas)",
+      "target": "Articles pressurized, pneumatic or hydraulic (containing non-flamable gas)",
+      "kind": "see"
+    },
+    {
+      "alias": "Acetylene tetrabromide",
+      "target": "Tetrabromoethane",
+      "kind": "see"
+    },
+    {
+      "alias": "Acid butyl phosphate",
+      "target": "Butyl acid phosphate",
+      "kind": "see"
+    },
+    {
+      "alias": "Acid, sludge",
+      "target": "Sludge acid",
+      "kind": "see"
+    },
+    {
+      "alias": "Actuating cartridge, explosive",
+      "target": "Cartridges, power device",
+      "kind": "see"
+    },
+    {
+      "alias": "Air bag inflators, or Air bag modules, or Seat-belt pretensioners",
+      "target": "Safety devices, electrically initiated or Safety devices, pyrotechnic",
+      "kind": "see"
+    },
+    {
+      "alias": "Aircraft engines (including turbines)",
+      "target": "Engines, internal combustion",
+      "kind": "see"
+    },
+    {
+      "alias": "Aircraft evacuation slides",
+      "target": "Life saving appliances etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Aircraft survival kits",
+      "target": "Life saving appliances etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Alkaline corrosive liquids, n.o.s.",
+      "target": "Caustic alkali liquids, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Allethrin",
+      "target": "Pesticides, liquid, toxic, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Allyl chlorocarbonate",
+      "target": "Allyl chloroformate",
+      "kind": "see"
+    },
+    {
+      "alias": "Aluminum phosphate solution",
+      "target": "Corrosive liquids, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Amatols",
+      "target": "Explosives, blasting, type B",
+      "kind": "see"
+    },
+    {
+      "alias": "Aminopropyldiethanolamine",
+      "target": "Amines, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "n-Aminopropylmorpholine",
+      "target": "Amines, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Ammonium bifluoride, solid",
+      "target": "Ammonium hydrogen difluoride, solid",
+      "kind": "see"
+    },
+    {
+      "alias": "Ammonium bifluoride solution",
+      "target": "Ammonium hydrogen difluoride, solution",
+      "kind": "see"
+    },
+    {
+      "alias": "Ammonium hydrosulfide, solution",
+      "target": "Ammonium sulfide solution",
+      "kind": "see"
+    },
+    {
+      "alias": "Ammonium hydroxide",
+      "target": "Ammonia solutions, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Ammonium silicofluoride",
+      "target": "Ammonium fluorosilicate",
+      "kind": "see"
+    },
+    {
+      "alias": "Ammunition, blank",
+      "target": "Cartridges for weapons, blank",
+      "kind": "see"
+    },
+    {
+      "alias": "Ammunition, incendiary (water-activated contrivances) with burster, expelling charge or propelling charge",
+      "target": "Contrivances, water-activated, etc.",
+      "kind": "see"
+    },
+    {
+      "alias": "Ammunition, rocket",
+      "target": "Warheads, rocket etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Ammunition, SA (small arms)",
+      "target": "Cartridges for weapons, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Ammunition, smoke (water-activated contrivances), white phosphorus, with burster, expelling charge or propelling charge",
+      "target": "Contrivances, water-activated, etc. (UN 0248)",
+      "kind": "see"
+    },
+    {
+      "alias": "Ammunition, smoke (water-activated contrivances), without white phosphorus or phosphides, with burster, expelling charge or propelling charge",
+      "target": "Contrivances, water-activated, etc. (UN 0249)",
+      "kind": "see"
+    },
+    {
+      "alias": "Ammunition, sporting",
+      "target": "Cartridges for weapons, etc. (UN 0012; UN 0328; UN 0339)",
+      "kind": "see"
+    },
+    {
+      "alias": "Ammunition, toxic (water-activated contrivances), with burster, expelling charge or propelling charge",
+      "target": "Contrivances, water-activated, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Anhydrous ammonia",
+      "target": "Ammonia, anhydrous",
+      "kind": "see"
+    },
+    {
+      "alias": "Anhydrous hydrofluoric acid",
+      "target": "Hydrogen fluoride, anhydrous",
+      "kind": "see"
+    },
+    {
+      "alias": "Aniline oil",
+      "target": "Aniline",
+      "kind": "see"
+    },
+    {
+      "alias": "Anti-freeze, liquid",
+      "target": "Flammable liquids, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Antimonous chloride",
+      "target": "Antimony trichloride",
+      "kind": "see"
+    },
+    {
+      "alias": "Antimony sulfide, solid",
+      "target": "Antimony compounds, inorganic, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Aqua ammonia",
+      "target": "Ammonia solution, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Arsenic chloride",
+      "target": "Arsenic trichloride",
+      "kind": "see"
+    },
+    {
+      "alias": "Arsenic, white, solid",
+      "target": "Arsenic trioxide",
+      "kind": "see"
+    },
+    {
+      "alias": "Arsenious acid, solid",
+      "target": "Arsenic trioxide",
+      "kind": "see"
+    },
+    {
+      "alias": "Arsenious and mercuric iodide solution",
+      "target": "Arsenic compounds, liquid, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Asphalt, cut back",
+      "target": "Tars, liquid, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Automobile, motorcycle, tractor, other self-propelled vehicle, engine, or other mechanical apparatus",
+      "target": "Vehicles or Battery etc",
+      "kind": "see"
+    },
+    {
+      "alias": "1-Aziridinylphosphine oxide-(tris)",
+      "target": "Tris-(1-aziridinyl) phosphine oxide, solution",
+      "kind": "see"
+    },
+    {
+      "alias": "Barium selenate",
+      "target": "Selenates or Selenites",
+      "kind": "see"
+    },
+    {
+      "alias": "Barium selenite",
+      "target": "Selenates or Selenites",
+      "kind": "see"
+    },
+    {
+      "alias": "Battery lithium type",
+      "target": "Lithium batteries etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Battery, wet, filled with acid or alkali with vehicle or mechanical equipment containing an internal combustion engine",
+      "target": "Vehicle, etc. or Engines, internal combustion, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Benzene phosphorus dichloride",
+      "target": "Phenyl phosphorus dichloride",
+      "kind": "see"
+    },
+    {
+      "alias": "Benzene phosphorus thiodichloride",
+      "target": "Phenyl phosphorus thiodichloride",
+      "kind": "see"
+    },
+    {
+      "alias": "Benzenethiol",
+      "target": "Phenyl mercaptan",
+      "kind": "see"
+    },
+    {
+      "alias": "Benzol",
+      "target": "Benzene",
+      "kind": "see"
+    },
+    {
+      "alias": "Bis (Aminopropyl) piperazine",
+      "target": "Corrosive liquid, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Blasting agent, n.o.s.",
+      "target": "Explosives, blasting etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Blasting cap assemblies",
+      "target": "Detonator assemblies, non-electric, for blasting",
+      "kind": "see"
+    },
+    {
+      "alias": "Blasting caps, electric",
+      "target": "Detonators, electric for blasting",
+      "kind": "see"
+    },
+    {
+      "alias": "Blasting caps, non-electric",
+      "target": "Detonators, non-electric, for blasting",
+      "kind": "see"
+    },
+    {
+      "alias": "Bleaching powder",
+      "target": "Calcium hypochlorite mixtures, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Borate and chlorate mixtures",
+      "target": "Chlorate and borate mixtures",
+      "kind": "see"
+    },
+    {
+      "alias": "Box toe gum",
+      "target": "Nitrocellulose etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Bromotoluene-alpha",
+      "target": "Benzyl bromide",
+      "kind": "see"
+    },
+    {
+      "alias": "Butane",
+      "target": "Petroleum gases, liquefied",
+      "kind": "see also"
+    },
+    {
+      "alias": "Butane, butane mixtures and mixtures having similar properties in cartridges each not exceeding 500 grams",
+      "target": "Receptacles, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Butyl alcohols",
+      "target": "Butanols",
+      "kind": "see"
+    },
+    {
+      "alias": "n-Butyl bromide",
+      "target": "1-Bromobutane",
+      "kind": "see"
+    },
+    {
+      "alias": "n-Butyl chloride",
+      "target": "Chlorobutanes",
+      "kind": "see"
+    },
+    {
+      "alias": "Butyl ethers",
+      "target": "Dibutyl ethers",
+      "kind": "see"
+    },
+    {
+      "alias": "Butyl ethyl ether",
+      "target": "Ethyl butyl ether",
+      "kind": "see"
+    },
+    {
+      "alias": "Butyl phosphoric acid",
+      "target": "Butyl acid phosphate",
+      "kind": "see"
+    },
+    {
+      "alias": "Butylene",
+      "target": "Petroleum gases, liquefied",
+      "kind": "see also"
+    },
+    {
+      "alias": "Calcium bisulfite solution",
+      "target": "Bisulfites, aqueous solutions, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Calcium hydrosulfite",
+      "target": "Calcium dithionite",
+      "kind": "see"
+    },
+    {
+      "alias": "Calcium selenate",
+      "target": "Selenates or Selenites",
+      "kind": "see"
+    },
+    {
+      "alias": "Cannon primers",
+      "target": "Primers, tubular",
+      "kind": "see"
+    },
+    {
+      "alias": "Caps, blasting",
+      "target": "Detonators, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Carbolic acid",
+      "target": "Phenol, solid or Phenol, molten",
+      "kind": "see"
+    },
+    {
+      "alias": "Carbolic acid solutions",
+      "target": "Phenol solutions",
+      "kind": "see"
+    },
+    {
+      "alias": "Carbon bisulfide",
+      "target": "Carbon disulfide",
+      "kind": "see"
+    },
+    {
+      "alias": "Carbonyl chloride",
+      "target": "Phosgene",
+      "kind": "see"
+    },
+    {
+      "alias": "Cartridge cases, empty primed",
+      "target": "Cases, cartridge, empty, with primer",
+      "kind": "see"
+    },
+    {
+      "alias": "Cartridges, actuating, for aircraft ejector seat catapult, fire extinguisher, canopy removal or apparatus",
+      "target": "Cartridges, power device",
+      "kind": "see"
+    },
+    {
+      "alias": "Cartridges, explosive",
+      "target": "Charges, demolition",
+      "kind": "see"
+    },
+    {
+      "alias": "Cartridges, sporting",
+      "target": "Cartridges for weapons, inert projectile, or Cartridges, small arms",
+      "kind": "see"
+    },
+    {
+      "alias": "Cartridges, safety, blank",
+      "target": "Cartridges for weapons, blank (UN 0014)",
+      "kind": "see"
+    },
+    {
+      "alias": "Cartridges, safety",
+      "target": "Cartriges for weapons, inert projectile, or Cartridges, small arms or Cartridges, power device (UN 0323)",
+      "kind": "see"
+    },
+    {
+      "alias": "Cartridges, starter, jet engine",
+      "target": "Cartridges, power device",
+      "kind": "see"
+    },
+    {
+      "alias": "Caustic potash",
+      "target": "Potassium hydroxide etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Cement",
+      "target": "Adhesives containing flammable liquid",
+      "kind": "see"
+    },
+    {
+      "alias": "Charges, expelling, explosive, for fire extinguishers",
+      "target": "Cartridges, power device",
+      "kind": "see"
+    },
+    {
+      "alias": "Chlorate of potash",
+      "target": "Potassium chlorate",
+      "kind": "see"
+    },
+    {
+      "alias": "Chlorate of soda",
+      "target": "Sodium chlorate",
+      "kind": "see"
+    },
+    {
+      "alias": "Chloride of phosphorus",
+      "target": "Phosphorus trichloride",
+      "kind": "see"
+    },
+    {
+      "alias": "Chloride of sulfur",
+      "target": "Sulfur chloride",
+      "kind": "see"
+    },
+    {
+      "alias": "Chlorinated lime",
+      "target": "Calcium hypochlorite mixtures, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Chlorobenzol",
+      "target": "Chlorobenzene",
+      "kind": "see"
+    },
+    {
+      "alias": "Chromic anhydride",
+      "target": "Chromium trioxide, anhydrous",
+      "kind": "see"
+    },
+    {
+      "alias": "Chromyl chloride",
+      "target": "Chromium oxychloride",
+      "kind": "see"
+    },
+    {
+      "alias": "Cigar and cigarette lighters, charged with fuel",
+      "target": "Lighters or Lighter refills containing flammable gas.",
+      "kind": "see"
+    },
+    {
+      "alias": "Coal tar dye, corrosive, liquid, n.o.s",
+      "target": "Dyes, liquid or solid, n.o.s. or Dye intermediates, liquid or solid, corrosive, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Collodion",
+      "target": "Nitrocellulose etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Composition B",
+      "target": "Hexolite, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Copper selenate",
+      "target": "Selenates or Selenites",
+      "kind": "see"
+    },
+    {
+      "alias": "Copper selenite",
+      "target": "Selenates or Selenites",
+      "kind": "see"
+    },
+    {
+      "alias": "Cordeau detonant fuse",
+      "target": "Cord, detonating, etc; Cord, detonating, flexible",
+      "kind": "see"
+    },
+    {
+      "alias": "Cordite",
+      "target": "Powder, smokeless",
+      "kind": "see"
+    },
+    {
+      "alias": "Cyanide or cyanide mixtures, dry",
+      "target": "Cyanides, inorganic, solid, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Cyclonite",
+      "target": "Cyclotrimethylenetrinitramine, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Cyclooctadiene phosphines",
+      "target": "9-Phosphabicyclononanes",
+      "kind": "see"
+    },
+    {
+      "alias": "Cyclopentane, methyl",
+      "target": "Methylcyclopentane",
+      "kind": "see"
+    },
+    {
+      "alias": "Delay electric igniter",
+      "target": "Igniters",
+      "kind": "see"
+    },
+    {
+      "alias": "Depth charges",
+      "target": "Charges, depth",
+      "kind": "see"
+    },
+    {
+      "alias": "Detonating relays",
+      "target": "Detonators, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Di-2-ethylhexyl phosphoric acid",
+      "target": "Diisooctyl acid phosphate",
+      "kind": "see"
+    },
+    {
+      "alias": "Diacetyl",
+      "target": "Butanedione",
+      "kind": "see"
+    },
+    {
+      "alias": "1,2-Dibromoethane",
+      "target": "Ethylene dibromide",
+      "kind": "see"
+    },
+    {
+      "alias": "1,2-Dichloroethane",
+      "target": "Ethylene dichloride",
+      "kind": "see"
+    },
+    {
+      "alias": "Dichloropropene and propylene dichloride mixture",
+      "target": "1,2- Dichloropropane",
+      "kind": "see"
+    },
+    {
+      "alias": "Dicycloheptadiene",
+      "target": "Bicyclo [2,2,1] hepta-2,5-diene, stabilized",
+      "kind": "see"
+    },
+    {
+      "alias": "Diethyl cellosolve",
+      "target": "Ethylene glycol diethyl ether",
+      "kind": "see"
+    },
+    {
+      "alias": "Difluorochloroethanes",
+      "target": "1-Chloro-1,1-difluoroethanes",
+      "kind": "see"
+    },
+    {
+      "alias": "Dimethyl chlorothiophosphate",
+      "target": "Dimethyl thiophosphoryl chloride",
+      "kind": "see"
+    },
+    {
+      "alias": "Dinitrochlorobenzene",
+      "target": "Chlorodinitrobenzene",
+      "kind": "see"
+    },
+    {
+      "alias": "Dipicrylamine",
+      "target": "Hexanitrodiphenylamine",
+      "kind": "see"
+    },
+    {
+      "alias": "Dry ice",
+      "target": "Carbon dioxide, solid",
+      "kind": "see"
+    },
+    {
+      "alias": "Dynamite",
+      "target": "Explosive, blasting, type A",
+      "kind": "see"
+    },
+    {
+      "alias": "Electrolyte (acid or alkali) for batteries",
+      "target": "Battery fluid, acid or Battery fluid, alkali",
+      "kind": "see"
+    },
+    {
+      "alias": "Etching acid, liquid, n.o.s.",
+      "target": "Hydrofluoric acid, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Ether",
+      "target": "Diethyl ether",
+      "kind": "see"
+    },
+    {
+      "alias": "Ethyl alcohol",
+      "target": "Ethanol",
+      "kind": "see"
+    },
+    {
+      "alias": "Ethyl aldehyde",
+      "target": "Acetaldehyde",
+      "kind": "see"
+    },
+    {
+      "alias": "Ethyl ether",
+      "target": "Diethyl ether",
+      "kind": "see"
+    },
+    {
+      "alias": "Ethyl silicate",
+      "target": "Tetraethyl silicate",
+      "kind": "see"
+    },
+    {
+      "alias": "Ethylene dibromide and methyl bromide liquid mixtures",
+      "target": "Methyl bromide and ethylene dibromide, liquid mixtures",
+      "kind": "see"
+    },
+    {
+      "alias": "Ethylhexaldehyde",
+      "target": "Octyl aldehydes etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Etiologic agent",
+      "target": "Infectious substances, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Explosive articles",
+      "target": "Articles, explosive , n.o.s. etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Explosive substances",
+      "target": "Substances, explosive, n.o.s. etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Explosives, slurry",
+      "target": "Explosive, blasting, type E",
+      "kind": "see"
+    },
+    {
+      "alias": "Explosives, water gels",
+      "target": "Explosive, blasting, type E",
+      "kind": "see"
+    },
+    {
+      "alias": "Fabric with animal or vegetable oil",
+      "target": "Fibers or fabrics, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Films, nitrocellulose base, from which gelatine has been removed; film scrap",
+      "target": "Celluloid scrap",
+      "kind": "see"
+    },
+    {
+      "alias": "Fire extinguisher charges, expelling, explosive",
+      "target": "Cartridges, power device",
+      "kind": "see"
+    },
+    {
+      "alias": "Flammable compressed gas",
+      "target": "Compressed or Liquefied gas, flammable, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Flammable compressed gas (small receptacles not fitted with a dispersion device, not refillable)",
+      "target": "Receptacles, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Flammable gas in lighters",
+      "target": "Lighters or lighter refills, cigarettes, containing flammable gas",
+      "kind": "see"
+    },
+    {
+      "alias": "Flares, airplane",
+      "target": "Flares, aerial",
+      "kind": "see"
+    },
+    {
+      "alias": "Flares, signal",
+      "target": "Cartridges, signal",
+      "kind": "see"
+    },
+    {
+      "alias": "Flares, water-activated",
+      "target": "Contrivances, water-activated, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Flue dusts, poisonous",
+      "target": "Arsenical dust",
+      "kind": "see"
+    },
+    {
+      "alias": "Fluoric acid",
+      "target": "Hydrofluoric acid, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Formaldehyde solutions (with not less than 10% and less than 25% formaldehyde)",
+      "target": "Aviation regulated liquid, n.o.s. or Other regulated substances, liquid, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Formalin",
+      "target": "Formaldehyde, solutions",
+      "kind": "see"
+    },
+    {
+      "alias": "Fulminate of mercury, wet",
+      "target": "Mercury fulminate, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Fumigated lading",
+      "target": "§§ 172.302(g), 173.9 and 176.76(h)",
+      "kind": "see"
+    },
+    {
+      "alias": "Fuse, detonating, metal clad",
+      "target": "Cord, detonating, metal clad",
+      "kind": "see"
+    },
+    {
+      "alias": "Fuse, detonating, mild effect, metal clad",
+      "target": "Cord, detonating, mild effect, metal clad",
+      "kind": "see"
+    },
+    {
+      "alias": "Fuses, tracer",
+      "target": "Tracers for ammunition",
+      "kind": "see"
+    },
+    {
+      "alias": "Fuzes, combination, percussion and time",
+      "target": "Fuzes, detonating (UN0257, UN0367); Fuzes, igniting (UN0317, UN0368)",
+      "kind": "see"
+    },
+    {
+      "alias": "Gasoline, casinghead",
+      "target": "Gasoline",
+      "kind": "see"
+    },
+    {
+      "alias": "Gelatine, blasting",
+      "target": "Explosive, blasting, type A",
+      "kind": "see"
+    },
+    {
+      "alias": "Gelatine dynamites",
+      "target": "Explosive, blasting, type A",
+      "kind": "see"
+    },
+    {
+      "alias": "Glyceryl trinitrate",
+      "target": "Nitroglycerin, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Grenades, illuminating",
+      "target": "Ammunition, illuminating, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Grenades, smoke",
+      "target": "Ammunition, smoke, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Gunpowder, compressed or Gunpowder in pellets",
+      "target": "Black powder (UN 0028)",
+      "kind": "see"
+    },
+    {
+      "alias": "Gunpowder, granular or as a meal",
+      "target": "Black powder (UN 0027)",
+      "kind": "see"
+    },
+    {
+      "alias": "Hand signal device",
+      "target": "Signal devices, hand",
+      "kind": "see"
+    },
+    {
+      "alias": "Hazardous substances, liquid or solid, n.o.s.",
+      "target": "Environmentally hazardous substances, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Hexanoic acid",
+      "target": "Corrosive liquids, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Hexogen",
+      "target": "Cyclotrimethylenetrinitramine, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Hexyl",
+      "target": "Hexanitrodiphenylamine",
+      "kind": "see"
+    },
+    {
+      "alias": "High explosives",
+      "target": "individual explosives' entries",
+      "kind": "see"
+    },
+    {
+      "alias": "HMX",
+      "target": "Cyclotetramethylenete tranitramine, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Hydriodic acid, anhydrous",
+      "target": "Hydrogen iodide, anhydrous",
+      "kind": "see"
+    },
+    {
+      "alias": "Hydrobromic acid, anhydrous",
+      "target": "Hydrogen bromide, anhydrous",
+      "kind": "see"
+    },
+    {
+      "alias": "Hydrochloric acid, anhydrous",
+      "target": "Hydrogen chloride, anhydrous",
+      "kind": "see"
+    },
+    {
+      "alias": "Hydrocyanic acid, anhydrous",
+      "target": "Hydrogen cyanide etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Hydrocyanic acid, liquefied",
+      "target": "Hydrogen cyanide, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Hydrofluoric acid, anhydrous",
+      "target": "Hydrogen fluoride, anhydrous",
+      "kind": "see"
+    },
+    {
+      "alias": "Hydrofluoroboric acid",
+      "target": "Fluoroboric acid",
+      "kind": "see"
+    },
+    {
+      "alias": "Hydrofluorosilicic acid",
+      "target": "Fluorosilicic acid",
+      "kind": "see"
+    },
+    {
+      "alias": "Hydrogen iodide solution",
+      "target": "Hydriodic acid",
+      "kind": "see"
+    },
+    {
+      "alias": "Hydrogen sulfate",
+      "target": "Sulfuric acid",
+      "kind": "see"
+    },
+    {
+      "alias": "Hydrosilicofluoric acid",
+      "target": "Fluorosilicic acid",
+      "kind": "see"
+    },
+    {
+      "alias": "Igniter fuse, metal clad",
+      "target": "Fuse, igniter, tubular, metal clad",
+      "kind": "see"
+    },
+    {
+      "alias": "Inflammable",
+      "target": "Flammable",
+      "kind": "see"
+    },
+    {
+      "alias": "Iron chloride",
+      "target": "Ferric chloride",
+      "kind": "see"
+    },
+    {
+      "alias": "Iron sesquichloride",
+      "target": "Ferric chloride",
+      "kind": "see"
+    },
+    {
+      "alias": "Irritating material",
+      "target": "Tear gas substances, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Isobutane",
+      "target": "Petroleum gases, liquefied",
+      "kind": "see also"
+    },
+    {
+      "alias": "Isobutyl alcohol",
+      "target": "Isobutanol",
+      "kind": "see"
+    },
+    {
+      "alias": "Isobutyl aldehyde",
+      "target": "Isobutyraldehyde",
+      "kind": "see"
+    },
+    {
+      "alias": "Isobutylene",
+      "target": "Petroleum gases, liquefied",
+      "kind": "see also"
+    },
+    {
+      "alias": "Isooctane",
+      "target": "Octanes",
+      "kind": "see"
+    },
+    {
+      "alias": "Isopentane",
+      "target": "Pentane",
+      "kind": "see"
+    },
+    {
+      "alias": "Isopentanoic acid",
+      "target": "Corrosive liquids, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Isopropyl alcohol",
+      "target": "Isopropanol",
+      "kind": "see"
+    },
+    {
+      "alias": "Isopropyl mercaptan",
+      "target": "Propanethiols",
+      "kind": "see"
+    },
+    {
+      "alias": "Isopropyl phosphoric acid",
+      "target": "Isopropyl acid phosphate",
+      "kind": "see"
+    },
+    {
+      "alias": "Jet fuel",
+      "target": "Fuel aviation, turbine engine",
+      "kind": "see"
+    },
+    {
+      "alias": "Jet perforators",
+      "target": "Charges, shaped, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Jet tappers, without detonator",
+      "target": "Charges, shaped, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Jet thrust igniters, for rocket motors or Jato",
+      "target": "Igniters",
+      "kind": "see"
+    },
+    {
+      "alias": "Jet thrust unit (Jato)",
+      "target": "Rocket motors",
+      "kind": "see"
+    },
+    {
+      "alias": "Lacquer base or lacquer chips, nitrocellulose, dry",
+      "target": "Nitrocellulose, etc. (UN 2557)",
+      "kind": "see"
+    },
+    {
+      "alias": "Lacquer base or lacquer chips, plastic, wet with alcohol or solvent",
+      "target": "Nitrocellulose (UN2059, UN2555, UN2556, UN2557) or Paint etc.(UN1263)",
+      "kind": "see"
+    },
+    {
+      "alias": "Lead dross",
+      "target": "Lead sulfate, with more than 3 percent free acid",
+      "kind": "see"
+    },
+    {
+      "alias": "Lead peroxide",
+      "target": "Lead dioxide",
+      "kind": "see"
+    },
+    {
+      "alias": "Lead trinitroresorcinate",
+      "target": "Lead styphnate, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Lime, unslaked",
+      "target": "Calcium oxide",
+      "kind": "see"
+    },
+    {
+      "alias": "Liquefied hydrocarbon gas",
+      "target": "Hydrocarbon gas mixture, liquefied, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Liquefied natural gas",
+      "target": "Methane, etc. (UN 1972)",
+      "kind": "see"
+    },
+    {
+      "alias": "Lithium acetylide ethylenediamine complex",
+      "target": "Water reactive solid etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Lithium in cartridges",
+      "target": "Lithium",
+      "kind": "see"
+    },
+    {
+      "alias": "LNG",
+      "target": "Methane etc. (UN 1972)",
+      "kind": "see"
+    },
+    {
+      "alias": "LPG",
+      "target": "Petroleum gases, liquefied",
+      "kind": "see"
+    },
+    {
+      "alias": "Lye",
+      "target": "Sodium hydroxide, solutions",
+      "kind": "see"
+    },
+    {
+      "alias": "Magnesium bisulfite solution",
+      "target": "Bisulfites, aqueous solutions, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Magnesium scrap",
+      "target": "Magnesium, etc. (UN 1869)",
+      "kind": "see"
+    },
+    {
+      "alias": "Magnetized material",
+      "target": "§ 173.21",
+      "kind": "see"
+    },
+    {
+      "alias": "Marine pollutants, liquid or solid, n.o.s.",
+      "target": "Environmentally hazardous substances, liquid or solid, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Matches, block",
+      "target": "Matches, 'strike anywhere'",
+      "kind": "see"
+    },
+    {
+      "alias": "Matting acid",
+      "target": "Sulfuric acid",
+      "kind": "see"
+    },
+    {
+      "alias": "Memtetrahydrophthalic anhydride",
+      "target": "Corrosive liquids, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Mercuric compounds",
+      "target": "Mercury compounds, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Mercuric sulfocyanate",
+      "target": "Mercury thiocyanate",
+      "kind": "see"
+    },
+    {
+      "alias": "Mercurol",
+      "target": "Mercury nucleate",
+      "kind": "see"
+    },
+    {
+      "alias": "Mercurous compounds",
+      "target": "Mercury compounds, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Methane and hydrogen, mixtures",
+      "target": "Hydrogen and methane, mixtures, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Methyl alcohol",
+      "target": "Methanol",
+      "kind": "see"
+    },
+    {
+      "alias": "Methyl amyl ketone",
+      "target": "Amyl methyl ketone",
+      "kind": "see"
+    },
+    {
+      "alias": "Methyl bromide and chloropicrin mixtures with more than 2 percent chloropicrin",
+      "target": "Chloropicrin and methyl bromide mixtures",
+      "kind": "see"
+    },
+    {
+      "alias": "Methyl bromide and chloropicrin mixtures with not more than 2 percent chloropicrin",
+      "target": "Methyl bromide",
+      "kind": "see"
+    },
+    {
+      "alias": "Methyl chloride and chloropicrin mixtures",
+      "target": "Chloropicrin and methyl chloride mixtures",
+      "kind": "see"
+    },
+    {
+      "alias": "Methyl chlorocarbonate",
+      "target": "Methyl chloroformate",
+      "kind": "see"
+    },
+    {
+      "alias": "Methyl chloroform",
+      "target": "1,1,1-Trichloroethane",
+      "kind": "see"
+    },
+    {
+      "alias": "Methyl ethyl ether",
+      "target": "Ethyl methyl ether",
+      "kind": "see"
+    },
+    {
+      "alias": "Methyl ethyl ketone",
+      "target": "Ethyl methyl ketone",
+      "kind": "see"
+    },
+    {
+      "alias": "Methyl mercaptopropionaldehyde",
+      "target": "4-Thiapentanal",
+      "kind": "see"
+    },
+    {
+      "alias": "Methyl norbornene dicarboxylic anhydride",
+      "target": "Corrosive liquids, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Methyl phosphonothioic dichloride, anhydrous",
+      "target": "Corrosive liquid, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Methyl sulfate",
+      "target": "Dimethyl sulfate",
+      "kind": "see"
+    },
+    {
+      "alias": "Methyl sulfide",
+      "target": "Dimethyl sulfide",
+      "kind": "see"
+    },
+    {
+      "alias": "Methylene chloride",
+      "target": "Dichloromethane",
+      "kind": "see"
+    },
+    {
+      "alias": "Methylpentanes",
+      "target": "Hexanes",
+      "kind": "see"
+    },
+    {
+      "alias": "Mine rescue equipment containing carbon dioxide",
+      "target": "Carbon dioxide",
+      "kind": "see"
+    },
+    {
+      "alias": "Mixed acid",
+      "target": "Nitrating acid, mixtures etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Mobility aids",
+      "target": "Battery powered equipment or Battery powered vehicle'",
+      "kind": "see"
+    },
+    {
+      "alias": "Monochloroethylene",
+      "target": "Vinyl chloride, stabilized",
+      "kind": "see"
+    },
+    {
+      "alias": "Monoethanolamine",
+      "target": "Ethanolamine, solutions",
+      "kind": "see"
+    },
+    {
+      "alias": "Monoethylamine",
+      "target": "Ethylamine",
+      "kind": "see"
+    },
+    {
+      "alias": "Morpholine, aqueous, mixture",
+      "target": "Corrosive liquids, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Motor spirit",
+      "target": "Gasoline",
+      "kind": "see"
+    },
+    {
+      "alias": "Muriatic acid",
+      "target": "Hydrochloric acid",
+      "kind": "see"
+    },
+    {
+      "alias": "Musk xylene",
+      "target": "5-tert-Butyl-2,4,6-trinitro-m-xylene",
+      "kind": "see"
+    },
+    {
+      "alias": "Natural gases (with high methane content)",
+      "target": "Methane, etc. (UN 1971, UN 1972)",
+      "kind": "see"
+    },
+    {
+      "alias": "Neohexane",
+      "target": "Hexanes",
+      "kind": "see"
+    },
+    {
+      "alias": "New explosive or explosive device",
+      "target": "§§ 173.51 and 173.56",
+      "kind": "see"
+    },
+    {
+      "alias": "Nitrobenzol",
+      "target": "Nitrobenzene",
+      "kind": "see"
+    },
+    {
+      "alias": "Nitrochlorobenzene",
+      "target": "Chloronitrobenzenes etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Nitrogen dioxide",
+      "target": "Dinitrogen tetroxide",
+      "kind": "see"
+    },
+    {
+      "alias": "Nitrogen fertilizer solution",
+      "target": "Fertilizer ammoniating solution etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Nitrogen peroxide",
+      "target": "Dinitrogen tetroxide",
+      "kind": "see"
+    },
+    {
+      "alias": "Nitrogen tetroxide and nitric oxide mixtures",
+      "target": "Nitric oxide and nitrogen tetroxide mixtures",
+      "kind": "see"
+    },
+    {
+      "alias": "Nitrogen tetroxide",
+      "target": "Dinitrogen tetroxide",
+      "kind": "see"
+    },
+    {
+      "alias": "Nitromannite, wetted",
+      "target": "Mannitol hexanitrate, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Nitromuriatic acid",
+      "target": "Nitrohydrochloric acid",
+      "kind": "see"
+    },
+    {
+      "alias": "Nitroxylol",
+      "target": "Nitroxylenes",
+      "kind": "see"
+    },
+    {
+      "alias": "Non-flammable gas, n.o.s.",
+      "target": "Compressed gas, etc. or Liquefied gas, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Nonliquefied gases",
+      "target": "Compressed gases, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Nonliquefied hydrocarbon gas",
+      "target": "Hydrocarbon gas mixture, compressed, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Nordhausen acid",
+      "target": "Sulfuric acid, fuming etc",
+      "kind": "see"
+    },
+    {
+      "alias": "2,5-Norbornadiene, stabilized",
+      "target": "Bicyclo [2,2,1] hepta-2,5-diene, stabilized",
+      "kind": "see"
+    },
+    {
+      "alias": "Oleum",
+      "target": "Sulfuric acid, fuming",
+      "kind": "see"
+    },
+    {
+      "alias": "Orthonitroaniline",
+      "target": "Nitroanilines etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Paranitroaniline, solid",
+      "target": "Nitroanilines etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Paris green, solid",
+      "target": "Copper acetoarsenite",
+      "kind": "see"
+    },
+    {
+      "alias": "PCB",
+      "target": "Polychlorinated biphenyls",
+      "kind": "see"
+    },
+    {
+      "alias": "Pentaerythritol tetranitrate",
+      "target": "Pentaerythrite tetranitrate, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Pepper spray",
+      "target": "Aerosols, etc. or Self-defense spray, non-pressurized",
+      "kind": "see"
+    },
+    {
+      "alias": "Perchloroethylene",
+      "target": "Tetrachloroethylene",
+      "kind": "see"
+    },
+    {
+      "alias": "Percussion caps",
+      "target": "Primers, cap type",
+      "kind": "see"
+    },
+    {
+      "alias": "Perfluoro-2-butene",
+      "target": "Octafluorobut-2-ene",
+      "kind": "see"
+    },
+    {
+      "alias": "PETN",
+      "target": "Pentaerythrite tetranitrate",
+      "kind": "see"
+    },
+    {
+      "alias": "PETN/TNT",
+      "target": "Pentolite, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Petrol",
+      "target": "Gasoline",
+      "kind": "see"
+    },
+    {
+      "alias": "Phosphoric acid triethyleneimine",
+      "target": "Tris-(1-aziridiyl)phosphine oxide, solution",
+      "kind": "see"
+    },
+    {
+      "alias": "Phosphoric anhydride",
+      "target": "Phosphorus pentoxide",
+      "kind": "see"
+    },
+    {
+      "alias": "Phosphorus bromide",
+      "target": "Phosphorus tribromide",
+      "kind": "see"
+    },
+    {
+      "alias": "Phosphorus chloride",
+      "target": "Phosphorus trichloride",
+      "kind": "see"
+    },
+    {
+      "alias": "Phosphoryl chloride",
+      "target": "Phosphorus oxychloride",
+      "kind": "see"
+    },
+    {
+      "alias": "Picric acid",
+      "target": "Trinitrophenol, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Picrite",
+      "target": "Nitroguanidine, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Picryl chloride",
+      "target": "Trinitrochlorobenzene",
+      "kind": "see"
+    },
+    {
+      "alias": "Pivaloyl chloride",
+      "target": "Trimethylacetyl chloride",
+      "kind": "see"
+    },
+    {
+      "alias": "Plastic solvent, n.o.s.",
+      "target": "Flammable liquids, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Poisonous gases, n.o.s.",
+      "target": "Compressed or liquefied gases, flammable or toxic, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Polyalkylamines, n.o.s.",
+      "target": "Amines, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Potassium bisulfite solution",
+      "target": "Bisulfites, aqueous solutions, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Potassium chlorate mixed with mineral oil",
+      "target": "Explosive, blasting, type C",
+      "kind": "see"
+    },
+    {
+      "alias": "Potassium dichloro isocyanurate or Potassium dichloro-s-triazinetrione",
+      "target": "Dichloroisocyanuric acid, dry or Dichloroisocyanuric acid salts etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Potassium hydrate",
+      "target": "Potassium hydroxide, solid",
+      "kind": "see"
+    },
+    {
+      "alias": "Potassium hydrogen fluoride",
+      "target": "Potassium hydrogen difluoride",
+      "kind": "see"
+    },
+    {
+      "alias": "Potassium hydrogen fluoride solution",
+      "target": "Corrosive liquid, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Potassium hydrosulfite",
+      "target": "Potassium dithionite",
+      "kind": "see"
+    },
+    {
+      "alias": "Potassium hydroxide, liquid",
+      "target": "Potassium hydroxide solution",
+      "kind": "see"
+    },
+    {
+      "alias": "Potassium hypochlorite, solution",
+      "target": "Hypochlorite solutions, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Potassium selenate",
+      "target": "Selenates or Selenites",
+      "kind": "see"
+    },
+    {
+      "alias": "Potassium selenite",
+      "target": "Selenates or Selenites",
+      "kind": "see"
+    },
+    {
+      "alias": "Powder paste",
+      "target": "Powder cake, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Power device, explosive",
+      "target": "Cartridges, power device",
+      "kind": "see"
+    },
+    {
+      "alias": "Primers, small arms",
+      "target": "Primers, cap type",
+      "kind": "see"
+    },
+    {
+      "alias": "Projectiles, illuminating",
+      "target": "Ammunition, illuminating, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Propadiene mixed with methyl acetylene",
+      "target": "Methyl acetylene and propadiene mixtures, stabilized",
+      "kind": "see"
+    },
+    {
+      "alias": "Propane,",
+      "target": "Petroleum gases, liquefied",
+      "kind": "see also"
+    },
+    {
+      "alias": "Propyl alcohol",
+      "target": "Propanol",
+      "kind": "see"
+    },
+    {
+      "alias": "Propyl mercaptan",
+      "target": "Propanethiols",
+      "kind": "see"
+    },
+    {
+      "alias": "Propylene",
+      "target": "Petroleum gases, liquefied",
+      "kind": "see also"
+    },
+    {
+      "alias": "Prussic acid",
+      "target": "Hydrogen cyanide",
+      "kind": "see"
+    },
+    {
+      "alias": "Pyroxylin solution or solvent",
+      "target": "Nitrocellulose",
+      "kind": "see"
+    },
+    {
+      "alias": "Quicklime",
+      "target": "Calcium oxide",
+      "kind": "see"
+    },
+    {
+      "alias": "R 12",
+      "target": "Dichlorodifluoromethane",
+      "kind": "see"
+    },
+    {
+      "alias": "R 12B1",
+      "target": "Chlorodifluorobromomethane",
+      "kind": "see"
+    },
+    {
+      "alias": "R 13",
+      "target": "Chlorotrifluoromethane",
+      "kind": "see"
+    },
+    {
+      "alias": "R 13B1",
+      "target": "Bromotrifluoromethane",
+      "kind": "see"
+    },
+    {
+      "alias": "R 14",
+      "target": "Tetrafluoromethane",
+      "kind": "see"
+    },
+    {
+      "alias": "R 21",
+      "target": "Dichlorofluoromethane",
+      "kind": "see"
+    },
+    {
+      "alias": "R 22",
+      "target": "Chlorodifluoromethane",
+      "kind": "see"
+    },
+    {
+      "alias": "R 114",
+      "target": "Dichlorotetrafluoroethane",
+      "kind": "see"
+    },
+    {
+      "alias": "R 115",
+      "target": "Chloropentafluoroethane",
+      "kind": "see"
+    },
+    {
+      "alias": "R 116",
+      "target": "Hexafluoroethane",
+      "kind": "see"
+    },
+    {
+      "alias": "R 124",
+      "target": "Chlorotetrafluoroethane",
+      "kind": "see"
+    },
+    {
+      "alias": "R 133a",
+      "target": "Chlorotrifluoroethane",
+      "kind": "see"
+    },
+    {
+      "alias": "R 152a",
+      "target": "Difluoroethane",
+      "kind": "see"
+    },
+    {
+      "alias": "R 500",
+      "target": "Dichlorodifluoromethane and difluorethane, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "R 502",
+      "target": "Chlorodifluoromethane and chloropentafluoroethane mixture, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "R 503",
+      "target": "Chlorotrifluoromethane and trifluoromethane, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Railway torpedo",
+      "target": "Signals, railway track, explosive",
+      "kind": "see"
+    },
+    {
+      "alias": "RC 318",
+      "target": "Octafluorocyclobutane",
+      "kind": "see"
+    },
+    {
+      "alias": "RDX",
+      "target": "Cyclotrimethylene trinitramine, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Red phosphorus",
+      "target": "Phosphorus, amorphous",
+      "kind": "see"
+    },
+    {
+      "alias": "Rifle grenade",
+      "target": "Grenades, hand or rifle, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Rifle powder",
+      "target": "Powder, smokeless (UN 0160)",
+      "kind": "see"
+    },
+    {
+      "alias": "Road asphalt or tar liquid",
+      "target": "Tars, liquid, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Safety fuse",
+      "target": "Fuse, safety",
+      "kind": "see"
+    },
+    {
+      "alias": "Sand acid",
+      "target": "Fluorosilicic acid",
+      "kind": "see"
+    },
+    {
+      "alias": "Self-defense spray, aerosol",
+      "target": "Aerosols, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Self-propelled vehicle",
+      "target": "Engines or Batteries etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Shaped charges",
+      "target": "Charges, shaped, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Signals, highway",
+      "target": "Signal devices, hand",
+      "kind": "see"
+    },
+    {
+      "alias": "Signals, ship distress, water-activated",
+      "target": "Contrivances, water-activated, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Silicofluoric acid",
+      "target": "Fluorosilicic acid",
+      "kind": "see"
+    },
+    {
+      "alias": "Silicon chloride",
+      "target": "Silicon tetrachloride",
+      "kind": "see"
+    },
+    {
+      "alias": "Sodium bifluoride",
+      "target": "Sodium hydrogendifluoride",
+      "kind": "see"
+    },
+    {
+      "alias": "Sodium bisulfite, solution",
+      "target": "Bisulfites, aqueous solutions, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Sodium chlorate mixed with dinitrotoluene",
+      "target": "Explosive blasting, type C",
+      "kind": "see"
+    },
+    {
+      "alias": "Sodium dichloroisocyanurate or Sodium dichloro-s-triazinetrione",
+      "target": "Dichloroisocyanuric acid etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Sodium hydrate",
+      "target": "Sodium hydroxide, solid",
+      "kind": "see"
+    },
+    {
+      "alias": "Sodium hydrosulfite",
+      "target": "Sodium dithionite",
+      "kind": "see"
+    },
+    {
+      "alias": "Sodium hypochlorite, solution",
+      "target": "Hypochlorite solutions etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Sodium metal, liquid alloy",
+      "target": "Alkali metal alloys, liquid, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Sodium potassium alloys",
+      "target": "Potassium sodium alloys",
+      "kind": "see"
+    },
+    {
+      "alias": "Sodium selenate",
+      "target": "Selenates or Selenites",
+      "kind": "see"
+    },
+    {
+      "alias": "Spirits of salt",
+      "target": "Hydrochloric acid",
+      "kind": "see"
+    },
+    {
+      "alias": "Squibs",
+      "target": "Igniters etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Steel swarf",
+      "target": "Ferrous metal borings, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Storage batteries, wet",
+      "target": "Batteries, wet etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Styphnic acid",
+      "target": "Trinitroresorcinol, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Sulfur dichloride",
+      "target": "Sulfur chlorides",
+      "kind": "see"
+    },
+    {
+      "alias": "Sulfur dioxide solution",
+      "target": "Sulfurous acid",
+      "kind": "see"
+    },
+    {
+      "alias": "Sulfuretted hydrogen",
+      "target": "Hydrogen sulfide",
+      "kind": "see"
+    },
+    {
+      "alias": "Sulfuric and hydrofluoric acid mixtures",
+      "target": "Hydrofluoric and sulfuric acid mixtures",
+      "kind": "see"
+    },
+    {
+      "alias": "Sulfuric anhydride",
+      "target": "Sulfur trioxide, stabilized",
+      "kind": "see"
+    },
+    {
+      "alias": "Tear gas cartridges",
+      "target": "Ammunition, tear-producing, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Tear gas devices, with not more than 2 percent tear gas substances, by mass",
+      "target": "Aerosols, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Tear gas grenades",
+      "target": "Tear gas candles",
+      "kind": "see"
+    },
+    {
+      "alias": "Tetrazene",
+      "target": "Guanyl nitrosaminoguanyltetrazene",
+      "kind": "see"
+    },
+    {
+      "alias": "Tetryl",
+      "target": "Trinitrophenylmethylnitramine",
+      "kind": "see"
+    },
+    {
+      "alias": "Thiocarbonylchloride",
+      "target": "Thiophosgene",
+      "kind": "see"
+    },
+    {
+      "alias": "Tin chloride, fuming",
+      "target": "Stannic chloride, anhydrous",
+      "kind": "see"
+    },
+    {
+      "alias": "Tin perchloride or Tin tetrachloride",
+      "target": "Stannic chloride, anhydrous",
+      "kind": "see"
+    },
+    {
+      "alias": "Tinning flux",
+      "target": "Zinc chloride",
+      "kind": "see"
+    },
+    {
+      "alias": "Tires and tire assemblies",
+      "target": "Air, compressed or Nitrogen, compressed",
+      "kind": "see"
+    },
+    {
+      "alias": "TNT mixed with aluminum",
+      "target": "Tritonal",
+      "kind": "see"
+    },
+    {
+      "alias": "TNT",
+      "target": "Trinitrotoluene, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Toluene sulfonic acid",
+      "target": "Alkyl, or Aryl sulfonic acid etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Tractors",
+      "target": "Vehicle, etc",
+      "kind": "see"
+    },
+    {
+      "alias": "Trichloro-s-triazinetrione dry, with more than 39 percent available chlorine",
+      "target": "Trichloroisocyanuric acid, dry",
+      "kind": "see"
+    },
+    {
+      "alias": "Urea peroxide",
+      "target": "Urea hydrogen peroxide",
+      "kind": "see"
+    },
+    {
+      "alias": "Valeric acid",
+      "target": "Corrosive liquids, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Very signal cartridge",
+      "target": "Cartridges, signal",
+      "kind": "see"
+    },
+    {
+      "alias": "Wheelchair, electric",
+      "target": "Battery powered vehicle or Battery powered equipment",
+      "kind": "see"
+    },
+    {
+      "alias": "White acid",
+      "target": "Hydrofluoric acid",
+      "kind": "see"
+    },
+    {
+      "alias": "Zinc bisulfite solution",
+      "target": "Bisulfites, aqueous solutions, n.o.s.",
+      "kind": "see"
+    },
+    {
+      "alias": "Zinc hydrosulfite",
+      "target": "Zinc dithionite",
+      "kind": "see"
+    },
+    {
+      "alias": "Zinc muriate solution",
+      "target": "Zinc chloride, solution",
+      "kind": "see"
+    },
+    {
+      "alias": "Zinc selenate",
+      "target": "Selenates or Selenites",
+      "kind": "see"
+    },
+    {
+      "alias": "Zinc selenite",
+      "target": "Selenates or Selenites",
+      "kind": "see"
+    },
+    {
+      "alias": "Zinc silicofluoride",
+      "target": "Zinc fluorosilicate",
+      "kind": "see"
+    }
+  ]
+}
