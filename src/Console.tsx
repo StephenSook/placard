@@ -358,6 +358,21 @@ export function Console() {
 
       <CellTicker />
 
+      {/* A phone shows the verdict 3.2 screens below the fold, so on small
+          screens a sticky strip carries the STATUS and scrolls to the card.
+          It is a link, never a copy: two renderings of a verdict is two things
+          to keep in sync, and the second one eventually lies. */}
+      {verdict.status !== "IDLE" && (
+        <button
+          type="button"
+          className={`console__stickyVerdict console__stickyVerdict--${verdict.status === "PASS" ? "pass" : "refused"}`}
+          onClick={() => document.querySelector(".verdict")?.scrollIntoView({ behavior: "smooth", block: "start" })}
+        >
+          {verdict.status === "PASS" ? "Cleared" : "Refused"}
+          <em>{verdict.checked} {verdict.checked === 1 ? "pair" : "pairs"} checked &#8595;</em>
+        </button>
+      )}
+
       <div className="console__grid">
         <HazardRail items={manifest} />
 

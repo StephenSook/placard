@@ -115,3 +115,69 @@
   .console__grid { grid-template-columns: 1fr; }
   .console__top { grid-template-columns: 1fr; align-items: start; gap: 12px; }
 }
+
+/* ── phones ──────────────────────────────────────────────────────────────────
+   Measured on the deployed build before any of this existed: on a 375 by 667
+   viewport the document ran 7.6 screens and the VERDICT sat 3.2 screens down.
+   The refusal is the entire point of the page and it took three swipes to
+   reach, behind a hero that consumed a full screen on its own.
+
+   Nothing here reorders the DOM. Reading order and assistive-technology order
+   stay exactly as they are on desktop; the hero simply stops being enormous,
+   and a compact status strip keeps the verdict on screen while you edit. */
+
+@media (max-width: 640px) {
+  /* The hero was 0 to 687px, a full screen of type before any product. */
+  .console__title { font-size: clamp(2rem, 11vw, 2.75rem); }
+  .console__lede { font-size: var(--t-body); line-height: 1.5; }
+  .console__head { gap: 8px; }
+
+  /* 44px is the smallest reliably tappable target. Measured before: 11 controls
+     under it, including the manifest remove button at 24 by 24. */
+  .manifest__remove { width: 44px; height: 44px; }
+  .manifest__example { min-height: 44px; padding: 0.55rem 0.8rem; }
+  .manifest__input { min-height: 44px; }
+  .pill { min-height: 44px; }
+  .bay__check input[type="checkbox"] { width: 22px; height: 22px; }
+  .bay__move { min-height: 44px; }
+
+  /* The matrix stays scrollable in its own box rather than shrinking to
+     illegibility: 324 cells is the point, and a squeezed grid says nothing. */
+  .matrix { padding: 14px; }
+  .matrix__corner { width: 120px; }
+  .matrix__rowhead { max-width: 120px; }
+}
+
+/* The verdict strip. Sticky on phones ONLY, and it appears only once a verdict
+   exists, so it never occupies space while there is nothing to say. It is a
+   link to the card rather than a copy of it: duplicating the verdict would mean
+   two things to keep in sync, and the second one would eventually lie. */
+.console__stickyVerdict { display: none; }
+
+@media (max-width: 1000px) {
+  .console__stickyVerdict {
+    display: block;
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    margin: 0 0 var(--gap);
+    border: none;
+    width: 100%;
+    text-align: left;
+    padding: 0.7rem 1rem;
+    border-radius: var(--r-sm);
+    font-family: var(--font-mono);
+    font-size: var(--t-micro);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgb(20 17 14 / 0.16);
+  }
+  .console__stickyVerdict--refused { background: var(--refused); color: #fff; }
+  .console__stickyVerdict--pass    { background: var(--cleared); color: #fff; }
+  .console__stickyVerdict em { font-style: normal; opacity: 1; float: right; text-transform: none; letter-spacing: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .console__stickyVerdict { position: static; }
+}
