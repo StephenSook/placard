@@ -329,18 +329,22 @@ a manifest is loaded, `executeTool` on `check_segregation` with a barrier
 asserted returns REFUSED carrying 177.848(e)(3) verbatim, and `commit_manifest`
 is absent throughout.
 
-## An adversarial second model told me not to ship, and it was right
+## I attacked my own safety claim with a second model, and it earned its keep
 
-Late in the build I ran a whole-repository adversarial review with a second
-model, scoped to one question: can a shipping paper be exported for a load that
-fails 177.848. It came back "Do not ship. Five material defects." All five were
-real, I reproduced every one, and all five had passed a 147-test suite, because
-every one of them lived in a path no test exercised.
+The claim this project makes is narrow and absolute: no shipping paper can be
+exported for a load that fails 49 CFR 177.848. So before shipping I pointed a
+second model at the whole repository with that one question and nothing else.
 
-Its summary named the shape exactly: the token binding, the canonical encoding
-and the TOCTOU handling showed no bypass. The export gate was never defeated.
-The SOLVER was returning PASS for loads the regulation forbids, and the gate
-faithfully exported them. A correct lock on a door in the wrong wall.
+It found five real defects. I reproduced every one before touching anything, and
+every one of them had passed a 147-test suite, because every one lived in the
+interaction between two features rather than inside either. That is the part
+worth reporting: a green suite measures the paths you thought of.
+
+The architecture held where it was designed to. The token binding, the canonical
+encoding and the TOCTOU handling showed no bypass, and the export gate was never
+defeated. What the review found was upstream of it: the SOLVER was returning
+PASS for loads the regulation forbids, and the gate was faithfully exporting
+them. A correct lock on a door in the wrong wall.
 
 **A subsidiary cell hid the explosives referral.** The most-restrictive
 reduction ranks X above O above the asterisk. That is right for restrictiveness
@@ -375,11 +379,23 @@ agent in as many words not to assert it on the operator's behalf.
 **And my own attack demo could leave the page compromised**, because its
 AbortController was scoped inside the runner and aborted only on the happy path.
 
-Thirteen regression tests, one per finding, plus the negative cases that stop
-each fix becoming a blunt refusal. Then mutation testing, because a regression
-test that cannot fail is decoration: the fifth one asserted merely that some
-`finally` existed and survived deleting the very cleanup it was written to
-guard, since another runner in the same file also had one.
+All five are fixed, each with a regression test reproducing the exact load that
+was cleared, plus the negative case that stops the fix becoming a blunt refusal:
+an ordinary explosive pair still routes through the compatibility table, a
+number whose rows differ only by packing group still resolves, and the (e)(3)
+exception still applies when both of its conditions are genuinely asserted.
+
+Then I mutation-tested those regression tests, because a test that cannot fail
+is decoration. Four of five caught their defect immediately. The fifth asserted
+merely that some `finally` existed and survived deleting the very cleanup it was
+written to guard, because another function in the same file also had one. It now
+asserts the specific block, and is caught three separate ways.
+
+I am putting this in the writeup rather than quietly fixing it because the
+alternative is a submission that claims a safety property and hides the evidence
+that the claim was tested. The five defects are gone. The discipline that found
+them is the more durable thing, and it is reproducible: the review command, the
+loads that reproduced each defect, and the tests are all in the repository.
 
 ## Challenges
 

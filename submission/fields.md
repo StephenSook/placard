@@ -29,48 +29,45 @@ number, and put the restraint in the second clause rather than the first.
 
 ---
 
-## Required fields
+## Required fields, all DECIDED
 
-**28249 Submitter Type** (dropdown)
-> Individual
+Each from a fact already established in the build rather than a preference, so
+none of these is waiting on anyone.
 
-**28250 Country of residence** (dropdown)
-> United States
+| Field | Answer | Why this and not another |
+|---|---|---|
+| 28249 Submitter Type | **Individual** | Built solo. The writeup says so and the git history is one author. |
+| 28250 Country | **United States** | Author is a computer science student at Kennesaw State, Georgia. |
+| 28252 App Status | **New** | First commit is inside the submission window. Nothing predates it. |
+| 28254 Live URL | `https://segregation-console.netlify.app` | Origin-trial token is bound to this exact origin, so it cannot move. |
+| 28256 Public repo | `https://github.com/StephenSook/placard` | Public, Apache-2.0 detected in the About sidebar, 100% community health. |
+| 28259 Level of learning | **Significant** | The WebMCP runtime facts in the writeup were learned by driving the client, not read. |
+| 28260 Career AI value | **Yes** | The adversarial-review discipline transfers to any codebase. |
 
-**28252 App Status** (dropdown)
-> New
-
-**28254 Live URL**
-> https://segregation-console.netlify.app
-
-**28256 Public code repo**
-> https://github.com/StephenSook/placard
-
-**28259 Level of learning** (dropdown)
-> Significant
-
-**28260 Career AI value** (dropdown)
-> Yes
+**28253 If Existing, what did you update** (optional)
+> Not applicable. New, built entirely within the submission period.
 
 ---
 
 **28257 Which agent(s) or client(s) did you test your WebMCP tools with?**
-(required, textarea, keep under 255 characters)
+(required, textarea, 255 characters max)
 
-**VERIFIED 2026-08-29 in Chrome 151 on the live origin, no flag.** Driven
-through `document.modelContext` directly: `getTools` returned 2 tools at mount,
-4 after a manifest was loaded, and `commit_manifest` absent throughout while the
-load failed. `executeTool` on `check_segregation` with `barriersPresent: true`
-returned REFUSED on ground CORROSIVE_OVER_OXIDIZER with 177.848(e)(3) verbatim.
-Splitting across two vehicles returned PASS with an approval token.
+**DECIDED. Chrome only, and the answer says so, because the ChatGPT attempt did
+not exercise WebMCP.**
 
-**Still NOT verified: ChatGPT's in-app browser specifically.** Do not name it in
-this answer until that run happens.
+Attempted 2026-08-29 on a ChatGPT Plus account: asked it to open the live URL
+and name the tools. It used its TEXT CRAWLER, said so in its own words ("the
+text crawler isn't exposing the JavaScript-registered tools directly"), then
+fell back to web and GitHub search. No model picker is exposed on that account,
+only a thinking-effort control, so there is no Sol or Terra to select. WebMCP
+was never reached, so naming ChatGPT here would describe a test that did not
+happen.
 
-> Chrome 151 with the WebMCP origin trial live on the origin, no flag. Verified
+> Chrome 151 with the WebMCP origin trial live on the origin, no flag. Driven
 > through document.modelContext directly: getTools, executeTool, and tools
-> unregistering by AbortSignal as page state changes. Lighthouse agentic-browsing
-> scores 100. webmcp-evals runs against the live page in smoke mode.
+> unregistering by AbortSignal as page state changes. Lighthouse
+> agentic-browsing scores 100. webmcp-evals runs against the live page in smoke
+> mode.
 
 ---
 
@@ -88,16 +85,29 @@ this answer until that run happens.
 > Not applicable. New, built entirely within the submission period.
 
 **28255 Testing instructions / credentials** (optional, judges only)
-> No credentials. Nothing is gated. https://segregation-console.netlify.app/judge
-> is a numbered three-minute route through every claim, each with the one click
-> that checks it. /api/measure and /api/forbidden-audit answer without a key.
+
+This field now carries the client steer, because a judge who tries ChatGPT
+first, sees the text crawler, and concludes the tools do not exist would be
+drawing a wrong conclusion from a real observation.
+
+> No credentials, nothing gated. USE CHROME 149+: the origin trial is
+> registered so no flag is needed, and document.modelContext is live. ChatGPT's
+> browsing may use its text crawler, which does not execute page JavaScript and
+> so sees no tools. /judge is a numbered 3-minute route; the APIs need no key.
 
 ---
 
 ## Still open before this can be submitted
 
-1. **The project has no name.** The repository is named for what it does.
-   Devpost's own guidance says not to let AI name a project, so this one is
-   yours. It is the first thing a judge reads.
-2. **Field 28257 needs the ChatGPT in-app browser run to be real.**
-3. **Demo video** is scripted and audited but not rendered, and it is required.
+Exactly one thing, and it is a decision rather than work.
+
+1. **The demo video.** `video_required: true` on the form, so `submit_project`
+   refuses without it and itemises it as missing. The script is written and
+   every figure in it is audited against FACTS.md; it has not been rendered
+   because the owner decided against a video. Until that changes the submission
+   cannot complete, and that is the whole of the remaining blockage.
+
+Settled and no longer open: the project is named **Placard**; the repository is
+renamed, public and at 100% community health; every required text and dropdown
+field is decided above; and field 28257 no longer waits on a ChatGPT run,
+because that run was attempted, did not reach WebMCP, and the answer says so.
