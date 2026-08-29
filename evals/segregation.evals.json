@@ -11,7 +11,11 @@
     "expectedCall": [
       {
         "functionName": "lookup_material",
-        "arguments": { "query": { "$contains": "chlorate" } }
+        "arguments": {
+          "query": {
+            "$contains": "chlorate"
+          }
+        }
       }
     ]
   },
@@ -27,7 +31,11 @@
     "expectedCall": [
       {
         "functionName": "classify_line_item",
-        "arguments": { "text": { "$contains": "acid" } }
+        "arguments": {
+          "text": {
+            "$contains": "acid"
+          }
+        }
       }
     ]
   },
@@ -37,14 +45,22 @@
       {
         "role": "user",
         "type": "message",
-        "content": "Put UN1830 sulfuric acid and UN1748 calcium hypochlorite on one truck. We have physical barriers between them. Check whether that is legal."
+        "content": "Check whether sulfuric acid and calcium hypochlorite may ride together with barriers between them."
       }
     ],
     "expectedCall": [
       {
         "functionName": "check_segregation",
         "arguments": {
-          "vehicles": { "$any": true }
+          "vehicles": [
+            {
+              "items": [
+                "UN1830",
+                "UN1748"
+              ],
+              "barriersPresent": true
+            }
+          ]
         }
       }
     ]
@@ -55,15 +71,19 @@
       {
         "role": "user",
         "type": "message",
-        "content": "I have UN1090 acetone, UN1830 sulfuric acid and UN1748 calcium hypochlorite. Find me a legal way to split them across at most two trucks."
+        "content": "Find me a legal way to split this manifest across at most two trucks."
       }
     ],
     "expectedCall": [
       {
         "functionName": "propose_load",
         "arguments": {
-          "items": { "$any": true },
-          "maxVehicles": { "$gte": 1 }
+          "items": [
+            "UN1090",
+            "UN1830",
+            "UN1748"
+          ],
+          "maxVehicles": 2
         }
       }
     ]
@@ -74,31 +94,44 @@
       {
         "role": "user",
         "type": "message",
-        "content": "Check a load containing ammonium chlorate by name together with UN1090 acetone."
+        "content": "Check a load containing ammonium chlorate by name together with acetone."
       }
     ],
     "expectedCall": [
       {
         "functionName": "check_segregation",
-        "arguments": { "vehicles": { "$any": true } }
+        "arguments": {
+          "vehicles": [
+            {
+              "items": [
+                "Ammonium chlorate",
+                "UN1090"
+              ]
+            }
+          ]
+        }
       }
     ]
   },
   {
-    "name": "Committing requires the approval token the check issued, never a bare assertion that it passed",
+    "name": "commit_manifest is registered ONLY once the load passes, and then it works",
     "messages": [
       {
         "role": "user",
         "type": "message",
-        "content": "The load passed. Export the shipping paper."
+        "content": "This load passed. Export the shipping paper."
       }
     ],
     "expectedCall": [
       {
         "functionName": "commit_manifest",
         "arguments": {
-          "approvalToken": { "$type": "string" },
-          "vehicles": { "$any": true }
+          "approvalToken": {
+            "$type": "string"
+          },
+          "vehicles": {
+            "$any": true
+          }
         }
       }
     ]

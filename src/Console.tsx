@@ -12,7 +12,7 @@
  * which is what makes the tool visibly appear and disappear as the load
  * changes.
  */
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { HazardRail } from "./ui/HazardRail.tsx";
 import { CellTicker } from "./ui/CellTicker.tsx";
 import { ManifestPanel } from "./ui/ManifestPanel.tsx";
@@ -106,19 +106,28 @@ export function Console() {
     invalidate();
   }, [invalidate]);
 
-  const loadDemo = useCallback(() => {
-    const resolved = DEMO
+  /**
+   * Resolve a list of material references into a manifest. Shared by the demo
+   * button and by the URL loader below, so a link and a click cannot produce
+   * different state.
+   */
+  const resolveRefs = useCallback((refs: string[]): ResolvedItem[] =>
+    refs
       .map((q) => {
         const f = lookupMaterial({ query: q }).matches[0];
         if (!f) return null;
         const r = resolveItem(f.id ? { id: f.id } : { name: f.name });
         return "error" in r ? null : r;
       })
-      .filter((x): x is ResolvedItem => x !== null);
+      .filter((x): x is ResolvedItem => x !== null),
+  []);
+
+  const loadDemo = useCallback(() => {
+    const resolved = resolveRefs(DEMO);
     setManifest(resolved);
     setBays([{ items: resolved, barriersPresent: false, singleShipper: false, nonReactionAsserted: false }]);
     invalidate();
-  }, [invalidate]);
+  }, [invalidate, resolveRefs]);
 
   const addVehicle = useCallback(() => {
     setBays((b) => [...b, { items: [], barriersPresent: false, singleShipper: false, nonReactionAsserted: false }]);
@@ -219,6 +228,59 @@ export function Console() {
     }
     setBusy(false);
   }, [toWire, nonce]);
+
+  /**
+   * URL STATE, and it exists because a real failure demanded it.
+   *
+   * `webmcp-evals smoke` opens a FRESH page for each case, and on a fresh page
+   * only the two always-on tools are registered, because the other three depend
+   * on page state. So four of six published eval cases errored with "tool is
+   * not available": the project's own central feature made its own evals
+   * unrunnable, and that command is printed in the README and the writeup.
+   *
+   * A URL that carries the load fixes it at the root rather than by weakening
+   * the evals, and it is worth having anyway: a link can now open the exact
+   * refusal, so a judge sees the money shot without clicking anything.
+   *
+   *   ?load=UN1830,UN1748        the manifest, by id or by name
+   *   &check=1                   run the check on arrival
+   *   &barriers=1 &shipper=1 &nonreaction=1   the three assertions
+   *   ?demo=1                    the six-item demonstration manifest
+   *
+   * Runs once on mount. It never writes to the URL, so a person clicking around
+   * is not fighting the address bar.
+   */
+  const bootedFromUrl = useRef(false);
+  useEffect(() => {
+    if (bootedFromUrl.current || typeof window === "undefined") return;
+    bootedFromUrl.current = true;
+    const q = new URLSearchParams(window.location.search);
+    const refs = q.get("demo") === "1"
+      ? [...DEMO]
+      : (q.get("load") ?? "").split(",").map((x) => x.trim()).filter(Boolean);
+    if (refs.length === 0) return;
+
+    const resolved = resolveRefs(refs);
+    if (resolved.length === 0) return;
+    setManifest(resolved);
+    setBays([{
+      items: resolved,
+      barriersPresent: q.get("barriers") === "1",
+      singleShipper: q.get("shipper") === "1",
+      nonReactionAsserted: q.get("nonreaction") === "1",
+    }]);
+    setAgentViewRevision((n) => n + 1);
+    if (q.get("check") === "1") setPendingCheck(true);
+  }, [resolveRefs]);
+
+  // The check has to run AFTER the bays state lands, so it is deferred one
+  // render rather than called inline, where it would read the empty load.
+  const [pendingCheck, setPendingCheck] = useState(false);
+  useEffect(() => {
+    if (!pendingCheck || manifest.length === 0) return;
+    setPendingCheck(false);
+    void check();
+  }, [pendingCheck, manifest, check]);
 
   const commit = useCallback(async () => {
     if (verdict.status !== "PASS") return;
