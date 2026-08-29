@@ -97,6 +97,22 @@ drawing a wrong conclusion from a real observation.
 
 ---
 
+## Validation run against Devpost, 2026-08-29
+
+Called `submit_project` with every answer below. It cannot submit while a
+required deliverable is missing, so this was a safe way to learn exactly what
+blocks it. The server's entire response:
+
+```
+Could not save submission: Video is required
+```
+
+**One blocker, and it is the video.** Every other field validated. Note the
+wording: it could not SAVE, so the answers below are not persisted on Devpost
+and must be supplied in the same call that eventually succeeds. They are
+recorded here so that call is a copy-paste rather than a set of fresh decisions
+made under deadline.
+
 ## Still open before this can be submitted
 
 Exactly one thing, and it is a decision rather than work.
