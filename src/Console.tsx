@@ -50,7 +50,7 @@ type Verdict =
 export function Console() {
   const nonce = useSessionNonce();
   const [manifest, setManifest] = useState<ResolvedItem[]>([]);
-  const [bays, setBays] = useState<Bay[]>([{ items: [], barriersPresent: false, singleShipper: false }]);
+  const [bays, setBays] = useState<Bay[]>([{ items: [], barriersPresent: false, singleShipper: false, nonReactionAsserted: false }]);
   const [verdict, setVerdict] = useState<Verdict>({ status: "IDLE" });
   // Bumped on every verdict change so the agent view re-reads the live
   // registry. Not derived from `verdict` itself, because the registry settles
@@ -116,12 +116,12 @@ export function Console() {
       })
       .filter((x): x is ResolvedItem => x !== null);
     setManifest(resolved);
-    setBays([{ items: resolved, barriersPresent: false, singleShipper: false }]);
+    setBays([{ items: resolved, barriersPresent: false, singleShipper: false, nonReactionAsserted: false }]);
     invalidate();
   }, [invalidate]);
 
   const addVehicle = useCallback(() => {
-    setBays((b) => [...b, { items: [], barriersPresent: false, singleShipper: false }]);
+    setBays((b) => [...b, { items: [], barriersPresent: false, singleShipper: false, nonReactionAsserted: false }]);
     invalidate();
   }, [invalidate]);
 
@@ -136,7 +136,7 @@ export function Console() {
     invalidate();
   }, [invalidate]);
 
-  const toggle = useCallback((i: number, key: "barriersPresent" | "singleShipper", value: boolean) => {
+  const toggle = useCallback((i: number, key: "barriersPresent" | "singleShipper" | "nonReactionAsserted", value: boolean) => {
     setBays((b) => b.map((bay, x) => (x === i ? { ...bay, [key]: value } : bay)));
     invalidate();
   }, [invalidate]);
@@ -162,6 +162,7 @@ export function Console() {
         items: bay.items.map((i) => i.item.id ?? i.name),
         barriersPresent: bay.barriersPresent,
         singleShipper: bay.singleShipper,
+        nonReactionAsserted: bay.nonReactionAsserted,
       })),
     [bays]
   );
@@ -183,6 +184,10 @@ export function Console() {
           items: v.items.map((ref) => byRef.get(ref)).filter((x): x is ResolvedItem => !!x),
           barriersPresent: bays[0]?.barriersPresent ?? false,
           singleShipper: bays[0]?.singleShipper ?? false,
+          // Never inherited. Splitting a load changes which materials sit
+          // together, so a non-reaction assertion made about the old
+          // arrangement says nothing about the new one and must be re-made.
+          nonReactionAsserted: false,
         }))
       );
       setAnnounce(`A legal split was found across ${r.vehiclesUsed} vehicles.`);

@@ -135,10 +135,24 @@ export function lookupByUn(un: string): HmtEntry[] {
  * 1.2C, 1.2D, 1.2E, 1.2F, 1.3C, 1.3L, 1.1L, 1.2L, 1.4E and 1.4F.
  */
 export function entriesByName(name: string): HmtEntry[] {
-  const exact = HMT.filter((e) => e.name.toLowerCase() === name.toLowerCase().trim());
-  if (exact.length) return exact;
+  // ALWAYS the normalised bucket, never the exact match alone.
+  //
+  // Returning literal matches first made SAFETY DEPEND ON A COMMA. The 172.101
+  // table spells the incendiary-ammunition name two ways, with and without a
+  // comma before "or propelling charge". The no-comma spelling has exactly one
+  // row, 1.4G, so it resolved cleanly, while its normalised bucket also holds
+  // UN0009 at 1.2G and UN0010 at 1.3G. Verified: that spelling with UN1325
+  // returned PASS and exported, while the 1.2G row is an X cell.
+  //
+  // The exact match still decides WHICH entry is returned when the bucket is
+  // unambiguous, so a literal name is never shadowed. It just no longer
+  // decides WHETHER the name is ambiguous.
   const k = normalizeOrthography(name);
-  return HMT.filter((e) => normalizeOrthography(e.name) === k);
+  const bucket = HMT.filter((e) => normalizeOrthography(e.name) === k);
+  const classes = new Set(bucket.map((e) => e.class));
+  if (classes.size > 1) return bucket;
+  const exact = HMT.filter((e) => e.name.toLowerCase() === name.toLowerCase().trim());
+  return exact.length ? exact : bucket;
 }
 
 export type NameResolution =

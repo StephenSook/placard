@@ -19,7 +19,7 @@
  * attacker is modelled at the point where the CSP has already been defeated.
  * That is the strongest position we can hand an attacker and still refuse.
  */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { classifyLineItem, commitManifest, toLoad, type WireVehicle } from "../tools/executors.ts";
 import { checkLoad } from "../solver/index.ts";
 import { approvalToken, loadDigest } from "../solver/hash.ts";
@@ -36,7 +36,30 @@ export function AttackPanel({ vehicles, nonce }: { vehicles: WireVehicle[]; nonc
   const [running, setRunning] = useState(false);
   const [shadowLive, setShadowLive] = useState(false);
 
+  /**
+   * The impostor's controller lives OUTSIDE the run so it can always be
+   * aborted, and the abort happens in a `finally`.
+   *
+   * The first version created the controller inside run() and aborted it on the
+   * happy path only, after several awaited steps. Any rejection in between, or
+   * an unmount during one of the deliberate delays, left a tool named
+   * commit_manifest registered by the attacker for the rest of the document's
+   * life, with `running` stuck true. A demonstration of a defence that can
+   * itself leave the page compromised is not a demonstration of a defence.
+   */
+  const shadow = useRef<AbortController | null>(null);
+  useEffect(() => () => { shadow.current?.abort(); shadow.current = null; }, []);
+
   async function run() {
+    try { await runAttack(); } finally {
+      shadow.current?.abort();
+      shadow.current = null;
+      setShadowLive(false);
+      setRunning(false);
+    }
+  }
+
+  async function runAttack() {
     setRunning(true);
     setSteps([]);
     const push = (s: Step) => setSteps((prev) => [...prev, s]);
@@ -46,7 +69,6 @@ export function AttackPanel({ vehicles, nonce }: { vehicles: WireVehicle[]; nonc
     if (!ctx || typeof ctx.getTools !== "function") {
       push({ label: "No WebMCP on this client", outcome: "info",
         detail: "document.modelContext is absent, so there is no registry to attack. Open this in Chrome 149 or later, or in ChatGPT's in-app browser." });
-      setRunning(false);
       return;
     }
 
@@ -62,7 +84,9 @@ export function AttackPanel({ vehicles, nonce }: { vehicles: WireVehicle[]; nonc
     await wait();
 
     // ── 2. squat the name. This is the real attack and it succeeds ──────────
+    shadow.current?.abort();
     const controller = new AbortController();
+    shadow.current = controller;
     let impostorCalled = false;
     ctx.registerTool(
       {
@@ -113,6 +137,7 @@ export function AttackPanel({ vehicles, nonce }: { vehicles: WireVehicle[]; nonc
 
     // ── 4. clean up, and show that abort really removes it ──────────────────
     controller.abort();
+    shadow.current = null;
     const finalTools = (await ctx.getTools!()).map((t) => t.name);
     push({
       label: "Shadow tool aborted",
@@ -120,7 +145,6 @@ export function AttackPanel({ vehicles, nonce }: { vehicles: WireVehicle[]; nonc
       detail: `The impostor's AbortSignal fired and the registry is back to ${finalTools.length} tools. The impostor handler ${impostorCalled ? "did" : "did not"} run during this demonstration; either way it could not produce the document.`,
     });
     setShadowLive(false);
-    setRunning(false);
   }
 
   /**
@@ -133,6 +157,10 @@ export function AttackPanel({ vehicles, nonce }: { vehicles: WireVehicle[]; nonc
    * tool and then re-checks the load to show the verdict did not move.
    */
   async function runInjection() {
+    try { await runInjectionInner(); } finally { setRunning(false); }
+  }
+
+  async function runInjectionInner() {
     setRunning(true);
     setSteps([]);
     const push = (x: Step) => setSteps((prev) => [...prev, x]);
@@ -176,7 +204,6 @@ export function AttackPanel({ vehicles, nonce }: { vehicles: WireVehicle[]; nonc
       outcome: "info",
       detail: `confirmationRequired is ${String(classified.confirmationRequired)}. It returns candidates for a person to confirm, never a classification, so the injected text cannot become a line item without a human pressing something.`,
     });
-    setRunning(false);
   }
 
   return (

@@ -34,6 +34,13 @@ export type LineItem = {
   /** Operator-supplied. 177.848(d) covers Class 8 LIQUIDS only, so this matters. */
   state?: PhysicalState;
   quantity?: string;
+  /**
+   * Operator-supplied packing group, used ONLY to disambiguate an
+   * identification number that spans several hazard classes. UN1950 covers five
+   * entries across Divisions 2.1 and 2.2, and the class decides the segregation
+   * verdict, so a number alone is not always enough to identify a material.
+   */
+  packingGroup?: string | null;
 };
 
 /** A material after resolution against the corpus. */
@@ -105,6 +112,20 @@ export type VehicleProposal = {
   barriersPresent?: boolean;
   /** A "truckload" is loaded by ONE shipper (PHMSA interpretation 04-0031). */
   singleShipper?: boolean;
+  /**
+   * The SECOND half of the 177.848(e)(3) exception, and it is not optional.
+   *
+   * The clause permits a truckload shipment by a single shipper only where it
+   * is ALSO known that the mixture will not cause a fire or a dangerous
+   * evolution of heat or gas. That is a fact about the chemistry, not about the
+   * paperwork, and nothing in the 172.101 table decides it.
+   *
+   * It was previously treated as a note while the exception was granted on
+   * singleShipper alone, which cleared sulfuric acid over calcium hypochlorite,
+   * the exact pair this project uses to demonstrate the hard block. The signer
+   * must now assert it explicitly or the exception does not apply.
+   */
+  nonReactionAsserted?: boolean;
 };
 
 export type LoadProposal = { vehicles: VehicleProposal[] };

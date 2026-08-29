@@ -56,9 +56,16 @@ describe("normalizeOrthography", () => {
   });
 
   it("still resolves the names that are genuinely unambiguous", () => {
-    const unique = HMT.filter(
-      (e) => new Set(HMT.filter((x) => normalizeOrthography(x.name) === normalizeOrthography(e.name)).map((x) => x.class)).size === 1,
-    );
+    // Bucketed once rather than a filter inside a filter. The quadratic version
+    // took 11.5 seconds on 3,293 entries and was the slowest thing in the suite
+    // by an order of magnitude.
+    const buckets = new Map<string, Set<string>>();
+    for (const e of HMT) {
+      const k = normalizeOrthography(e.name);
+      if (!buckets.has(k)) buckets.set(k, new Set());
+      buckets.get(k)!.add(e.class);
+    }
+    const unique = HMT.filter((e) => buckets.get(normalizeOrthography(e.name))!.size === 1);
     expect(unique.length).toBeGreaterThan(2000);
     expect(resolveName(unique[0]!.name).kind).toBe("resolved");
   });

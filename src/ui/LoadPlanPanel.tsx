@@ -16,13 +16,13 @@ import { Placard } from "./Placard.tsx";
 import type { ResolvedItem } from "../solver/types.ts";
 import "./loadplan.css";
 
-export type Bay = { items: ResolvedItem[]; barriersPresent: boolean; singleShipper: boolean };
+export type Bay = { items: ResolvedItem[]; barriersPresent: boolean; singleShipper: boolean; nonReactionAsserted: boolean };
 
 export type LoadPlanPanelProps = {
   bays: Bay[];
   onAddVehicle: () => void;
   onRemoveVehicle: (i: number) => void;
-  onToggle: (i: number, key: "barriersPresent" | "singleShipper", value: boolean) => void;
+  onToggle: (i: number, key: "barriersPresent" | "singleShipper" | "nonReactionAsserted", value: boolean) => void;
   onMove: (from: { bay: number; item: number }, toBay: number) => void;
   onPropose: () => void;
   busy: boolean;
@@ -119,6 +119,26 @@ export function LoadPlanPanel({
                   </em>
                 </span>
               </label>
+              {/* The second half of the 177.848(e)(3) exception. Shown only
+                  once the first half is claimed, because on its own it governs
+                  nothing and would read as noise. */}
+              {bay.singleShipper && (
+                <label className="bay__check bay__check--grave">
+                  <input
+                    type="checkbox"
+                    checked={bay.nonReactionAsserted}
+                    onChange={(e) => onToggle(bi, "nonReactionAsserted", e.target.checked)}
+                  />
+                  <span>
+                    I know this mixture will not cause a fire or a dangerous evolution of heat or gas
+                    <em className="bay__hint">
+                      177.848(e)(3) requires this IN ADDITION to the truckload above before its
+                      exception applies. No table decides it. Ticking it is an assertion about the
+                      chemistry that you carry under 172.204.
+                    </em>
+                  </span>
+                </label>
+              )}
             </div>
           </article>
         ))}

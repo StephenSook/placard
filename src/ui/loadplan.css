@@ -56,3 +56,12 @@
 .bay__check { display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: start; cursor: pointer; font-size: var(--t-nano); line-height: 1.35; color: var(--deck-ink); }
 .bay__check input { margin-top: 2px; accent-color: var(--cleared); }
 .bay__hint { display: block; font-style: normal; color: var(--deck-ink-soft); margin-top: 2px; }
+
+/* The non-reaction assertion. Drawn heavier than its siblings because it is the
+   only checkbox on this page that asserts a fact about chemistry rather than
+   about the arrangement of a truck. */
+.bay__check--grave {
+  border-left: 2px solid var(--caution);
+  padding-left: 0.6rem;
+  margin-top: 0.15rem;
+}

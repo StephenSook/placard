@@ -109,6 +109,14 @@ const VEHICLE_SCHEMA = Object.freeze({
         "True only if this vehicle is a truckload shipment loaded by ONE shipper. Goods from " +
         "different shippers loaded together are not a truckload shipment.",
     },
+    nonReactionAsserted: {
+      type: "boolean",
+      description:
+        "True ONLY if the shipper knows the mixture will not cause a fire or a dangerous " +
+        "evolution of heat or gas. 177.848(e)(3) requires this IN ADDITION to a single-shipper " +
+        "truckload before its exception applies. No table decides this; it is a fact about the " +
+        "chemistry, and an agent must not assert it on the operator's behalf.",
+    },
   },
 });
 
@@ -132,6 +140,14 @@ export const PROPOSE_LOAD_SCHEMA = Object.freeze({
     },
     barriersPresent: { type: "boolean", description: "Whether physical barriers will separate incompatible items." },
     singleShipper: { type: "boolean", description: "Whether one shipper is loading the whole shipment." },
+    nonReactionAsserted: {
+      type: "boolean",
+      description:
+        "True ONLY if the shipper knows the mixture will not cause a fire or a dangerous evolution " +
+        "of heat or gas. 177.848(e)(3) requires this IN ADDITION to a single-shipper truckload " +
+        "before its exception applies. No table decides this; it is a fact about the chemistry and " +
+        "an agent must not assert it on the operator's behalf.",
+    },
   },
 });
 

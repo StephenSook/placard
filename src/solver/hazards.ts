@@ -118,10 +118,42 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
   if (item.id) {
     const rows = lookupByUn(item.id);
     if (rows.length === 0) return { error: `${item.id} is not in the 49 CFR 172.101 table` };
-    // Several rows can share a UN number, one per packing group. Prefer an
-    // exact packing-group match when the caller named one; otherwise take the
-    // first, which is the lowest packing group and therefore the most severe.
-    entry = rows[0]!;
+
+    // AN IDENTIFICATION NUMBER IS NOT ALWAYS AN IDENTIFIER EITHER, and this is
+    // the same defect that was fixed for proper shipping names and left in
+    // place here, which is worse, because a number LOOKS authoritative.
+    //
+    // Several rows share a UN number, usually one per packing group, and those
+    // share a hazard class so they share a segregation verdict. But some span
+    // CLASSES. UN1950 has five rows across Division 2.1 and Division 2.2, and
+    // taking rows[0] picked a 2.2 aerosol. Verified: UN1950 with UN2910 and no
+    // barrier returned PASS and exported, while the 2.1 row is an O cell
+    // against Class 7 and needs separation. The shipping paper also carried the
+    // wrong proper shipping name, so the document named a material the operator
+    // had not described.
+    const classes = [...new Set(rows.map((r) => r.class))];
+    if (classes.length > 1) {
+      const pgMatch = item.packingGroup
+        ? rows.filter((r) => r.pg === item.packingGroup)
+        : [];
+      const pgClasses = [...new Set(pgMatch.map((r) => r.class))];
+      if (pgMatch.length === 0 || pgClasses.length > 1) {
+        return {
+          error:
+            `${item.id} covers ${rows.length} entries in the 172.101 table spanning hazard classes ` +
+            `${classes.join(", ")}, and the segregation verdict depends on which one it is. ` +
+            `Give the proper shipping name, or a packing group that selects one: ` +
+            `${rows.map((r) => `${r.class}${r.pg ? ` PG ${r.pg}` : ""} ${r.name}`).slice(0, 4).join("; ")}` +
+            (rows.length > 4 ? "; and others" : ""),
+        };
+      }
+      entry = pgMatch[0]!;
+    } else {
+      // One class across every row: packing groups differ but the verdict does
+      // not, so the first row, which is the lowest packing group and therefore
+      // the most severe, is safe to take.
+      entry = rows[0]!;
+    }
   } else if (item.name) {
     const r = resolveName(item.name);
     if (r.kind === "ambiguous") {

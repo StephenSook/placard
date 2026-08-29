@@ -99,7 +99,10 @@ export function checkVehicle(items: ResolvedItem[], v: VehicleProposal, vehicleI
         (isClass8Liquid(a) && keysOf(b).some((k) => CLASS_4_OR_5.has(k))) ||
         (isClass8Liquid(b) && keysOf(a).some((k) => CLASS_4_OR_5.has(k)));
       if (hardBlock) {
-        const truckloadCarveOut = v.singleShipper === true;
+        // BOTH conditions, because the clause states both. Granting the
+        // exception on singleShipper alone cleared UN1830 over UN1748 with a
+        // barrier, which is the precise pair the (e)(3) hard block exists for.
+        const truckloadCarveOut = v.singleShipper === true && v.nonReactionAsserted === true;
         if (!truckloadCarveOut) {
           violations.push({
             code: "CORROSIVE_OVER_OXIDIZER", items: [i, j], vehicle: vehicleIndex,
@@ -108,7 +111,7 @@ export function checkVehicle(items: ResolvedItem[], v: VehicleProposal, vehicleI
           });
           continue;
         }
-        notes.push(`${a.name} and ${b.name} rely on the truckload exception in 177.848(e)(3). That exception requires a single shipper AND knowledge that the mixture will not cause a fire or a dangerous evolution of heat or gas. The second condition is a judgement this tool cannot make; the signer must confirm it.`);
+        notes.push(`${a.name} and ${b.name} rely on the truckload exception in 177.848(e)(3), which this load claims on BOTH required grounds: a truckload shipment by a single shipper, and an explicit assertion that the mixture will not cause a fire or a dangerous evolution of heat or gas. The second is a fact about the chemistry that no table decides, and the signer owns it under 172.204.`);
       }
 
       // axis 3: the narrative prohibitions of 177.848(c).
@@ -141,7 +144,29 @@ export function checkVehicle(items: ResolvedItem[], v: VehicleProposal, vehicleI
       if (!worst) continue;
       const [ra, rb] = worst.via;
 
-      if (worst.code === "*") {
+      // 177.848(f) IS NOT A CELL VALUE, IT IS A REFERRAL, and it must not be
+      // maskable by one.
+      //
+      // worstCell reduces every combination of the two items' hazard sets to a
+      // single most-restrictive code, ranking X above O above * above blank.
+      // That ranking is right for restrictiveness and wrong for routing: the
+      // asterisk does not say "less restrictive than O", it says "the answer is
+      // in the compatibility table". A pair whose PRIMARY classes are both
+      // explosive but whose SUBSIDIARY hazards happen to produce an O therefore
+      // had the O win, and a barrier cleared it, and the compatibility table was
+      // never consulted at all.
+      //
+      // Verified: UN0018 (1.2G, subsidiary 8 and 6.1) with UN0350 (1.4B) and a
+      // barrier returned PASS and exported a shipping paper, while compatibility
+      // groups G and B are X under 177.848(g)(2).
+      //
+      // So the referral is decided on whether ANY combination is an asterisk,
+      // independently of which code ranks highest.
+      const referredToCompatibility = keysOf(a).some((ka) =>
+        keysOf(b).some((kb) => segregationCell(ka, kb) === "*"),
+      );
+
+      if (worst.code === "*" || referredToCompatibility) {
         const groups = [...groupsOf(a), ...groupsOf(b)];
         const fp = resolveCompatibility(groups);
         if (!fp.ok) {
@@ -162,8 +187,13 @@ export function checkVehicle(items: ResolvedItem[], v: VehicleProposal, vehicleI
             message: `${a.name} and ${b.name} resolve to compatibility groups ${g.a} and ${g.b}, which the 177.848(f) table marks ${g.code}.`,
             citations: [cite("e4-asterisk"), g.citation],
           });
+          continue;
         }
-        continue;
+        // The compatibility table cleared them. If the referral fired because a
+        // SUBSIDIARY combination is an asterisk while some other combination is
+        // an X or an O, that other cell still governs, so fall through rather
+        // than treating the compatibility result as the whole answer.
+        if (worst.code === "*") continue;
       }
 
       if (worst.code === "X") {

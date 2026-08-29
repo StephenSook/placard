@@ -190,7 +190,7 @@ const looksLikeId = (s: string) => /^(UN|NA|ID)\s?\d{4}$/i.test(s.trim());
  * material has no identification number and must still be checkable.
  */
 /** The shape a vehicle takes on the wire, between the agent and the solver. */
-export type WireVehicle = { items: string[]; barriersPresent?: boolean; singleShipper?: boolean };
+export type WireVehicle = { items: string[]; barriersPresent?: boolean; singleShipper?: boolean; nonReactionAsserted?: boolean };
 
 export function toLoad(vehicles: WireVehicle[]): LoadProposal {
   return {
@@ -200,6 +200,7 @@ export function toLoad(vehicles: WireVehicle[]): LoadProposal {
       ),
       ...(v.barriersPresent !== undefined ? { barriersPresent: v.barriersPresent } : {}),
       ...(v.singleShipper !== undefined ? { singleShipper: v.singleShipper } : {}),
+      ...(v.nonReactionAsserted !== undefined ? { nonReactionAsserted: v.nonReactionAsserted } : {}),
     })),
   };
 }
@@ -236,7 +237,7 @@ export async function checkSegregation(
 // ── commit_manifest ──────────────────────────────────────────────────────────
 
 export async function commitManifest(
-  input: { approvalToken: string; vehicles: Array<{ items: string[]; barriersPresent?: boolean; singleShipper?: boolean }> },
+  input: { approvalToken: string; vehicles: WireVehicle[] },
   nonce: string
 ) {
   // THE SECURITY BOUNDARY. Not the registry: the WebMCP tool map is keyed by
