@@ -32,9 +32,15 @@
 #   hmt.json  synonyms.json  segregation_table.json  compatibility_table.json
 #   SHA256SUMS  PROVENANCE.md
 # All public domain under 17 USC 105. Never add a blanket *.json rule, and
-# never add /data/ here. The raw eCFR XML is the one exception below: it is
-# 2.9 MB, re-fetchable from a pinned URL, and hashed in SHA256SUMS.
-/data/raw/*.xml
+# never add /data/ here.
+#
+# The raw eCFR XML at /data/raw/ is ALSO tracked, deliberately, at 3.0 MB total.
+# It was gitignored as "re-fetchable from a pinned URL", and the citation gate
+# then reported, on its first CI run, that 0 of 24 clauses could be verified
+# because their source was absent from a clean checkout. A verbatim-quote check
+# that cannot see the quoted document is not a check. Tracking the source makes
+# `npm run verify:data` real for CI and offline for a stranger, which is what
+# the README promises. Do not re-ignore it.
 
 # Env + secrets
 .env
@@ -79,3 +85,6 @@ lighthouse-report.*
 
 # scratch: local experiments, mutation harnesses, smoke scripts
 /scratch/
+
+# Netlify CLI link state, machine-local.
+.netlify/
