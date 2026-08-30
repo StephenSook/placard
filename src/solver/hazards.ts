@@ -171,10 +171,27 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
       }
       entry = pgMatch[0]!;
     } else {
-      // One class across every row: packing groups differ but the verdict does
-      // not, so the first row, which is the lowest packing group and therefore
-      // the most severe, is safe to take.
-      entry = rows[0]!;
+      // One class across every row, so the verdict cannot turn on which row is
+      // chosen for the CLASS. It can still turn on the SUBSIDIARY hazards, and
+      // it always determines what the shipping paper prints.
+      //
+      // This used to take rows[0] on the reasoning that the first row is the
+      // lowest packing group and therefore the most severe. The corpus
+      // falsifies that: UN2031's rows run II, II, II, I and NA1760's run II, I,
+      // II, III, I, II, III, II. Worse, UN1831 has two PG I rows, one labelled
+      // ["8"] and one ["8","6.1"] carrying special provision 2, and rows[0] is
+      // the one WITHOUT the poison-by-inhalation subsidiary. A 6.1 PG I zone A
+      // liquid has its own row in the 177.848(d) table, so dropping it drops a
+      // restriction, and the exported paper named a material the operator had
+      // not described.
+      //
+      // Choose the genuinely most severe: lowest packing group first, then the
+      // row bearing the most hazard labels. Ties keep table order.
+      const PG_RANK: Record<string, number> = { I: 0, II: 1, III: 2 };
+      entry = [...rows].sort((x, y) => {
+        const px = PG_RANK[x.pg ?? ""] ?? 3, py = PG_RANK[y.pg ?? ""] ?? 3;
+        return px - py || (y.labels?.length ?? 0) - (x.labels?.length ?? 0);
+      })[0]!;
     }
   } else if (item.name) {
     const r = resolveName(item.name);

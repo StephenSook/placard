@@ -196,3 +196,41 @@ describe("footnote 6 has two conditions and a vehicle scope", () => {
     expect(msgs).not.toContain("footnote 6");
   });
 });
+
+describe("a UN number spanning several rows resolves to the most severe", () => {
+  /**
+   * The resolver took rows[0] on the reasoning that the first row is the lowest
+   * packing group and therefore the most severe. The corpus falsifies that:
+   * UN2031's rows run II, II, II, I and NA1760's run II, I, II, III, I, II,
+   * III, II. UN1831 has TWO PG I rows, one labelled ["8"] and one ["8","6.1"]
+   * carrying special provision 2, and rows[0] was the one without the
+   * poison-by-inhalation subsidiary.
+   */
+  it("keeps the 6.1 subsidiary UN1831 carries on its other PG I row", () => {
+    const r = resolveItem({ id: "UN1831" });
+    if ("error" in r) throw new Error(r.error);
+    expect(r.packingGroup).toBe("I");
+    expect(r.hazards.map((h) => h.raw)).toContain("6.1");
+  });
+
+  it("picks the lowest packing group, not the first row", () => {
+    for (const id of ["UN2031", "NA1760"]) {
+      const r = resolveItem({ id });
+      if ("error" in r) throw new Error(r.error);
+      expect(r.packingGroup, `${id} did not resolve to its lowest packing group`).toBe("I");
+    }
+  });
+
+  it("that subsidiary changes a verdict, which is why it matters", async () => {
+    // UN2031 nitric acid with UN1090 acetone. Class 8 against Class 3 carries
+    // no restriction, so dropping the 5.1 subsidiary cleared this pair.
+    expect(await clears([{ items: ["UN2031", "UN1090"] }])).toBe(false);
+  });
+
+  it("still resolves a single-row identification number unchanged", () => {
+    // Non-vacuity: the sort must not disturb the ordinary case.
+    const r = resolveItem({ id: "UN1090" });
+    if ("error" in r) throw new Error(r.error);
+    expect(r.name).toBe("Acetone");
+  });
+});
