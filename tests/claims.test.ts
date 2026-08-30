@@ -14,7 +14,7 @@
  */
 import { describe, it, expect } from "vitest";
 import { execFileSync } from "node:child_process";
-import { readFileSync, existsSync } from "node:fs";
+import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { parseProvenance } from "../scripts/provenance.ts";
 
@@ -214,6 +214,28 @@ describe("provenance cannot drift from the record", () => {
 });
 
 describe("judge-facing surfaces exist and are reachable", () => {
+  it("states a test-file count the repository actually has", () => {
+    // The line this guards used to read "89 tests" while the suite ran 213.
+    // Nothing checked it, so it drifted for the life of the project, and a
+    // judge running npm test would have seen a number the README contradicts.
+    //
+    // The raw test count is deliberately NOT claimed any more. Some files
+    // generate cases in loops, so no static count can be right, and a figure
+    // no guard can check is a figure that drifts. The FILE count can be
+    // checked exactly, and the exhaustive cell counts are checked by the
+    // 324-cell and 169-cell suites themselves.
+    const readme = read("README.md");
+    const m = /npm test\s+# (\d+) test files/.exec(readme);
+    expect(m, "README no longer states a test-file count in the npm test block").toBeTruthy();
+    const actual = readdirSync(join(process.cwd(), "tests"))
+      .filter((f) => f.endsWith(".test.ts")).length;
+    expect(actual).toBeGreaterThan(0);
+    expect(
+      Number(m![1]),
+      `README says ${m![1]} test files, the repository has ${actual}`,
+    ).toBe(actual);
+  });
+
   it("ships the endpoints the README advertises", () => {
     const readme = read("README.md");
     for (const path of ["/api/measure", "/api/forbidden-audit", "/judge"]) {

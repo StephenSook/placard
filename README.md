@@ -18,7 +18,9 @@ needed**. Open it in ChatGPT's in-app browser or in Chrome 149 or later and the 
 ```bash
 npm ci
 npm run verify:data   # re-hash the corpus, prove every quoted clause is verbatim
-npm test              # 89 tests: exhaustive, property, metamorphic, fixed point, gate
+npm test              # 13 test files. All 324 segregation cells and all 169
+                      # compatibility cells exhaustively, plus property,
+                      # metamorphic, fixed-point, adversarial and gate tests.
 ```
 
 `verify:data` prints a receipt of what it actually checked, because a gate that passes having
