@@ -382,11 +382,23 @@ It scored 2 of 6 the first time I actually ran it, on the single-file version of
 these evals. Running a command you publish is not optional.
 
 
-14 test files, 288 tests. Lighthouse on the live origin, desktop, 58 audits passed and
-none failed: agentic browsing 100, accessibility 100, best practices 100, SEO
-100, performance 100. Agentic browsing at 100 is itself the proof the origin
-trial is live, because those audits report nothing at all rather than failing
-when the token is missing.
+14 test files, 304 tests. Lighthouse on the live origin, desktop: **agentic
+browsing 100, accessibility 100, best practices 100, SEO 100, performance 100.**
+Agentic browsing at 100 is itself the proof the origin trial is live, because
+those audits report nothing at all rather than failing when the token is
+missing.
+
+Two audits do not score full marks and I would rather name them than round them
+away. `speed-index` is 0.99. `valid-source-maps` is 0, and the obvious fix is to
+ship the maps, since this repository is public and there is nothing to withhold,
+so I turned them on, built, deployed and requested one. **Vercel answers 403 with
+an empty body for any `.map` path, at the platform level, regardless of headers
+or rewrites.** Emitting a 728 KB artifact the host will never serve is worse than
+not emitting it, and renaming the file to dodge a deliberate platform protection
+would be defeating a security control to win a score, which is the exact move
+this project exists to argue against. A judge who wants the mapping clones the
+repository. The third diagnostic, `network-dependency-tree-insight`, is the
+critical request chain of a bundled application and I have not eliminated it.
 
 Verified by hand in Chrome 151 against the live origin with no flag, driving
 `document.modelContext` directly: `getTools` returns 2 tools at mount and 4 once

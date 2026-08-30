@@ -256,7 +256,7 @@ const looksLikeId = (s: string) => /^(UN|NA|ID)\s?\d{4}$/i.test(s.trim());
  */
 export type WireRef =
   | string
-  | { id?: string; name?: string; packingGroup?: string; pihZone?: string; state?: string; quantity?: string };
+  | { id?: string; name?: string; packingGroup?: string; pihZone?: string; quantity?: string };
 
 export type WireVehicle = { items: WireRef[]; barriersPresent?: boolean; singleShipper?: boolean; nonReactionAsserted?: boolean };
 
@@ -264,7 +264,27 @@ export type WireVehicle = { items: WireRef[]; barriersPresent?: boolean; singleS
 export const refLabel = (r: WireRef): string =>
   typeof r === "string" ? r : (r.id ?? r.name ?? "");
 
-const REF_KEYS = ["id", "name", "packingGroup", "pihZone", "state", "quantity"] as const;
+const REF_KEYS = ["id", "name", "packingGroup", "pihZone", "quantity"] as const;
+
+/**
+ * PHYSICAL STATE IS AN ATTESTATION, NOT AN IDENTITY FIELD, and I put it on the
+ * wire myself one commit before this one.
+ *
+ * 177.848(d) covers Class 8 LIQUIDS only. Whether a drum holds a liquid or a
+ * solid is a fact about the shipment on the dock, not a lookup key, so an agent
+ * that can declare it can walk a load out of the row that forbids it.
+ * Reproduced with this project's own headline pair: the page holds sulfuric
+ * acid as a liquid with the operator's barrier asserted, the agent re-sends the
+ * same two materials declaring the acid SOLID, the contents comparison sees the
+ * same materials and applies the barrier, and UN1830 with UN1748 returns PASS
+ * and commits. That is the load the entire project exists to refuse.
+ *
+ * So it is refused by name like the other three, and the state the solver uses
+ * comes from the corpus, which infers it from the proper shipping name and
+ * falls back to liquid for Class 8 and 6.1 precisely because that is the
+ * stricter reading.
+ */
+const STATE_KEY = "state";
 
 /** Narrow one wire reference, or null if it is not a usable identity. */
 function coerceRef(x: unknown): WireRef | null {
@@ -273,6 +293,7 @@ function coerceRef(x: unknown): WireRef | null {
   const raw = x as Record<string, unknown>;
   // An attestation smuggled inside an item is the same forgery one level down.
   for (const k of ATTESTATION_KEYS) if (raw[k] !== undefined) return null;
+  if (raw[STATE_KEY] !== undefined) return null;
   const out: Record<string, string> = {};
   for (const k of REF_KEYS) {
     const v = raw[k];
@@ -422,8 +443,9 @@ export const attestationReport = (attest: Attestations[]) =>
 const ATTESTATION_REFUSAL =
   "vehicles must be an array of objects, each with an items array. An item is either a string " +
   "(an identification number or a proper shipping name) or an object carrying id, name, " +
-  "packingGroup, pihZone, state or quantity, for when a bare reference names more than one " +
-  "material. " +
+  "packingGroup, pihZone or quantity, for when a bare reference names more than one material. " +
+  "Physical state is not one of them: 177.848(d) covers Class 8 LIQUIDS only, so declaring a " +
+  "state is a claim about what is on the dock and it is derived from the 172.101 entry instead. " +
   "barriersPresent, singleShipper and nonReactionAsserted are NOT arguments to this tool: " +
   "they are attestations about the physical vehicle that only the operator at the console can " +
   "make, and they are read from the page. Send items only.";
@@ -442,8 +464,19 @@ export type PageLoad = { items: WireRef[] }[];
  * below, and string equality is the STRICTER of the two, so a reference this
  * cannot pin down can never gain an attestation it should not have.
  */
+/**
+ * The binding key must cover EVERY field the wire can carry, not only the ones
+ * that name a 172.101 row. An attestation is about one vehicle holding one set
+ * of things, so anything a caller can vary and the operator did not is a
+ * difference that should drop the attestation rather than inherit it.
+ *
+ * Quantity is here for that reason even though it changes no verdict: it goes
+ * on the signed document, and a paper describing different quantities is not
+ * the truck the operator walked out to.
+ */
 const canonicalRef = (ref: WireRef): string | null => {
-  const r = resolveItem(toLineItem(ref));
+  const item = toLineItem(ref);
+  const r = resolveItem(item);
   if ("error" in r) return null;
   return [
     r.item.id ?? "",
@@ -451,6 +484,8 @@ const canonicalRef = (ref: WireRef): string | null => {
     r.hazardClass,
     r.packingGroup ?? "",
     r.pihZone ?? "",
+    r.state ?? "",
+    (item.quantity ?? "").trim().toLowerCase(),
   ].join("|");
 };
 
@@ -539,7 +574,6 @@ export function toLineItem(ref: WireRef): LineItem {
     ...(ref.name ? { name: ref.name } : {}),
     ...(ref.packingGroup ? { packingGroup: ref.packingGroup.toUpperCase() } : {}),
     ...(ref.pihZone ? { pihZone: ref.pihZone.toUpperCase() as LineItem["pihZone"] } : {}),
-    ...(ref.state ? { state: ref.state as LineItem["state"] } : {}),
     ...(ref.quantity ? { quantity: ref.quantity } : {}),
   };
 }

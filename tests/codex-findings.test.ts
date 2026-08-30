@@ -733,3 +733,62 @@ describe("23. removing a vehicle does not revoke attestations from the ones that
     expect(src).toContain("key: `bay-${nextBayKey.current++}`");
   });
 });
+
+// ── round seven ──────────────────────────────────────────────────────────────
+//
+// The round itself died mid-turn, which is no verdict. It had already named a
+// concrete lead before it went, so the lead was reproduced by hand: it was
+// real, and it was the worst one yet.
+
+describe("24. physical state is an attestation, not an identity field", () => {
+  const page = [{ items: [{ id: "UN1830" }, { id: "UN1748" }] }];
+
+  it("refuses a state declared on the wire, by name", async () => {
+    const v = await checkSegregation(
+      { vehicles: [{ items: [{ id: "UN1830", state: "solid" } as never, "UN1748"] }] }, N,
+    );
+    expect(v.status).toBe("REFUSED");
+    expect((v as { reason?: string }).reason).toMatch(/malformed request/);
+    expect((v as { reason?: string }).reason).toMatch(/Physical state is not one of them/);
+  });
+
+  it("the headline pair cannot be walked out of its row by declaring it solid", async () => {
+    // 177.848(d) covers Class 8 LIQUIDS only. With state on the wire, an agent
+    // re-sent the operator's own load with the acid declared SOLID, the
+    // contents comparison saw the same two materials, the operator's barrier
+    // was applied to a configuration nobody had looked at, and UN1830 with
+    // UN1748 returned PASS and COMMITTED. That is the load this project exists
+    // to refuse, cleared by one word.
+    const forged = await checkSegregation(
+      { vehicles: [{ items: [{ id: "UN1830", state: "solid" } as never, "UN1748"] }] },
+      N, [{ barriersPresent: true }], page,
+    );
+    expect(forged.status).toBe("REFUSED");
+
+    // And the honest version of the same load is still refused on its merits.
+    const honest = await checkSegregation(
+      { vehicles: [{ items: ["UN1830", "UN1748"] }] }, N, [{ barriersPresent: true }], page,
+    );
+    expect(honest.status).toBe("REFUSED");
+  });
+
+  it("the schema does not offer state, and says why", async () => {
+    const { CHECK_SEGREGATION_SCHEMA } = await import("../src/tools/schemas.ts");
+    const item = (CHECK_SEGREGATION_SCHEMA as never as {
+      properties: { vehicles: { items: { properties: { items: { items: { anyOf: { type: string; properties?: Record<string, unknown>; description?: string }[] } } } } } };
+    }).properties.vehicles.items.properties.items.items;
+    const obj = item.anyOf.find((x) => x.type === "object")!;
+    expect(Object.keys(obj.properties!)).not.toContain("state");
+    expect(obj.description).toMatch(/Physical state is NOT here/);
+  });
+
+  it("the binding key covers every field the wire can still carry", async () => {
+    // Quantity changes no verdict and does go on the signed document, so a
+    // different quantity is a different truck and must not inherit a barrier.
+    const v = await checkSegregation(
+      { vehicles: [{ items: [{ id: "UN1830", quantity: "2 drums" }, "UN1748"] }] },
+      N, [{ barriersPresent: true }], page,
+    );
+    expect((v as { attestationsNotApplied?: number[] }).attestationsNotApplied).toEqual([1]);
+  });
+});
