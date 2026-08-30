@@ -87,30 +87,94 @@ export type ExplosiveIdentity = {
   hazardClass: string;
 };
 
-const isFirework = (e: ExplosiveIdentity) => /firework/i.test(e.name);
-const divisionOf = (e: ExplosiveIdentity) => (/^1\.(\d)/.exec(e.hazardClass) ?? [])[1] ?? "";
-
 /**
- * WHETHER A CLASS 1 ENTRY IS AN ARTICLE, and the honest answer is usually "this
- * corpus cannot tell".
+ * WHETHER A CLASS 1 ENTRY IS AN ARTICLE OR A SUBSTANCE.
  *
- * Footnote 6 permits group G articles with groups C, D and E "provided that
- * explosive substances are not carried in the same transport vehicle". The
- * first version tested `/^substances?[,\s]/` on the proper shipping name, which
- * matches 14 of the 388 Class 1 entries in the table. Black powder, TNT, PETN,
- * nitroglycerin and every other bulk explosive were invisible to it, so
- * "Articles, explosive, n.o.s." with black powder passed and the same article
+ * 177.848(g)(vi) grants its permission to explosive ARTICLES in compatibility
+ * group G, and only while no explosive SUBSTANCE rides in the same vehicle. The
+ * 172.101 table has no article-or-substance column, so the first version of
+ * this tested the proper shipping name: `/^substances?[,\s]/` matched 14 of 388
+ * Class 1 entries, black powder and TNT and PETN were invisible to it, and
+ * "Articles, explosive, n.o.s." with black powder passed while the same article
  * with the literally-named "Substances, explosive, n.o.s." refused. Identical
  * regulatory situations, opposite verdicts, decided by a word in a name.
  *
- * 172.101 does not carry an article/substance column. The name is the only
- * signal and it covers 40 of 388, so for the other 348 the proviso cannot be
- * evaluated. An unevaluable condition is not a satisfied one, the same rule
- * footnote 4 now follows, so anything not provably an article blocks the
- * permission rather than being assumed harmless.
+ * 173.52(b) table 1 is the actual source, and it settles most of it by
+ * DEFINITION rather than by spelling. Seven groups are defined as articles, one
+ * as a substance, and five admit either:
+ *
+ *   B E F H J K N   defined as an article
+ *   A               defined as a substance
+ *   C D G L S       defined as either, so the corpus still cannot tell
+ *
+ * That is why the map below is keyed on the compatibility group and each entry
+ * carries its own verbatim definition: a refusal that cannot settle the
+ * question quotes the definition that failed to settle it, so a reader sees the
+ * regulation being ambiguous rather than the tool being arbitrary.
+ *
+ * Where the group admits either, the proper shipping name is still consulted,
+ * as a secondary signal and never as a contradiction of the group. An
+ * unevaluable condition is not a satisfied one, the rule footnote 4 already
+ * follows, so a material that is neither provably an article nor provably a
+ * substance blocks the permission rather than being assumed harmless.
  */
-const isProvablyArticle = (e: ExplosiveIdentity) => /^articles?[,\s]/i.test(e.name.trim());
-const isProvablySubstance = (e: ExplosiveIdentity) => /^substances?[,\s]/i.test(e.name.trim());
+type ExplosiveForm = "article" | "substance" | "either";
+
+const GROUP_FORM: Record<CompatibilityGroup, { form: ExplosiveForm; citation: Citation }> = {
+  A: { form: "substance", citation: cite("17352-group-A") },
+  B: { form: "article", citation: cite("17352-group-B") },
+  C: { form: "either", citation: cite("17352-group-C") },
+  D: { form: "either", citation: cite("17352-group-D") },
+  E: { form: "article", citation: cite("17352-group-E") },
+  F: { form: "article", citation: cite("17352-group-F") },
+  G: { form: "either", citation: cite("17352-group-G") },
+  H: { form: "article", citation: cite("17352-group-H") },
+  J: { form: "article", citation: cite("17352-group-J") },
+  K: { form: "article", citation: cite("17352-group-K") },
+  L: { form: "either", citation: cite("17352-group-L") },
+  N: { form: "article", citation: cite("17352-group-N") },
+  S: { form: "either", citation: cite("17352-group-S") },
+};
+
+const isFirework = (e: ExplosiveIdentity) => /firework/i.test(e.name);
+const divisionOf = (e: ExplosiveIdentity) => (/^1\.(\d)/.exec(e.hazardClass) ?? [])[1] ?? "";
+
+/** The compatibility group letter carried by a class such as "1.2E". */
+const groupOf = (e: ExplosiveIdentity): CompatibilityGroup | undefined => {
+  const m = /^1\.\d\s*([A-S])$/.exec(e.hazardClass.trim().toUpperCase());
+  const g = m?.[1] as CompatibilityGroup | undefined;
+  return g && g in GROUP_FORM ? g : undefined;
+};
+
+/**
+ * The DESCRIPTION half of a 173.52(b) table 1 row, without the trailing group
+ * letter and classification codes that share the row.
+ *
+ * The clause slice is verbatim and stays that way, because that is what the
+ * citation gate proves. A prefix of a verbatim slice is still verbatim, so
+ * trimming " G 1.1G 1.2G 1.3G 1.4G" off the end for display costs nothing and
+ * stops a refusal sentence trailing off into table cells.
+ */
+const definitionText = (c: Citation) => c.text.replace(/\s+[A-S](\s+1\.\d[A-S])+$/, "").trim();
+
+const formOf = (e: ExplosiveIdentity) => {
+  const g = groupOf(e);
+  return g ? GROUP_FORM[g] : undefined;
+};
+
+const isProvablyArticle = (e: ExplosiveIdentity) => {
+  const f = formOf(e)?.form;
+  if (f === "article") return true;
+  if (f === "substance") return false;
+  return /^articles?[,\s]/i.test(e.name.trim());
+};
+
+const isProvablySubstance = (e: ExplosiveIdentity) => {
+  const f = formOf(e)?.form;
+  if (f === "substance") return true;
+  if (f === "article") return false;
+  return /^substances?[,\s]/i.test(e.name.trim());
+};
 
 export function checkGroups(
   groups: Set<CompatibilityGroup>,
@@ -172,9 +236,19 @@ export function checkGroups(
         // it cannot be evaluated for a material this corpus cannot classify.
         const blocking = vehicle.filter((e) => isProvablySubstance(e) || !isProvablyArticle(e));
         if (blocking.length > 0) {
-          const why = isProvablySubstance(blocking[0]!)
-            ? `${blocking[0]!.name} is an explosive substance`
-            : `${blocking[0]!.name} cannot be shown to be an explosive ARTICLE from the 172.101 table, which carries no article-or-substance column, so the proviso cannot be evaluated for it and is therefore not satisfied`;
+          const bad = blocking[0]!;
+          const def = formOf(bad);
+          const why = isProvablySubstance(bad)
+            ? `${bad.name} is an explosive substance` +
+              (def?.form === "substance"
+                ? `, because 49 CFR 173.52(b) defines its compatibility group as "${definitionText(def.citation)}"`
+                : "")
+            : `${bad.name} cannot be shown to be an explosive ARTICLE. The 172.101 table carries no ` +
+              `article-or-substance column, and ` +
+              (def
+                ? `49 CFR 173.52(b) defines its compatibility group as "${definitionText(def.citation)}", which admits either. `
+                : `its compatibility group could not be read from the hazard class ${JSON.stringify(bad.hazardClass)}. `) +
+              `So the proviso cannot be evaluated for it and is therefore not satisfied`;
           return {
             ok: false, a, b, code, citation: cite("g6-group-G"),
             reason: `footnote 6 permits compatibility group G articles with groups C, D and E only where explosive substances are not carried in the same transport vehicle, and ${why}.`,

@@ -158,4 +158,84 @@ export const CLAUSES: ClauseSpec[] = [
     from: "Regardless of the provisions of § 172.101(c)(12)",
     to: "required by this part for subsidiary hazards.",
   },
+
+  // ── 173.52(b) table 1, what each compatibility group IS ────────────────────
+  //
+  // 172.101 has no article-or-substance column, and 177.848(g)(vi) grants its
+  // permission to explosive ARTICLES in group G provided no explosive
+  // SUBSTANCES ride in the same vehicle. Without a source for that distinction
+  // the only signal was whether a proper shipping name happened to begin with
+  // the word "Article", so "Cartridges for weapons, with bursting charge"
+  // blocked a load it is entitled to join, on its spelling.
+  //
+  // 173.52(b) table 1 settles it for most groups by definition: B, E, F, H, J,
+  // K and N are defined as articles and A as a substance. C, D, G, L and S are
+  // defined as either, and there the corpus still cannot tell, which the
+  // refusal now says in those words rather than implying the material is
+  // suspect.
+  {
+    id: "17352-group-A", section: "49 CFR 173.52(b), table 1, compatibility group A", slug: "173-52-compatibility-groups",
+    from: "Primary explosive substance",
+    to: "1.1A",
+  },
+  {
+    id: "17352-group-B", section: "49 CFR 173.52(b), table 1, compatibility group B", slug: "173-52-compatibility-groups",
+    from: "Article containing a primary explosive substance and not containing",
+    to: "1.4B",
+  },
+  {
+    id: "17352-group-C", section: "49 CFR 173.52(b), table 1, compatibility group C", slug: "173-52-compatibility-groups",
+    from: "Propellant explosive substance",
+    to: "1.4C",
+  },
+  {
+    id: "17352-group-D", section: "49 CFR 173.52(b), table 1, compatibility group D", slug: "173-52-compatibility-groups",
+    from: "Secondary detonating explosive substance or black powder",
+    to: "1.5D",
+  },
+  {
+    id: "17352-group-E", section: "49 CFR 173.52(b), table 1, compatibility group E", slug: "173-52-compatibility-groups",
+    from: "Article containing a secondary detonating explosive substance, without means of initiation, with a propelling charge",
+    to: "1.4E",
+  },
+  {
+    id: "17352-group-F", section: "49 CFR 173.52(b), table 1, compatibility group F", slug: "173-52-compatibility-groups",
+    from: "Article containing a secondary detonating explosive substance with its means of initiation",
+    to: "1.4F",
+  },
+  {
+    id: "17352-group-G", section: "49 CFR 173.52(b), table 1, compatibility group G", slug: "173-52-compatibility-groups",
+    from: "Pyrotechnic substance",
+    to: "1.4G",
+  },
+  {
+    id: "17352-group-H", section: "49 CFR 173.52(b), table 1, compatibility group H", slug: "173-52-compatibility-groups",
+    from: "Article containing both an explosive substance and white phosphorus",
+    to: "1.3H",
+  },
+  {
+    id: "17352-group-J", section: "49 CFR 173.52(b), table 1, compatibility group J", slug: "173-52-compatibility-groups",
+    from: "Article containing both an explosive substance and flammable liquid or gel",
+    to: "1.3J",
+  },
+  {
+    id: "17352-group-K", section: "49 CFR 173.52(b), table 1, compatibility group K", slug: "173-52-compatibility-groups",
+    from: "Article containing both an explosive substance and a toxic chemical agent",
+    to: "1.3K",
+  },
+  {
+    id: "17352-group-L", section: "49 CFR 173.52(b), table 1, compatibility group L", slug: "173-52-compatibility-groups",
+    from: "Explosive substance or article containing an explosive substance and presenting a special risk",
+    to: "1.3L",
+  },
+  {
+    id: "17352-group-N", section: "49 CFR 173.52(b), table 1, compatibility group N", slug: "173-52-compatibility-groups",
+    from: "Articles predominantly containing extremely insensitive substances",
+    to: "1.6N",
+  },
+  {
+    id: "17352-group-S", section: "49 CFR 173.52(b), table 1, compatibility group S", slug: "173-52-compatibility-groups",
+    from: "Substance or article so packed or designed",
+    to: "1.4S",
+  },
 ];

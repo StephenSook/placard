@@ -58,6 +58,7 @@ const clauses = JSON.parse(readFileSync(join(DATA, "clauses.json"), "utf8")) as 
 const SLUG_FOR = (section: string): string =>
   section.includes("177.848") ? "177-848-segregation"
   : section.includes("173.21") ? "173-21-forbidden"
+  : section.includes("173.52") ? "173-52-compatibility-groups"
   : section.includes("172.102") ? "172-102-special-provisions"
   : section.includes("172.101") ? "172-101-hmt"
   : "";

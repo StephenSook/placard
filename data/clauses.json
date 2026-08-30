@@ -1,6 +1,6 @@
 {
   "source": "verbatim slices of the pinned eCFR sections",
-  "count": 24,
+  "count": 37,
   "clauses": {
     "e1-blank": {
       "section": "49 CFR 177.848(e)(1)",
@@ -97,6 +97,58 @@
     "sp128-reclass": {
       "section": "49 CFR 172.102, special provision 128",
       "text": "Regardless of the provisions of § 172.101(c)(12), aluminum smelting by-products and aluminum remelting by-products described under this entry, meeting the definition of Class 8, Packing Group II and III may be classed as a Division 4.3 material and transported under this entry. The presence of a Class 8 hazard must be communicated as required by this part for subsidiary hazards."
+    },
+    "17352-group-A": {
+      "section": "49 CFR 173.52(b), table 1, compatibility group A",
+      "text": "Primary explosive substance A 1.1A"
+    },
+    "17352-group-B": {
+      "section": "49 CFR 173.52(b), table 1, compatibility group B",
+      "text": "Article containing a primary explosive substance and not containing two or more effective protective features. Some articles, such as detonators for blasting, detonator assemblies for blasting and primers, cap-type, are included, even though they do not contain primary explosives. B 1.1B 1.2B 1.4B"
+    },
+    "17352-group-C": {
+      "section": "49 CFR 173.52(b), table 1, compatibility group C",
+      "text": "Propellant explosive substance or other deflagrating explosive substance or article containing such explosive substance C 1.1C 1.2C 1.3C 1.4C"
+    },
+    "17352-group-D": {
+      "section": "49 CFR 173.52(b), table 1, compatibility group D",
+      "text": "Secondary detonating explosive substance or black powder or article containing a secondary detonating explosive substance, in each case without means of initiation and without a propelling charge, or article containing a primary explosive substance and containing two or more effective protective features D 1.1D 1.2D 1.4D 1.5D"
+    },
+    "17352-group-E": {
+      "section": "49 CFR 173.52(b), table 1, compatibility group E",
+      "text": "Article containing a secondary detonating explosive substance, without means of initiation, with a propelling charge (other than one containing flammable liquid or gel or hypergolic liquid) E 1.1E 1.2E 1.4E"
+    },
+    "17352-group-F": {
+      "section": "49 CFR 173.52(b), table 1, compatibility group F",
+      "text": "Article containing a secondary detonating explosive substance with its means of initiation, with a propelling charge (other than one containing flammable liquid or gel or hypergolic liquid) or without a propelling charge F 1.1F 1.2F 1.3F 1.4F"
+    },
+    "17352-group-G": {
+      "section": "49 CFR 173.52(b), table 1, compatibility group G",
+      "text": "Pyrotechnic substance or article containing a pyrotechnic substance, or article containing both an explosive substance and an illuminating, incendiary, tear-producing or smoke-producing substance (other than a water-activated article or one containing white phosphorus, phosphide or flammable liquid or gel or hypergolic liquid) G 1.1G 1.2G 1.3G 1.4G"
+    },
+    "17352-group-H": {
+      "section": "49 CFR 173.52(b), table 1, compatibility group H",
+      "text": "Article containing both an explosive substance and white phosphorus H 1.2H 1.3H"
+    },
+    "17352-group-J": {
+      "section": "49 CFR 173.52(b), table 1, compatibility group J",
+      "text": "Article containing both an explosive substance and flammable liquid or gel J 1.1J 1.2J 1.3J"
+    },
+    "17352-group-K": {
+      "section": "49 CFR 173.52(b), table 1, compatibility group K",
+      "text": "Article containing both an explosive substance and a toxic chemical agent K 1.2K 1.3K"
+    },
+    "17352-group-L": {
+      "section": "49 CFR 173.52(b), table 1, compatibility group L",
+      "text": "Explosive substance or article containing an explosive substance and presenting a special risk (e.g., due to water-activation or presence of hybergolic liquids, phosphides or pyrophoric substances) needing isolation of each type L 1.1L 1.2L 1.3L"
+    },
+    "17352-group-N": {
+      "section": "49 CFR 173.52(b), table 1, compatibility group N",
+      "text": "Articles predominantly containing extremely insensitive substances N 1.6N"
+    },
+    "17352-group-S": {
+      "section": "49 CFR 173.52(b), table 1, compatibility group S",
+      "text": "Substance or article so packed or designed that any hazardous effects arising from accidental functioning are limited to the extent that they do not significantly hinder or prohibit fire fighting or other emergency response efforts in the immediate vicinity of the package S 1.4S"
     }
   }
 }
