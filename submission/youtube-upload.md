@@ -8,13 +8,23 @@ the account is yours.
 
 | What | Path |
 |---|---|
-| Video, 4K master | `video/film/out/placard-4k.mp4` |
+| Video, 4K master (UPLOAD THIS) | `video/film/out/placard-4k-final.mp4` |
 | Video, 1080p verified master | `video/film/out/placard-final-1080.mp4` |
 | Subtitles, English | `video/film/out/placard.srt` |
 | Custom thumbnail | `video/film/out/thumbnail-candidate.jpg` |
 
-Upload the 4K master. YouTube re-encodes either one, and the 4K source gives it
-a better ladder to encode from. Attach the SRT under Subtitles, English, and set
+Upload the 4K master. This is not vanity: YouTube assigns codec by upload
+resolution, so a 1080p upload is served as H.264 at roughly an 8 Mbps ceiling
+while a 1440p-or-above upload is served as VP9, and **the 1080p rendition
+YouTube generates from a 4K upload is better than the one it would generate from
+a 1080p upload**. Viewers watching at 1080p benefit. H.264 at that ceiling smears
+small high-contrast text worst, which is most of what this film shows.
+
+Verified by hand, because `verify_final.sh` hard-codes the 1080 gate and would
+fail a 4K file on resolution alone: 3840x2160, h264, 30 fps, 165.2s, 56.6 MB,
+faststart, integrated loudness **-15.1 LUFS**. The audio stream's MD5 is
+**identical** to the verified 1080 master, which proves the mux carried the
+already-verified track rather than re-encoding it. Attach the SRT under Subtitles, English, and set
 the custom thumbnail.
 
 ## Settings
