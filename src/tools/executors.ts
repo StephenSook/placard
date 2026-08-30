@@ -332,11 +332,23 @@ function coerceRef(x: unknown): WireRef | null {
     if (!(REF_KEYS as readonly string[]).includes(k)) return null;
   }
   const out: Record<string, string> = {};
+  // A SUPPLIED FIELD IS NEVER SILENTLY DROPPED, and this loop dropped two kinds.
+  //
+  // Round ten refused unsupported property NAMES so a caller could not hold an
+  // approval token for bytes it had not sent. This loop then did exactly that
+  // to supported names carrying unusable VALUES: `null` and `""` were skipped,
+  // so { id: "UN1090", name: "" } canonicalised to a bare UN1090 and shared its
+  // approval token. Reproduced: that payload returned PASS, and the token
+  // committed a DIFFERENT payload. The schema permitted it too, because id and
+  // name carried maxLength and no minLength; both now require minLength 1.
+  //
+  // Absent stays absent, because JSON has no undefined and internal callers
+  // spread optional fields. Present-but-unusable is refused.
   for (const k of REF_KEYS) {
     const v = raw[k];
-    if (v === undefined || v === null) continue;
-    if (typeof v !== "string") return null;
-    if (v.trim() !== "") out[k] = v.trim();
+    if (v === undefined) continue;
+    if (typeof v !== "string" || v.trim() === "") return null;
+    out[k] = v.trim();
   }
   if (!out.id && !out.name) return null;
   return out as WireRef;

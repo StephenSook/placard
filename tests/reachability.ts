@@ -46,14 +46,65 @@ function declaredName(n: ts.Node): string | null {
 }
 
 /**
- * How often each identifier is USED, which is not how often it appears.
- * A declaration's own name is not a use, and neither is naming it in an import
- * or export list: `export { foo } from "./x"` re-exports foo without reaching it.
+ * THE CALL GRAPH, AND WHY A REFERENCE COUNT WAS NOT ONE.
+ *
+ * Counting how often a name appears outside its own declaration is not
+ * reachability, and round eleven showed both directions of the error:
+ *
+ *   function dead()   { return helper(); }
+ *   function helper() { return cite("e2-X"); }
+ *
+ * counted `helper` as used, so a citation inside a chain nothing calls read as
+ * reachable. A self-recursive dead function did the same, referencing itself.
+ * And in the other direction, `import { original as alias }` then `alias()`
+ * left `original` with no references at all, so a LIVE citation read as dead
+ * and would have failed the build for the wrong reason.
+ *
+ * So this builds edges instead. A reference recorded inside a named
+ * declaration is an edge from that declaration to the name; a reference
+ * recorded outside every named declaration is a ROOT, because module-level code
+ * runs when the module is imported. Reachable is the closure of the roots.
+ *
+ * WHAT THIS STILL DOES NOT DO, stated rather than implied: it matches on
+ * identifier TEXT, not resolved symbols, so two modules that both declare a
+ * private helper of the same name share a node, which can only ever make the
+ * analysis more permissive. A symbol-resolved graph from the TypeScript
+ * TypeChecker would remove that. The gate is a backstop for a clause quoted and
+ * never applied, and it fails the build when a clause is unaccounted, so a
+ * false DEAD would be loud and a false LIVE is the residual risk.
  */
-function referenceCounts(universe: Source[]): Map<string, number> {
-  const refs = new Map<string, number>();
+type Graph = {
+  /** Names referenced from module level, which runs on import. */
+  roots: Set<string>;
+  /** Declared name to the names its body references. */
+  edges: Map<string, Set<string>>;
+};
+
+/** `import { original as alias }` means a use of alias is a use of original. */
+function aliasMap(sf: ts.SourceFile): Map<string, string> {
+  const m = new Map<string, string>();
+  const walk = (n: ts.Node): void => {
+    if (ts.isImportSpecifier(n) && n.propertyName) m.set(n.name.text, n.propertyName.text);
+    ts.forEachChild(n, walk);
+  };
+  walk(sf);
+  return m;
+}
+
+function buildGraph(universe: Source[]): Graph {
+  const roots = new Set<string>();
+  const edges = new Map<string, Set<string>>();
+  const edge = (from: string, to: string) => {
+    let set = edges.get(from);
+    if (!set) edges.set(from, (set = new Set()));
+    set.add(to);
+  };
   for (const src of universe) {
-    const walk = (n: ts.Node): void => {
+    const sf = parse(src);
+    const alias = aliasMap(sf);
+    const walk = (n: ts.Node, stack: readonly string[]): void => {
+      const name = declaredName(n);
+      const next = name ? [...stack, name] : stack;
       if (ts.isIdentifier(n)) {
         const p = n.parent as ts.Node | undefined;
         const isOwnName = !!p && declaredName(p) === n.text && (p as { name?: ts.Node }).name === n;
@@ -61,13 +112,32 @@ function referenceCounts(universe: Source[]): Map<string, number> {
           !!p &&
           (ts.isImportSpecifier(p) || ts.isExportSpecifier(p) ||
             ts.isImportClause(p) || ts.isNamespaceImport(p) || ts.isNamespaceExport(p));
-        if (!isOwnName && !isSpecifier) refs.set(n.text, (refs.get(n.text) ?? 0) + 1);
+        if (!isOwnName && !isSpecifier) {
+          for (const t of new Set([n.text, alias.get(n.text) ?? n.text])) {
+            const inside = stack[stack.length - 1];
+            if (inside === undefined) roots.add(t);
+            else edge(inside, t);
+          }
+        }
       }
-      ts.forEachChild(n, walk);
+      ts.forEachChild(n, (c) => walk(c, next));
     };
-    walk(parse(src));
+    walk(sf, []);
   }
-  return refs;
+  return { roots, edges };
+}
+
+/** Everything the module-level code can eventually reach. */
+function closure(g: Graph): Set<string> {
+  const seen = new Set<string>();
+  const stack = [...g.roots];
+  while (stack.length > 0) {
+    const name = stack.pop()!;
+    if (seen.has(name)) continue;
+    seen.add(name);
+    for (const next of g.edges.get(name) ?? []) if (!seen.has(next)) stack.push(next);
+  }
+  return seen;
 }
 
 /**
@@ -78,7 +148,7 @@ function referenceCounts(universe: Source[]): Map<string, number> {
  * only from the UI would look dead.
  */
 export function reachableCitedIds(scanned: Source[], universe: Source[]): Set<string> {
-  const refs = referenceCounts(universe);
+  const live = closure(buildGraph(universe));
   const out = new Set<string>();
   for (const src of scanned) {
     const walk = (n: ts.Node, enclosing: readonly string[]): void => {
@@ -92,9 +162,7 @@ export function reachableCitedIds(scanned: Source[], universe: Source[]): Set<st
       ) {
         const arg = n.arguments[0]!;
         // Every enclosing name must be reached, not merely the innermost one.
-        if (ts.isStringLiteral(arg) && next.every((nm) => (refs.get(nm) ?? 0) > 0)) {
-          out.add(arg.text);
-        }
+        if (ts.isStringLiteral(arg) && next.every((nm) => live.has(nm))) out.add(arg.text);
       }
       ts.forEachChild(n, (c) => walk(c, next));
     };

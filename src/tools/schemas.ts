@@ -64,8 +64,8 @@ const MATERIAL_REF = {
       additionalProperties: false,
       minProperties: 1,
       properties: {
-        id: { type: "string", maxLength: 20, description: "Identification number, for example UN1744." },
-        name: { type: "string", maxLength: 200, description: "Proper shipping name exactly as the 172.101 table prints it." },
+        id: { type: "string", minLength: 1, maxLength: 20, description: "Identification number, for example UN1744." },
+        name: { type: "string", minLength: 1, maxLength: 200, description: "Proper shipping name exactly as the 172.101 table prints it." },
         packingGroup: { type: "string", enum: ["I", "II", "III"], description: "Only needed when the number alone names more than one material." },
         pihZone: {
           type: "string",

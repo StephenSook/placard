@@ -1132,9 +1132,16 @@ describe("33. the clause gate inferred reachability from text, and text cannot s
     // The positive control. Without this the test below passes on a filter
     // that simply returns nothing, which is the vacuous-gate failure this
     // whole family of guards exists to prevent.
+    //
+    // The trailing `caller();` is load-bearing and this test failed without it
+    // when the filter became a real call graph in round eleven. Under the old
+    // reference COUNT, `live` looked used because `caller` mentioned it; under
+    // a graph, nothing calls `caller`, so both are dead and the old version of
+    // this control was asserting the very hole round eleven reported.
     expect(one(`
       export function live() { return cite("e2-X"); }
       export function caller() { return live(); }
+      caller();
     `).has("e2-X")).toBe(true);
   });
 
@@ -1177,5 +1184,99 @@ describe("33. the clause gate inferred reachability from text, and text cannot s
         return inner();
       }
     `).has("e2-X")).toBe(false);
+  });
+});
+
+// ── round eleven ─────────────────────────────────────────────────────────────
+
+describe("34. a supplied field with an unusable value was still being dropped", () => {
+  const N34 = "round-eleven";
+
+  it("refuses an empty-string identity field instead of ignoring it", async () => {
+    // REPRODUCED BEFORE THE FIX. Round ten refused unsupported property NAMES
+    // so a token could not cover bytes the caller had not sent. coerceRef then
+    // did exactly that to supported names with unusable VALUES: "" and null
+    // were skipped, so { id: "UN1090", name: "" } canonicalised to a bare
+    // UN1090. It returned PASS, and the token committed a DIFFERENT payload.
+    const r = await checkSegregation(
+      { vehicles: [{ items: [{ id: "UN1090", name: "" }] }] } as never, N34, [{}],
+    );
+    expect(r.status).toBe("REFUSED");
+  });
+
+  it("refuses a null identity field", async () => {
+    const r = await checkSegregation(
+      { vehicles: [{ items: [{ id: "UN1090", name: null }] }] } as never, N34, [{}],
+    );
+    expect(r.status).toBe("REFUSED");
+  });
+
+  it("no longer lets two different payloads share one approval token", async () => {
+    // The exact-bytes claim is the whole security argument, so this asserts it
+    // end to end rather than asserting the coercer in isolation.
+    const withEmpty = await checkSegregation(
+      { vehicles: [{ items: [{ id: "UN1090", name: "" }] }] } as never, N34, [{}],
+    );
+    expect(withEmpty.status).toBe("REFUSED");
+    expect(withEmpty).not.toHaveProperty("approvalToken");
+  });
+
+  it("closes the schema hole that permitted it", () => {
+    // id and name carried maxLength and no minLength, so "" was schema-valid
+    // and the published contract disagreed with the running code.
+    const src = readFileSync(join(process.cwd(), "src/tools/schemas.ts"), "utf8");
+    expect(src).toContain('id: { type: "string", minLength: 1');
+    expect(src).toContain('name: { type: "string", minLength: 1');
+  });
+
+  it("still accepts every identity field that is actually usable", async () => {
+    // The negative half: refusing empty values must not refuse real ones.
+    const r = await checkSegregation(
+      { vehicles: [{ items: [{ id: "UN1744", name: "Bromine", packingGroup: "I", pihZone: "A" }] }] },
+      N34, [{}],
+    );
+    expect(r.status).not.toBe("REFUSED");
+  });
+});
+
+describe("35. counting references is not a call graph", () => {
+  const cited = (files: Source[]) => reachableCitedIds(files, files);
+  const one = (text: string) => cited([{ path: "src/solver/x.ts", text }]);
+
+  it("does not count a citation inside a chain nothing calls", () => {
+    // `helper` is referenced, so a reference COUNT called it live. Nothing
+    // calls `dead`, so nothing reaches either of them.
+    expect(one(`
+      function dead() { return helper(); }
+      function helper() { return cite("e2-X"); }
+    `).has("e2-X")).toBe(false);
+  });
+
+  it("does not let a function reach itself by recursing", () => {
+    expect(one(`
+      function dead(n) { if (n) return dead(n - 1); return cite("e2-X"); }
+    `).has("e2-X")).toBe(false);
+  });
+
+  it("follows an aliased import, so a live citation is not reported dead", () => {
+    // The other direction, and the more dangerous one here: a false DEAD fails
+    // the build for the wrong reason and invites weakening the gate to get
+    // green again.
+    const files: Source[] = [
+      { path: "src/solver/x.ts", text: `export function original() { return cite("e2-X"); }` },
+      {
+        path: "src/ui/y.ts",
+        text: `import { original as alias } from "./x.ts";\nfunction ui() { return alias(); }\nui();`,
+      },
+    ];
+    expect(reachableCitedIds([files[0]!], files).has("e2-X")).toBe(true);
+  });
+
+  it("reaches through module-level code, which is what runs on import", () => {
+    expect(one(`
+      function a() { return b(); }
+      function b() { return cite("e2-X"); }
+      a();
+    `).has("e2-X")).toBe(true);
   });
 });
