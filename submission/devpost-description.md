@@ -93,10 +93,12 @@ When it refuses, it names the two specific items and the specific ground. Not
 sentence from 177.848(e)(3) that blocks Class 8 liquids above or adjacent to
 Class 4 and 5 materials notwithstanding the methods of separation employed.
 
-A load plan whose two checkboxes are worded as assertions about the physical
+A load plan whose three checkboxes are worded as assertions about the physical
 world rather than as preferences, because that is what they are. Barriers means
 impediments, dividers or non-hazardous packages, and PHMSA interpretation
-03-0300 is explicit that air space alone does not satisfy it.
+03-0300 is explicit that air space alone does not satisfy it. Those checkboxes
+are the ONLY route by which an assertion reaches the solver. No tool argument
+and no URL parameter can make one.
 
 A shipping paper in the 172.202(a) basic description sequence, with the 172.204
 certification printed on screen rather than buried, because signing it is a
