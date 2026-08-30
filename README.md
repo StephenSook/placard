@@ -61,9 +61,9 @@ claim here is checkable from a URL:
 Over every ordered pair of the 18 hazard categories the segregation table
 indexes, in each barrier and truckload-carve-out configuration, **1,296
 configurations** were examined. The table alone clears **792** of them. Of those,
-the full regulation forbids **24**, on two grounds the table does not express:
-the 177.848(e)(3) corrosive-over-oxidizer block and 177.848 explosive
-compatibility.
+the full regulation forbids **56**, on two grounds the table does not express:
+177.848 explosive compatibility (48) and the 177.848(e)(3) corrosive-over-oxidizer
+block (8).
 
 That is a measurement of **the size of the gap an agent reasons across** when it
 treats the table as the whole rule. It is **not** a benchmark of any model's

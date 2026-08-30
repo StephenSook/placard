@@ -13,7 +13,7 @@ edited and its spoken numbers are claims like any other.
 | 3,293 entries | Entries after resolving packing-group continuations |
 | 256 Forbidden, none with a number | Entries designated Forbidden / Of those, how many carry a UN number |
 | 18 by 18, 324 cells | The segregation matrix |
-| 1,296 / 792 / 24 | The measured divergence |
+| 1,296 / 792 / 56 | The measured divergence |
 | UN1830 class 8, UN1748 class 5.1 | The demo manifest, resolved from the corpus |
 
 ---
@@ -46,7 +46,7 @@ everything on one truck, and calls `check_segregation`. The Verdict Card stamps
 > So how big is the gap? Across every ordered pair of the eighteen hazard
 > categories, in every barrier configuration, one thousand two hundred and
 > ninety six cases. The table alone clears seven hundred and ninety two of them.
-> Of those, the full regulation forbids twenty four. That endpoint recomputes it
+> Of those, the full regulation forbids fifty six. That endpoint recomputes it
 > on every request. No key, no account.
 
 ## 1:05 – 1:50  The loop, and the tool that does not exist

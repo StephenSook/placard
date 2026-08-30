@@ -15,7 +15,7 @@ number, and put the restraint in the second clause rather than the first.
 **A.**
 > Paste a chemical manifest and watch an agent load a truck legally. The page
 > shows which federal rule each pair breaks, quoted verbatim, and the export tool
-> does not exist until the load passes. 24 of 792 table-cleared loads are illegal.
+> does not exist until the load passes. 56 of 792 table-cleared loads are illegal.
 
 **B.**
 > Watch an agent try to load a hazmat truck and get refused by the regulation
@@ -25,7 +25,7 @@ number, and put the restraint in the second clause rather than the first.
 **C.**
 > An agent proposes a hazmat truck load, the page shows exactly which line of
 > 49 CFR each pair breaks, and the shipping paper cannot be exported until it
-> passes. 24 of the 792 loads the segregation table clears are actually illegal.
+> passes. 56 of the 792 loads the segregation table clears are actually illegal.
 
 ---
 

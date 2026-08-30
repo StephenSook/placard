@@ -548,7 +548,7 @@ describe("published figures must match the fact sheet", () => {
     // phrase. So: any line that mentions the cleared count must not carry a
     // divergence figure other than the current one, in digits or in words.
     const WORDS: Record<number, string> = {
-      24: "twenty four", 32: "thirty two", 16: "sixteen", 8: "eight",
+      24: "twenty four", 32: "thirty two", 56: "fifty six", 16: "sixteen", 8: "eight",
     };
     let lineChecks = 0;
     for (const f of surfaces) {

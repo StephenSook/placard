@@ -16,7 +16,7 @@ The page opens on a number it recomputes while you are looking at it:
 
 **Across every ordered pair of the 18 hazard categories in the federal
 segregation table, in every barrier configuration, 1,296 cases. The table alone
-clears 792 of them. Of those, the full regulation forbids 24.**
+clears 792 of them. Of those, the full regulation forbids 56.**
 
 `/api/measure` runs the real solver on every request and returns all of it,
 including the examples, so you can check the arithmetic rather than take my word
