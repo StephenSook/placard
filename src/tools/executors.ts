@@ -385,23 +385,46 @@ const ATTESTATION_REFUSAL =
 export type PageLoad = { items: string[] }[];
 
 /**
- * Compare two vehicles' contents the way the operator sees them: as a set of
- * references, order-insensitive, case and whitespace normalised.
+ * The canonical identity of one reference: the 172.101 row it resolves to.
  *
- * IDENTIFICATION NUMBERS NORMALISE DIFFERENTLY FROM NAMES, and collapsing both
- * to single spaces revoked a valid attestation. 49 CFR prints "UN 1090" with a
- * space and the resolver deliberately accepts both spellings, so an agent
- * echoing the printed form back sent references that resolve to exactly the
- * operator's materials, failed this comparison, lost the barrier it was
- * entitled to, and got SEPARATION_REQUIRED for a load the operator had
- * attested. Two spellings of one number reaching two answers is the defect
+ * Returns null when the reference does not resolve to exactly one material,
+ * which is deliberate. An unresolvable reference falls back to string equality
+ * below, and string equality is the STRICTER of the two, so a reference this
+ * cannot pin down can never gain an attestation it should not have.
+ */
+const canonicalRef = (ref: string): string | null => {
+  const t = ref.trim();
+  const r = resolveItem(looksLikeId(t) ? { id: t.replace(/\s/g, "").toUpperCase() } : { name: t });
+  if ("error" in r) return null;
+  return `${r.item.id ?? ""}|${r.name.toLowerCase()}|${r.hazardClass}|${r.packingGroup ?? ""}`;
+};
+
+/**
+ * Compare two vehicles' contents the way the operator sees them: as a MULTISET
+ * of materials, order-insensitive, duplicates preserved.
+ *
+ * REFERENCES ARE NOT IDENTITIES, and comparing the strings revoked attestations
+ * an operator had genuinely made. The page holds UN1090 and UN1479; an agent
+ * writes "Acetone" and UN1479, which is the same truck described the other way
+ * the resolver explicitly supports, and the barrier was dropped and PASS became
+ * REFUSED. The same happened for "UN 1090", which is how 49 CFR itself prints
+ * the number. Two spellings of one material reaching two answers is the defect
  * class this project exists to expose, and it was in the binding check.
  *
- * An identification number therefore loses ALL its whitespace and upper-cases,
- * exactly as `toLoad` and `resolveItem` do. A proper shipping name keeps word
- * boundaries, because there the spaces carry meaning.
+ * So both sides resolve to the 172.101 row first. Where every reference on both
+ * sides resolves, the comparison is between MATERIALS. Where any does not, it
+ * falls back to normalised strings, which is stricter: a reference nothing can
+ * resolve never inherits an attestation on a resemblance.
  */
 const sameItems = (a: string[], b: string[]): boolean => {
+  if (a.length !== b.length) return false;
+
+  const ids = [a.map(canonicalRef), b.map(canonicalRef)];
+  if (ids[0]!.every((x) => x !== null) && ids[1]!.every((x) => x !== null)) {
+    const [x, y] = [[...ids[0]!].sort(), [...ids[1]!].sort()];
+    return x.every((v, i) => v === y[i]);
+  }
+
   const norm = (xs: string[]) =>
     xs
       .map((x) => {
@@ -410,7 +433,7 @@ const sameItems = (a: string[], b: string[]): boolean => {
       })
       .sort();
   const [x, y] = [norm(a), norm(b)];
-  return x.length === y.length && x.every((v, i) => v === y[i]);
+  return x.every((v, i) => v === y[i]);
 };
 
 /**
@@ -557,6 +580,30 @@ export async function commitManifest(
 }
 
 /** The deliverable: a shipping-paper description per 49 CFR 172 subpart C. */
+/**
+ * The certification the signer is taking on, QUOTED rather than paraphrased.
+ *
+ * The paper used to carry a sentence I wrote that read like the regulation and
+ * was not it, next to a claim that the signer "becomes a hazmat employee under
+ * 49 CFR 172 subpart H". Subpart H is the TRAINING subpart and the definition
+ * of a hazmat employee is in 171.8, so that sentence cited the wrong place for
+ * a claim the corpus could not check, on the one document this tool produces.
+ * The paper now prints 172.204(a)(1) verbatim from the pinned corpus and says
+ * only what 172.204(a) itself says about who is certifying.
+ */
+export const shipperCertification = () => ({
+  heading: "Shipper certification, 49 CFR 172.204",
+  quote: cite("172204-a1-certification"),
+  obligation: cite("172204-a-general"),
+  /** Not part of the regulation. Ours, and marked as ours. */
+  disclaimer:
+    "This page does not sign anything, and nothing here is legal advice. " +
+    "The certification is made by the person who signs, not by this software.",
+});
+
+/** The rule that fixes the column order of every line on the paper. */
+export const descriptionSequence = () => cite("172202-a-sequence");
+
 export function buildShippingPaper(load: LoadProposal) {
   return load.vehicles.map((v, i) => ({
     vehicle: i + 1,
@@ -570,8 +617,11 @@ export function buildShippingPaper(load: LoadProposal) {
     lines: v.items.map((item) => {
       const r = resolveItem(item);
       if ("error" in r) return { error: r.error };
-      // Basic description sequence per 172.202(a): identification number,
-      // proper shipping name, hazard class, packing group.
+      // Basic description sequence in the order 172.202(a) requires it:
+      // identification number, proper shipping name, hazard class, packing
+      // group. The clause travels with the document rather than sitting in a
+      // comment, because a comment is not a citation and this repo has already
+      // been caught reading one as if it were.
       return {
         identificationNumber: r.item.id,
         properShippingName: r.name,

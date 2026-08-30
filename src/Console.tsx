@@ -304,18 +304,30 @@ export function Console() {
         setBusy(false);
         return;
       }
+      // A SPLIT CLEARS EVERY PHYSICAL ATTESTATION, not just the reaction one.
+      //
+      // proposeLoad stopped taking attestations because an arrangement that
+      // does not exist yet cannot have been walked out to and looked at. This
+      // caller then undid that: it copied bay 1's barrier and single-shipper
+      // ticks onto every vehicle the proposal returned. Reproduced with UN1090
+      // and UN1479 in an attested bay: the split produced two vehicles, both
+      // arrived marked attested, and the exported paper said "barriers
+      // asserted" for two trucks nobody had inspected. The reaction assertion
+      // was already handled here, with a comment giving exactly the reason that
+      // applies to all three.
       setBays(
         r.vehicles.map((_v, vi) => ({
           items: bayItems[vi]!,
-          barriersPresent: bays[0]?.barriersPresent ?? false,
-          singleShipper: bays[0]?.singleShipper ?? false,
-          // Never inherited. Splitting a load changes which materials sit
-          // together, so a non-reaction assertion made about the old
-          // arrangement says nothing about the new one and must be re-made.
+          barriersPresent: false,
+          singleShipper: false,
           nonReactionAsserted: false,
         }))
       );
-      setAnnounce(`A legal split was found across ${r.vehiclesUsed} vehicles.`);
+      setAnnounce(
+        `A legal split was found across ${r.vehiclesUsed} vehicles. ` +
+          `Barrier, single-shipper and non-reaction assertions were cleared, because they were ` +
+          `made about the previous arrangement. Re-tick anything that is true of the new one.`
+      );
     } else if (r.status === "IMPOSSIBLE") {
       setAnnounce(`No arrangement exists. ${r.reason}`);
     }
