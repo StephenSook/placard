@@ -389,8 +389,7 @@ written down rather than left for you to discover:
 It scored 2 of 6 the first time I actually ran it, on the single-file version of
 these evals. Running a command you publish is not optional.
 
-
-14 test files, 336 tests. Lighthouse on the live origin, desktop: **agentic
+14 test files, 351 tests. Lighthouse on the live origin, desktop: **agentic
 browsing 100, accessibility 100, best practices 100, SEO 100, performance 100.**
 Agentic browsing at 100 is itself the proof the origin trial is live, because
 those audits report nothing at all rather than failing when the token is
@@ -484,7 +483,7 @@ asserts the specific block, and is caught three separate ways.
 
 Stopping after one round would have shipped everything below. The rule I now
 follow is that the exit condition is a clean round, not a declared finish,
-because each fix is itself a fresh diff nobody has reviewed. Ten rounds in,
+because each fix is itself a fresh diff nobody has reviewed. Twelve rounds in,
 no round has yet come back empty, and every single one has found something
 real. I would rather write that down than round it to a finish.
 
@@ -536,91 +535,10 @@ index that silently returns the wrong entry is worse than one that returns
 nothing. That is the thesis of this project, and the page was doing it to its own
 operator.
 
-**Round eight found the boundary was not binding the identity.** The approval
-token's canonical encoding left out packing group and inhalation hazard zone, so
-UN1744 "Bromine solutions" PG I Zone A and the same material at Zone B serialised
-to identical bytes and a token issued for one verified against the other. Those
-are two different loads. 6.1 PG I Zone A has its own row in the 177.848(d) table
-and Zone B does not.
-
-The same round found the wire could not say the thing the refusal asked for. The
-resolver refuses an ambiguous reference and names the field that would settle it,
-and the wire took strings only. A refusal whose remedy nobody can send is a dead
-end dressed as guidance. It also found that removing a vehicle shifted every
-later bay left, so a truck whose contents had not changed was compared against
-the empty bay that used to sit at its index and lost a barrier the operator had
-genuinely asserted.
-
-**Round nine ran on a different model family, over the whole repository instead
-of a diff.** That is why it found what eight diff-scoped rounds had not. It
-reported four things and two reproduced, and the two that did not include the one
-it ranked most severe, which is the whole argument for reproducing a finding
-before touching anything.
-
-The real ones. 177.848(e)(3) reaches Class 8 LIQUIDS, and my predicate asked for
-"not solid", which also catches gases: UN1048 hydrogen bromide is Division 2.3
-with a subsidiary Class 8 and was being hard-blocked by a clause that does not
-reach it. Separately, PROPOSE_LOAD_SCHEMA advertised a structured item form that
-its own executor threw out as malformed.
-
-That round also confirmed a lead from a review that DIED mid-turn, which is worth
-saying because a failed round is no verdict rather than a pass. Physical state had
-become an agent-settable field when I added structured references, and 177.848(d)
-covers Class 8 liquids only. So an agent re-sent the operator's own load with the
-sulfuric acid declared SOLID, walked this project's headline pair out of the row
-that forbids it, borrowed the operator's barrier, and committed a shipping paper.
-One word, through a field I had added an hour earlier. State is refused by name
-now, like the other three physical claims.
-
-**Round ten found three, and the first was round six's own lesson, which I had
-failed to generalise.** 177.848(e)(5) note A permits ammonium nitrate to load
-with a Division 1.1 or 1.5 material "unless otherwise prohibited by
-177.835(c)". My code granted that permission and pushed a note reading "Confirm
-177.835(c) does not apply". 177.835(c) is not in the pinned corpus, and the
-vehicle-combination facts it turns on are not in the 172.101 table either, so
-there was nothing for anyone to confirm it against. UN1942 with UN0027, black
-powder, Division 1.1D, returned PASS and exported a shipping paper for a cell
-the table marks X. Round six had already established that an unevaluable
-condition is not a satisfied one and fixed it for 177.848(g)(vi). I fixed the
-example I was handed and not the pattern behind it. Both clauses decline in the
-same words now, and a test asserts they still match. The regression test written
-in that earlier round had asserted this hole too, requiring PASS for exactly
-this load, which is the second time a test of mine has defended the gap the
-next round found.
-
-**A named denylist only refuses the claims somebody already thought of.** Item
-references rejected `state` and `quantity` by name, and vehicles rejected only
-the three attestations, so every other property at every other layer was
-accepted and silently dropped. A vehicle carrying `quantity: "999 railcars"`
-returned PASS with an approval token, and the token hashes the COERCED load, so
-the caller held approval for bytes it had not sent and the paper recorded a
-different shipment than the one described. The review named one layer and it
-reproduced at three. It is an exact allowlist per layer now, which removes the
-class rather than extending a list of forbidden names one round at a time, and
-the refusal names the offending path so a caller can act on it.
-
-**And the clause gate itself was the third.** It inferred "this citation is
-reachable" by splitting source text on exported declarations, and text cannot
-see scope: default exports, class methods, object-literal methods and private
-helpers all slipped through, and a bare re-export read as a caller. Any of them
-could have held a clause's only executable citation while the 41-clause receipt
-stayed green. It parses the syntax tree now, and seven mutation cases drive
-every declaration form, including a positive control so a filter that returned
-nothing could not pass.
-
-I am putting all of this in the writeup rather than quietly fixing it because
-the alternative is a submission that claims a safety property and hides the
-evidence that the claim was tested. Thirty-seven defects across ten rounds,
-thirty-three of which carry a numbered regression in
-`tests/codex-findings.test.ts` and the rest in its sibling suites, every one
-reproduced before being touched, every one with a regression test that pairs
-the load which used to clear against a load that must still clear, so no fix can
-degenerate into a blunt refusal. Every guard mutation-checked.
-
-**Three more rounds after I thought it was finished, and eleven more defects.**
-Every one of them was opened or left open by a previous round's FIX, which is
-the strongest argument I have for the rule that the exit condition is a clean
-round rather than a declared finish.
+**Rounds five, six and seven found eleven more, and every one of them was
+opened or left open by a previous round's FIX.** That is the strongest argument
+I have for the rule that the exit condition is a clean round rather than a
+declared finish.
 
 **Round five: a proposal was borrowing a physical fact.** propose_load took the
 page's vehicle 1 attestation positionally and applied it to every vehicle in an
@@ -673,6 +591,121 @@ to check this yourself", and step one was the eCFR endpoint as a TEMPLATE, with
 both query parameters empty. It answers HTTP 400. I found it by running the URL
 this repository publishes, which is the whole point: a reproduction step that
 does not work is worse than none, because it reads as evidence.
+
+**Round eight found the boundary was not binding the identity.** The approval
+token's canonical encoding left out packing group and inhalation hazard zone, so
+UN1744 "Bromine solutions" PG I Zone A and the same material at Zone B serialised
+to identical bytes and a token issued for one verified against the other. Those
+are two different loads. 6.1 PG I Zone A has its own row in the 177.848(d) table
+and Zone B does not.
+
+The same round found the wire could not say the thing the refusal asked for. The
+resolver refuses an ambiguous reference and names the field that would settle it,
+and the wire took strings only. A refusal whose remedy nobody can send is a dead
+end dressed as guidance. It also found that removing a vehicle shifted every
+later bay left, so a truck whose contents had not changed was compared against
+the empty bay that used to sit at its index and lost a barrier the operator had
+genuinely asserted.
+
+**Round nine ran on a different model family, over the whole repository instead
+of a diff.** That is why it found what eight diff-scoped rounds had not. It
+reported four things and two reproduced, and the two that did not include the one
+it ranked most severe, which is the whole argument for reproducing a finding
+before touching anything.
+
+The real ones. 177.848(e)(3) reaches Class 8 LIQUIDS, and my predicate asked for
+"not solid", which also catches gases: UN1048 hydrogen bromide is Division 2.3
+with a subsidiary Class 8 and was being hard-blocked by a clause that does not
+reach it. Separately, PROPOSE_LOAD_SCHEMA advertised a structured item form that
+its own executor threw out as malformed.
+
+That round also confirmed a lead from a review that DIED mid-turn, which is worth
+saying because a failed round is no verdict rather than a pass. Physical state had
+become an agent-settable field when I added structured references, and 177.848(d)
+covers Class 8 liquids only. So an agent re-sent the operator's own load with the
+sulfuric acid declared SOLID, walked this project's headline pair out of the row
+that forbids it, borrowed the operator's barrier, and committed a shipping paper.
+One word, through a field I had added an hour earlier. State is refused by name
+now, like the other three physical claims.
+
+**Round ten found three, and the first was round six's own lesson, which I had
+failed to generalise.** Note A permits ammonium nitrate to load with a Division
+1.1 or 1.5 material "unless otherwise prohibited by 177.835(c)". My code
+granted that and pushed a note reading "Confirm 177.835(c) does not apply".
+177.835(c) is not in the pinned corpus, and the vehicle-combination facts it
+turns on are not in the 172.101 table either, so there was nothing for anyone
+to confirm it against. UN1942 with UN0027, black powder, returned PASS and
+exported a shipping paper for a cell the table marks X. Round six had already
+established that an unevaluable condition is not a satisfied one, and fixed it
+for 177.848(g)(vi). I fixed the example I was handed and not the pattern behind
+it. Both clauses decline in the same words now, and a test asserts they match.
+The regression test written in that earlier round had asserted this hole too.
+
+**A named denylist only refuses the claims somebody already thought of.** Items
+rejected `state` and `quantity` by name and vehicles rejected only the three
+attestations, so every other property at every other layer was accepted and
+silently dropped. A vehicle carrying `quantity: "999 railcars"` returned PASS,
+and the token hashes the COERCED load, so the caller held approval for bytes it
+had not sent. The review named one layer; it reproduced at three. It is an
+exact allowlist per layer now, and the refusal names the offending path.
+
+**The clause gate itself was the third.** It inferred reachability by splitting
+source text on exported declarations, and text cannot see scope: default
+exports, class methods, object-literal methods and private helpers all slipped
+through, and a bare re-export read as a caller. Any of them could have held a
+clause's only live citation while the 41-clause receipt stayed green. It parses
+the syntax tree now.
+
+**Round eleven found two, both inside round ten's own fixes.** Round ten had
+refused unsupported property NAMES so a token could not cover bytes the caller
+had not sent; the item coercer then did exactly that to SUPPORTED names
+carrying unusable values, skipping null and strings that trim to empty. So
+`{ id: "UN1090", name: "" }` canonicalised to a bare UN1090, returned PASS, and
+its token committed a different payload. The schema permitted it too: id and
+name carried a maximum length and no minimum.
+
+The second was the reachability gate I had just rebuilt. Counting how often an
+identifier appears is not a call graph, and it was wrong in both directions. A
+chain nothing calls read as reachable, because the inner name was mentioned,
+and a self-recursive dead function referenced itself into life; while an
+aliased import left the original with no references at all, so a LIVE citation
+read as dead. That direction is the dangerous one, because it fails the build
+for the wrong reason and the tempting repair is to weaken the gate until it
+goes green. It builds edges now and takes the closure from the roots.
+
+**Round twelve found two more in that graph, one of each kind.** A default
+export imported under a different local name had no references, so a live
+citation read as dead; and a plain member access on unrelated data, `q.dead`,
+credited a module helper that merely shared the name. Under both sat a smaller
+mistake: the test for "is this identifier a declaration's own name" recognised
+only declarations holding a FUNCTION, so `export const bag = {...}` counted its
+own name as a reference and, sitting at module level, became a root.
+
+My own positive control was, once again, asserting the reported hole. That is
+three separate times a test written in the same commit as a fix would have
+defended the gap the next round found, which is the whole case for treating
+every fix as unreviewed code.
+
+Round twelve also reported a cross-payload token reuse, and that one did not
+hold. "UN1090", " UN1090 " and "un1090" are one material and one load; 49 CFR
+itself writes UN 1090 with a space, and round five had to make those compare
+equal because an agent using the regulation's own spelling was losing a barrier
+the operator had genuinely asserted. Two of a material does produce a different
+token, and a token issued for the pair is refused against the single. Both
+halves are pinned by tests now, so the intended behaviour is not "fixed" later.
+A reviewer's finding is a claim like any other, and that one I checked rather
+than took. Its turn had also ended mid-work, printing "no material findings" in
+the same breath as saying it was still running checks, which is a
+verdict-shaped false green: no verdict is not a pass.
+
+I am putting all of this in the writeup rather than quietly fixing it because
+the alternative is a submission that claims a safety property and hides the
+evidence that the claim was tested. Forty-one defects across twelve rounds,
+thirty-seven of which carry a numbered regression in
+`tests/codex-findings.test.ts` and the rest in its sibling suites, every one
+reproduced before being touched, every one with a regression test that pairs
+the load which used to clear against a load that must still clear, so no fix can
+degenerate into a blunt refusal. Every guard mutation-checked.
 
 The corpus grew through all of this rather than being trimmed to fit. It is now
 eight pinned sections and 41 verbatim clauses, 9,380 characters of regulation
