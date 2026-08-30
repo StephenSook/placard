@@ -244,24 +244,31 @@ npm test              # exhaustive, property, metamorphic, fixed point, gate`}</
         <Step n={8} title="Run the agent evaluations without an API key">
           <p>
             Smoke mode executes the expected tool calls against the live page directly, with no LLM
-            and no key, so the tool surface is checkable deterministically. All six cases pass.
+            and no key, so the tool surface is checkable deterministically. 5 of 5, then 2 of 2.
           </p>
           <pre className="jcode mono">{`brew install --cask google-chrome@canary
 
+# The load PASSES here: commit_manifest exists, propose_load does not.
 npx webmcp-evals smoke \\
   -u "https://segregation-console.vercel.app/?load=UN1090&check=1" \\
-  -e evals/segregation.evals.json -v`}</pre>
+  -e evals/segregation.evals.json -v
+
+# The load is REFUSED here: propose_load exists, commit_manifest does not.
+npx webmcp-evals smoke \\
+  -u "https://segregation-console.vercel.app/?load=UN1830,UN1748&check=1" \\
+  -e evals/segregation-refused.evals.json -v`}</pre>
           <p className="jwhy">
-            <strong>Two things that are not obvious.</strong> The harness hardcodes the Canary
-            channel and exposes no flag to change it. And the URL carries state deliberately: three
-            of the five tools only exist while the page holds a manifest, and{" "}
-            <code>commit_manifest</code> only exists while the load passes, which is the whole point
-            of this project. Smoke mode opens a fresh page per case, so a bare URL registers two
-            tools and four cases fail with "tool is not available". That was the real result until I
-            ran it, and fixing it properly is why the page reads its state from the URL at all.
+            <strong>There are two commands because there have to be.</strong> The harness takes one
+            URL per run, and no single page state registers both gated tools:{" "}
+            <code>commit_manifest</code> exists only while the load passes and{" "}
+            <code>propose_load</code> exactly when it does not. So the split is not a workaround, it
+            is the anticorrelation proved by the harness rather than described in prose. Also, the
+            harness hardcodes the Canary channel and exposes no flag to change it, and a bare URL
+            registers two tools, so most cases fail with "tool is not available". That was the real
+            result until I ran it, and it is why the page reads its state from the URL at all.
           </p>
           <a className="jbtn jbtn--ghost" href={`${REPO}/blob/main/evals/segregation.evals.json`} rel="noreferrer">
-            The eval suite
+            The eval suites
           </a>
           <a className="jbtn jbtn--ghost" href="/?load=UN1830,UN1748&check=1">
             Open the signature refusal directly

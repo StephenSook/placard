@@ -33,11 +33,10 @@ export type ToolRegistryStripProps = {
 /**
  * The two state-gated tools, drawn differently because they are the point.
  *
- * They are ANTICORRELATED. commit_manifest exists only while the load passes;
- * propose_load exists only while it is refused, because a legal split is
- * meaningless for a load that is already legal. They are never both present and
- * never both absent, so the strip below always shows one of them arriving as
- * the other leaves.
+ * They are ANTICORRELATED, and exactly so: commit_manifest exists only while
+ * the load passes, propose_load exactly when it does not. With a manifest on
+ * the page precisely one of them is registered, so the strip below always shows
+ * one arriving as the other leaves.
  */
 const GATED = ["commit_manifest", "propose_load"];
 
@@ -98,11 +97,10 @@ export function ToolRegistryStrip({ registered, all, supported }: ToolRegistrySt
           <>
             These two tools are never present together.
             <strong> commit_manifest</strong> exists only while the load passes.
-            <strong> propose_load</strong> exists only while it is refused, because a legal split is
-            meaningless for a load that is already legal. So the agent is handed exactly the
-            capability the regulation currently permits, and the other one leaves in the same
-            instant. An agent cannot optimise before it consults: it has to be refused before the
-            tool that fixes the refusal exists.
+            <strong> propose_load</strong> exists exactly when it does not, because a legal split
+            is meaningless for a load that is already legal. They are exact complements: with a
+            manifest loaded, precisely one of them is available, and the agent is handed the
+            capability the regulation currently permits while the other leaves in the same instant.
             <br />
             <br />
             That is the visible layer, and it is not the boundary. The boundary is that

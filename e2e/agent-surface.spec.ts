@@ -79,8 +79,36 @@ test.describe("the toolset is anticorrelated", () => {
     expect(names).not.toContain("propose_load");
   });
 
+  test("an agent that checks an UNCHECKED manifest is never left without a remedy", async ({ page }) => {
+    // THE DEAD END. The page's verdict is set by the operator pressing check.
+    // An agent calling check_segregation gets its answer but does not move page
+    // state, deliberately, so that it cannot talk commit_manifest into
+    // existence. When propose_load was gated on `verdict === REFUSED` that
+    // withheld the remedy too: the agent was refused and found BOTH gated tools
+    // absent. Reproduced before the fix; this is the regression test.
+    await page.goto("/?load=UN1830,UN1748"); // note: no &check=1
+    await settle(page);
+    const before = await toolNames(page);
+    expect(before, "the remedy tool must exist on an unchecked manifest").toContain("propose_load");
+    expect(before).not.toContain("commit_manifest");
+
+    const r = (await callTool(page, "check_segregation", {
+      vehicles: [{ items: ["UN1830", "UN1748"] }],
+    })) as { status: string };
+    expect(r.status).toBe("REFUSED");
+
+    const after = await toolNames(page);
+    expect(after, "the agent was left with no remedy after being refused").toContain("propose_load");
+    // And the safety property is untouched: the agent still cannot conjure the export.
+    expect(after).not.toContain("commit_manifest");
+  });
+
   test("the two are never present together, on either state", async ({ page }) => {
-    for (const url of ["/?load=UN1830,UN1748&check=1", "/?load=UN1090&check=1"]) {
+    for (const url of [
+      "/?load=UN1830,UN1748&check=1",
+      "/?load=UN1090&check=1",
+      "/?load=UN1830,UN1748", // unchecked: exactly one must still be present
+    ]) {
       await page.goto(url);
       await settle(page);
       const names = await toolNames(page);

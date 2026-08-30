@@ -189,13 +189,18 @@ describe("the toolset is anticorrelated, which is the demonstration", () => {
    */
   const hook = read("src/tools/useHazmatTools.ts");
 
-  it("gates propose_load on REFUSED and commit_manifest on PASS", () => {
-    expect(hook).toMatch(/enabled:\s*hasManifest\s*&&\s*refused/);
-    expect(hook).toMatch(/const refused = state\.verdict\?\.status === "REFUSED"/);
+  it("gates the two on EXACT COMPLEMENTS, not on two unrelated conditions", () => {
+    // `notPassing` rather than `refused`. Gating on REFUSED left a dead end:
+    // the page's verdict is set by the operator, so an agent that called
+    // check_segregation on an unchecked manifest was refused and then found
+    // BOTH gated tools absent, with no remedy to reach for.
     expect(hook).toMatch(/const passes = state\.verdict\?\.status === "PASS"/);
-    // commit_manifest's own enabled flag is `passes`, and nothing else may be.
+    expect(hook).toMatch(/const notPassing = !passes/);
+    expect(hook).toMatch(/enabled:\s*hasManifest\s*&&\s*notPassing/);
     const commitBlock = hook.slice(hook.indexOf('name: "commit_manifest"'));
     expect(commitBlock.slice(0, 600)).toMatch(/enabled:\s*passes,/);
+    // And the dead-end condition must not come back.
+    expect(hook).not.toMatch(/enabled:\s*hasManifest\s*&&\s*refused/);
   });
 
   it("never lets the two be gated on the same condition", () => {
@@ -211,7 +216,7 @@ describe("the toolset is anticorrelated, which is the demonstration", () => {
     expect(proposeEnabled, "no enabled flag found for propose_load").toBeTruthy();
     expect(commitEnabled, "no enabled flag found for commit_manifest").toBeTruthy();
     expect(proposeEnabled!.trim()).not.toBe(commitEnabled!.trim());
-    expect(proposeEnabled!).toContain("refused");
+    expect(proposeEnabled!).toContain("notPassing");
     expect(commitEnabled!).toContain("passes");
   });
 
@@ -219,7 +224,7 @@ describe("the toolset is anticorrelated, which is the demonstration", () => {
     // A tool that vanishes without warning is a trap. The description says so,
     // so an agent that cannot find it knows why rather than retrying.
     const d = read("src/tools/schemas.ts");
-    expect(d).toContain("EXISTS ONLY WHILE THE CURRENT LOAD IS REFUSED");
+    expect(d).toContain("EXISTS ONLY WHILE THE CURRENT LOAD DOES NOT PASS");
     expect(d).toContain("only present while");
   });
 });

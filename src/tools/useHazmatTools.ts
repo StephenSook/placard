@@ -100,17 +100,27 @@ export function useHazmatTools(
   const passes = state.verdict?.status === "PASS";
   // THE TOOLSET IS ANTICORRELATED, and that is the whole demonstration.
   //
-  // commit_manifest exists only while the load PASSES. propose_load exists only
-  // while it is REFUSED, because a legal split is meaningless for a load that
-  // is already legal and unknowable for one nobody has checked. So the two
-  // tools are never present together and never absent together: the page hands
-  // the agent exactly the capability the regulation currently permits and takes
-  // away the one it does not need, in the same instant, in opposite directions.
+  // commit_manifest exists only while the load PASSES. propose_load exists
+  // exactly when it does not. They are EXACT COMPLEMENTS, so with a manifest on
+  // the page precisely one of them is registered at any moment: the page hands
+  // the agent the capability the regulation currently permits and takes away
+  // the other in the same instant, in opposite directions.
   //
-  // The practical effect is that an agent cannot optimise before it consults.
-  // It must call check_segregation, be refused, and only then does the tool
-  // that fixes the refusal come into existence.
-  const refused = state.verdict?.status === "REFUSED";
+  // NOT `verdict === "REFUSED"`, which is what this said first and which was a
+  // dead end. The page's verdict is set by the OPERATOR pressing check; an
+  // agent calling check_segregation gets its answer back but does not move page
+  // state, deliberately, because that is what stops an agent talking
+  // commit_manifest into existence for a load nobody adjudicated. Gating on
+  // REFUSED inherited that: an agent with an unchecked manifest called
+  // check_segregation, was refused, and found BOTH gated tools absent, with no
+  // remedy tool to reach for. Reproduced before this was changed.
+  //
+  // `!passes` has no such hole. Unchecked or refused, the remedy exists;
+  // passing, the export exists. Never both, never neither. And it costs nothing
+  // in safety, because propose_load is readOnlyHint and produces a suggestion,
+  // not a document. The tool an agent must not be able to conjure is
+  // commit_manifest, and its gate is untouched.
+  const notPassing = !passes;
 
   const execPropose = useCallback(
     (a: { items: string[]; maxVehicles: number }) =>
@@ -137,9 +147,8 @@ export function useHazmatTools(
     inputSchema: PROPOSE_LOAD_SCHEMA,
     annotations: READ_ONLY,
     execute: execPropose,
-    // Not `hasManifest`. See the note above: this tool is the remedy for a
-    // refusal, so it exists exactly when there is a refusal to remedy.
-    enabled: hasManifest && refused,
+    // The exact complement of commit_manifest's gate. See the note above.
+    enabled: hasManifest && notPassing,
   });
 
   const check = useWebMCP({

@@ -9,7 +9,11 @@ load actually passes.
 **Component states:** https://segregation-console.vercel.app/states
 
 WebMCP is enabled on that origin by a registered Chrome origin trial, so **no browser flag is
-needed**. Open it in ChatGPT's in-app browser or in Chrome 149 or later and the tools are there.
+needed**. Open it in Chrome 149 or later and `document.modelContext` is live.
+
+One honest warning: asking ChatGPT to *open* the URL uses its text crawler, which does not execute
+page JavaScript and therefore reports no tools. It says so itself. If you look for the tool surface
+there and find nothing, that is the crawler rather than the page.
 
 ---
 
@@ -21,7 +25,16 @@ npm run verify:data   # re-hash the corpus, prove every quoted clause is verbati
 npm test              # 13 test files. All 324 segregation cells and all 169
                       # compatibility cells exhaustively, plus property,
                       # metamorphic, fixed-point, adversarial and gate tests.
+npm run test:e2e      # 3 files, through the REAL WebMCP runtime in a browser
 ```
+
+`test:e2e` is the one worth running if you only run one. Chromium exposes
+`document.modelContext` behind `--enable-features=WebMCP`, so the agent surface
+is exercised for real rather than asserted at the source level: tool
+registration, the anticorrelated gate below, the hash-bound commit, and the
+refusal of an attestation sent as a tool argument. It also runs the phone
+layout in WebKit, which is not decoration: a horizontal-overflow regression was
+invisible in Chromium's phone emulation and 1286px wide in WebKit.
 
 `verify:data` prints a receipt of what it actually checked, because a gate that passes having
 examined nothing is indistinguishable from one that works:
@@ -68,24 +81,36 @@ than only in the README.
 Smoke mode executes the expected tool calls against the live page with no LLM:
 
 ```bash
+# The load PASSES here, so commit_manifest exists and propose_load does not.
 npx webmcp-evals smoke \
   -u "https://segregation-console.vercel.app/?load=UN1090&check=1" \
   -e evals/segregation.evals.json -v
+
+# The load is REFUSED here, so propose_load exists and commit_manifest does not.
+npx webmcp-evals smoke \
+  -u "https://segregation-console.vercel.app/?load=UN1830,UN1748&check=1" \
+  -e evals/segregation-refused.evals.json -v
 ```
 
-Two things about that command are not obvious and cost me an hour, so they are
+5 of 5, then 2 of 2, both run against the live origin.
+
+**There are two commands because there have to be.** The harness takes one URL
+per run, and no single page state registers both gated tools any more. That is
+not a workaround for the split, it is the anticorrelation proved by the harness
+rather than described in prose: the same page, two states, and the tool set
+differs in exactly the two positions the regulation controls.
+
+Two things about the command are not obvious and cost me an hour, so they are
 written down rather than left for you to discover:
 
 - **It needs Google Chrome Canary.** The harness hardcodes that channel and
   exposes no flag to change it. `brew install --cask google-chrome@canary`.
-- **The URL carries state on purpose.** Three of the five tools only exist while
-  the page has a manifest, and `commit_manifest` only exists while the load
-  passes, which is the entire point of the project. Smoke mode opens a fresh
-  page per case, so a bare URL registers two tools and four cases fail with
-  "tool is not available". `?load=UN1090&check=1` puts the page in a passing
-  state, so all five are registered and all six cases run.
+- **The URL carries state on purpose.** Three of the five tools exist only in
+  particular page states, which is the entire point of the project. Smoke mode
+  opens a fresh page per case, so a bare URL registers two tools and most cases
+  fail with "tool is not available".
 
-That is 6 of 6. It was 2 of 6 until I actually ran it.
+It was 2 of 6 until I actually ran it.
 
 
 ---
@@ -138,9 +163,26 @@ invisible to it.
 |---|---|---|
 | `lookup_material` | `readOnlyHint` | always, registered at mount |
 | `classify_line_item` | `readOnlyHint`, `untrustedContentHint` | always, registered at mount |
-| `propose_load` | `readOnlyHint` | the manifest is non-empty |
+| `propose_load` | `readOnlyHint` | **only while the load does not pass** |
 | `check_segregation` | `readOnlyHint` | the manifest is non-empty |
 | `commit_manifest` | mutating | **only while the load passes** |
+
+Those last two are ANTICORRELATED, and exactly so: they are complements. With a
+manifest loaded, precisely one of them is registered at any moment. A legal
+split is meaningless for a load that already passes, so `propose_load` exists
+exactly when `commit_manifest` does not, and the page hands the agent the one
+capability the regulation currently permits while the other leaves in the same
+instant.
+
+The first version of that gate said `verdict === REFUSED`, and it was a dead
+end worth reporting. The page's verdict is set by the OPERATOR pressing check.
+An agent calling `check_segregation` gets its answer back but deliberately does
+not move page state, which is what stops it talking `commit_manifest` into
+existence for a load nobody adjudicated. Gating the remedy on REFUSED inherited
+that: an agent with an unchecked manifest called `check_segregation`, was
+refused, and found **both** gated tools absent with nothing to reach for. It
+was reproduced, then fixed by gating on the exact complement instead, and there
+is now an end-to-end test that fails if the dead end returns.
 
 WebMCP defines exactly two annotations. `destructiveHint`, `idempotentHint` and `openWorldHint`
 belong to the wider MCP set and appear nowhere in the WebMCP Draft Community Group Report, so they
@@ -148,8 +190,9 @@ appear nowhere here, and a test asserts it.
 
 ### The gate has three layers and only one of them is the boundary
 
-- **Visible.** `commit_manifest` is absent from the agent's registry while the load does not pass.
-  This is the UX and the thing you watch change. It is **not** the security property: the WebMCP
+- **Visible.** `commit_manifest` is absent from the agent's registry while the load does not pass,
+  and `propose_load` is absent while it does. This is the UX and the thing you watch change, and
+  it changes in two directions at once. It is **not** the security property: the WebMCP
   tool map is keyed by tool name, so any same-origin script can register over it, and the spec
   flags an unprotected unregister-then-reregister window.
 - **Load-bearing.** `commit_manifest`'s handler re-derives the verdict from a SHA-256 of the exact
