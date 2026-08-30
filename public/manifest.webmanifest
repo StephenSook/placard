@@ -19,8 +19,8 @@
     {
       "name": "The signature refusal",
       "short_name": "Refusal",
-      "description": "Sulfuric acid over calcium hypochlorite with a barrier, refused by 177.848(e)(3)",
-      "url": "/?load=UN1830,UN1748&barriers=1&check=1"
+      "description": "Sulfuric acid over calcium hypochlorite, refused by 177.848(e)(3)",
+      "url": "/?load=UN1830,UN1748&check=1"
     },
     {
       "name": "Check this project in three minutes",

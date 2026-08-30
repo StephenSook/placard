@@ -11,6 +11,10 @@
 # So: no pipe on any exit path, no reused scratch file, and the deployed origin
 # is verified afterwards rather than the command's own output being trusted.
 set -e
+# pipefail is not optional here. `vercel deploy | tee` without it exits 0 on a
+# FAILED deploy, because the pipeline's status is tee's. That is the exact
+# defect this script exists to prevent, and it was in the script itself.
+set -o pipefail
 cd "$(dirname "$0")/.."
 
 echo "==> typecheck, tests, build"

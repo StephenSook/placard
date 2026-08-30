@@ -2,7 +2,7 @@
  * THE 177.848(d) TABLE, rendered as itself.
  *
  * The headline number of this project is that the table alone clears 792
- * configurations of which the regulation forbids 32. Until now that was a
+ * configurations of which the regulation forbids 24. Until now that was a
  * sentence. This is the table it is a sentence about: 18 rows, 18 columns, 324
  * cells, with the divergent ones marked.
  *

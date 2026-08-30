@@ -176,7 +176,7 @@ from this table so they cannot diverge from one another.
 | Claim | Value |
 |---|---:|
 | Hazard categories the table indexes | ${div.categories} |
-| Configurations examined (ordered pairs x barrier x single shipper) | ${div.configurationsExamined} |
+| Configurations examined (ordered pairs x barrier x truckload carve-out) | ${div.configurationsExamined} |
 | Configurations the 177.848(d) table alone clears | ${div.tableAloneClears} |
 | Of those, configurations the full regulation forbids | ${div.divergent} |
 | Share of table-cleared configurations that are actually prohibited | ${(div.divergentShareOfCleared * 100).toFixed(1)}% |

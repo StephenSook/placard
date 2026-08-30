@@ -17,10 +17,10 @@
  *    (177.848(e)(6)), and 717 of 3,293 entries carry more than one label code,
  *    so this fires on roughly 22 percent of materials.
  */
-import { lookupByUn, resolveName, cite } from "./corpus.ts";
+import { lookupByUn, resolveName } from "./corpus.ts";
 import type { HmtEntry } from "./corpus.ts";
 import type {
-  Hazard, LineItem, MatrixKey, PhysicalState, PihZone, ResolvedItem, Citation,
+  Hazard, LineItem, MatrixKey, PhysicalState, PihZone, ResolvedItem,
 } from "./types.ts";
 
 /** SP 1 through 4 are the poison-inhalation hazard zones (49 CFR 172.102). */
@@ -36,7 +36,7 @@ const CLASS_ALTERING_SP = new Set(["128"]);
 export function matrixKeyFor(
   hazardClass: string,
   opts: { pihZone?: PihZone | null; packingGroup?: string | null; state?: PhysicalState } = {}
-): { key: MatrixKey | null; reason?: string; group?: string } {
+): { key: MatrixKey | null; reason?: string; group?: string; unparsed?: boolean } {
   const c = hazardClass.trim();
   const { pihZone = null, packingGroup = null, state = "unknown" } = opts;
 
@@ -87,8 +87,23 @@ export function matrixKeyFor(
       return { key: null, reason: "Class 9 has no row or column in the 177.848(d) table" };
     case "Forbidden":
       return { key: null, reason: "the material is Forbidden and may not be offered for transportation at all" };
+    // Classes the table genuinely does not cover. Naming them explicitly is
+    // what lets the default below mean "I could not parse this".
+    case "6.2":
+      return { key: null, reason: "Division 6.2 has no row or column in the 177.848(d) table" };
+    case "Comb liq":
+      return { key: null, reason: "combustible liquids have no row or column in the 177.848(d) table" };
     default:
-      return { key: null, reason: `hazard class ${c || "(none)"} is not represented in the 177.848(d) table` };
+      // AN UNPARSED LABEL IS NOT A CLEARED ONE. This branch used to report the
+      // same "not represented in the table" reason for a class with no row and
+      // for a string the parser did not recognise, and the solver turned both
+      // into a note citing 177.848(e)(1). A corrupt label therefore read as a
+      // clean bill of health.
+      return {
+        key: null,
+        unparsed: true,
+        reason: `the hazard label ${JSON.stringify(c)} could not be interpreted as a 49 CFR hazard class or division, so no row of the 177.848(d) table can be selected for it and this tool cannot clear it`,
+      };
   }
 }
 
@@ -116,8 +131,15 @@ function zoneFor(entry: HmtEntry): PihZone | null {
 export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
   let entry: HmtEntry | null = null;
   if (item.id) {
-    const rows = lookupByUn(item.id);
-    if (rows.length === 0) return { error: `${item.id} is not in the 49 CFR 172.101 table` };
+    // NORMALISE THE IDENTIFICATION NUMBER HERE TOO. The tool path strips
+    // whitespace and upper-cases before lookup; this path did not, so "UN 1090"
+    // resolved through an agent and failed from a link or the input box, even
+    // though that is exactly how 49 CFR prints it. Two spellings of the same
+    // number reaching two different answers is the shape of defect this project
+    // exists to expose, and it was in the resolver.
+    const id = item.id.trim().replace(/\s+/g, "").toUpperCase();
+    const rows = lookupByUn(id);
+    if (rows.length === 0) return { error: `${id} is not in the 49 CFR 172.101 table` };
 
     // AN IDENTIFICATION NUMBER IS NOT ALWAYS AN IDENTIFIER EITHER, and this is
     // the same defect that was fixed for proper shipping names and left in
@@ -140,7 +162,7 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
       if (pgMatch.length === 0 || pgClasses.length > 1) {
         return {
           error:
-            `${item.id} covers ${rows.length} entries in the 172.101 table spanning hazard classes ` +
+            `${id} covers ${rows.length} entries in the 172.101 table spanning hazard classes ` +
             `${classes.join(", ")}, and the segregation verdict depends on which one it is. ` +
             `Give the proper shipping name, or a packing group that selects one: ` +
             `${rows.map((r) => `${r.class}${r.pg ? ` PG ${r.pg}` : ""} ${r.name}`).slice(0, 4).join("; ")}` +
@@ -185,6 +207,7 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
     raw: primaryRaw,
     matrixKey: primary.key,
     ...(primary.reason ? { notCoveredReason: primary.reason } : {}),
+    ...(primary.unparsed ? { unparsed: true } : {}),
     compatibilityGroup: (primary.group ?? null) as Hazard["compatibilityGroup"],
     subsidiary: false,
   }];
@@ -198,6 +221,7 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
     hazards.push({
       raw: label,
       matrixKey: m.key,
+      ...(m.unparsed ? { unparsed: true } : {}),
       ...(m.reason ? { notCoveredReason: m.reason } : {}),
       compatibilityGroup: (m.group ?? null) as Hazard["compatibilityGroup"],
       subsidiary: true,
@@ -205,7 +229,11 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
   }
 
   return {
-    item,
+    // The identification number AS THE REGULATION WRITES IT, not as the user
+    // typed it. This is what reaches the shipping paper's basic description
+    // under 172.202(a), and "un 1090" is not a form the 172.101 table uses.
+    // A Forbidden material has none, and keeps its null.
+    item: { ...item, ...(entry.un ? { id: entry.un } : {}) },
     name: entry.name,
     hazardClass: primaryRaw,
     packingGroup: entry.pg,
@@ -219,12 +247,18 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
   };
 }
 
-/** The citations that explain how a resolution was reached. */
-export function resolutionCitations(r: ResolvedItem): Citation[] {
-  const out: Citation[] = [];
-  if (r.forbidden) out.push(cite("17321-a-forbidden"));
-  if (r.hazards.some((h) => h.subsidiary)) out.push(cite("e6-subsidiary"));
-  if (r.pihZone === "A") out.push(cite("sp1-zone-A"));
-  if (r.specialProvisionReview.includes("128")) out.push(cite("sp128-reclass"));
-  return out;
-}
+/*
+ * `resolutionCitations` used to live here and NOTHING CALLED IT. It was the
+ * only cite() site for e6-subsidiary, sp1-zone-A and sp128-reclass, so those
+ * three clauses passed the coverage gate in tests/claims.test.ts on the
+ * strength of a function no user or agent could ever reach: quoted, verified
+ * verbatim, counted in the receipt, and delivered to nobody.
+ *
+ * That is precisely the failure src/solver/coverage.ts exists to prevent,
+ * recurring one level up, and the gate could not see it because it greps the
+ * source for a citation call, and dead code contains text just fine.
+ *
+ * The three citations now sit in segregation.ts, attached to the notes that
+ * fire when those conditions actually hold, and the coverage gate now rejects
+ * a citation whose only home is an unreferenced function.
+ */

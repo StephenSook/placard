@@ -116,6 +116,40 @@ describe("every clause is either ENFORCED or declared reference-only", () => {
    * A verbatim quote of a rule you do not apply is worse than no quote at all,
    * because it reads as evidence of diligence that is not there.
    */
+  /**
+   * The source the coverage gate is allowed to count, with UNREACHABLE
+   * FUNCTIONS REMOVED.
+   *
+   * `resolutionCitations` in hazards.ts was the only cite() site for three
+   * clause ids and nothing in the repository called it. Those three passed this
+   * gate on the strength of a function no user or agent could reach: quoted,
+   * verified verbatim, counted in the receipt the README prints, and delivered
+   * to nobody. The gate could not see it because it greps source text, and dead
+   * code is still text.
+   *
+   * So every exported function in the scanned files is checked for a caller,
+   * and one with none is stripped before the citation scan runs.
+   */
+  const reachableSrc = (() => {
+    const all = FILES.filter((f) => /^src\/.*\.tsx?$/.test(f));
+    const whole = all.map(read).join("\n");
+    let out = "";
+    for (const f of FILES.filter((f) => /^src\/(solver|tools|evidence)\/.*\.ts$/.test(f))) {
+      const text = read(f);
+      // Split on exported function declarations and drop the uncalled ones.
+      const parts = text.split(/(?=^export function )/m);
+      for (const part of parts) {
+        const m = /^export function (\w+)/.exec(part);
+        if (!m) { out += part + "\n"; continue; }
+        const name = m[1]!;
+        // A caller is any use of the bare name that is not its own declaration.
+        const uses = (whole.match(new RegExp(`\\b${name}\\b`, "g")) ?? []).length;
+        if (uses > 1) out += part + "\n";
+      }
+    }
+    return out;
+  })();
+
   const solverSrc = FILES
     .filter((f) => /^src\/(solver|tools|evidence)\/.*\.ts$/.test(f))
     .map(read)
@@ -131,7 +165,7 @@ describe("every clause is either ENFORCED or declared reference-only", () => {
 
     const unaccounted: string[] = [];
     for (const id of ids) {
-      const cited = new RegExp(`cite\\("${id}"\\)`).test(solverSrc);
+      const cited = new RegExp(`cite\\("${id}"\\)`).test(reachableSrc);
       if (!cited && !declared.includes(id) && !advisory.includes(id)) unaccounted.push(id);
     }
     expect(ids.length).toBe(24);
@@ -467,12 +501,12 @@ describe("published figures must match the fact sheet", () => {
   };
 
   it("finds the divergence rows in FACTS.md", () => {
-    expect(factValue("Configurations examined (ordered pairs x barrier x single shipper)")).toMatch(/^\d+$/);
+    expect(factValue("Configurations examined (ordered pairs x barrier x truckload carve-out)")).toMatch(/^\d+$/);
     expect(factValue("Of those, configurations the full regulation forbids")).toMatch(/^\d+$/);
   });
 
   it("every prose surface states the SAME divergence figures as FACTS.md", () => {
-    const examined = factValue("Configurations examined (ordered pairs x barrier x single shipper)");
+    const examined = factValue("Configurations examined (ordered pairs x barrier x truckload carve-out)");
     const cleared = factValue("Configurations the 177.848(d) table alone clears");
     const forbids = factValue("Of those, configurations the full regulation forbids");
     const num = (raw: string | undefined) => (raw ?? "").replace(/[,*\s]/g, "");
@@ -481,7 +515,14 @@ describe("published figures must match the fact sheet", () => {
     // anywhere in the file. The first version of this test did the latter and
     // survived putting the stale figure back, because the correct one happened
     // to occur elsewhere in the document.
-    const surfaces = ["README.md", "submission/devpost-description.md"].filter((f) => FILES.includes(f));
+    // EVERY tracked prose surface, not a hand-listed two. The stale 24 survived
+    // the 24-to-32 correction on `video/script.md` and `submission/fields.md`
+    // precisely because this list named only the two files I happened to think
+    // of, while both of those are git-tracked and public. A guard that picks
+    // its own scope by hand has a blind spot exactly the size of what it omits.
+    const surfaces = FILES.filter(
+      (f) => /\.(md|txt)$/.test(f) && !f.startsWith("node_modules") && !/CHANGELOG/i.test(f),
+    );
     let asserted = 0;
 
     for (const f of surfaces) {
@@ -499,6 +540,51 @@ describe("published figures must match the fact sheet", () => {
     // Non-vacuity: if the sentences are reworded so none of the patterns match,
     // this test would otherwise pass having compared nothing at all.
     expect(asserted, "no divergence claim was parsed from any prose surface").toBeGreaterThanOrEqual(4);
+
+    // THE FORMS THE REGEXES ABOVE CANNOT SEE. The stale 24 survived the
+    // correction on two tracked files because one carried it in a table row
+    // ("| 1,296 / 792 / 24 |") and the other spelled it in words ("forbids
+    // twenty four"). Neither matches a prose regex looking for digits after a
+    // phrase. So: any line that mentions the cleared count must not carry a
+    // divergence figure other than the current one, in digits or in words.
+    const WORDS: Record<number, string> = {
+      24: "twenty four", 32: "thirty two", 16: "sixteen", 8: "eight",
+    };
+    let lineChecks = 0;
+    for (const f of surfaces) {
+      for (const line of read(f).split("\n")) {
+        if (!line.includes(String(cleared))) continue;
+        lineChecks++;
+        for (const [n, word] of Object.entries(WORDS)) {
+          if (Number(n) === Number(forbids)) continue;
+          expect(
+            new RegExp(`\\b${n}\\b`).test(line) || line.toLowerCase().includes(word),
+            `${f} carries a stale divergence figure (${n}) beside ${cleared}: ${line.trim()}`,
+          ).toBe(false);
+        }
+      }
+    }
+    expect(lineChecks, "no surface mentions the cleared count at all").toBeGreaterThan(0);
+
+    // A SPELLED-OUT figure on a line that never mentions 792. The video script
+    // narrates "the full regulation forbids thirty two", and narration is where
+    // a stale number does the most damage, because a rendered video cannot be
+    // corrected. So every "forbids <word>" is checked against the fact sheet in
+    // words, independently of what else is on the line.
+    let spoken = 0;
+    for (const f of surfaces) {
+      for (const m of read(f).matchAll(/regulation forbids ([a-z]+(?: [a-z]+)?)\b/gi)) {
+        const said = m[1]!.toLowerCase().trim();
+        if (/^\d+$/.test(said)) continue; // digits are covered above
+        spoken++;
+        expect(
+          said,
+          `${f} narrates "forbids ${said}" but the fact sheet says ${forbids}`,
+        ).toBe(WORDS[Number(forbids)]);
+      }
+    }
+    expect(spoken, "no surface spells the divergence figure in words").toBeGreaterThan(0);
+
   });
 });
 
@@ -535,6 +621,19 @@ describe("the judge itinerary covers what actually ships", () => {
     // promising an effect it cannot have, which is its own kind of lie.
     for (const p of ["barriers=1", "shipper=1", "nonreaction=1"]) {
       expect(judge, `/judge still links with ${p}`).not.toContain(p);
+    }
+    // And NOT just this page. The PWA manifest's shortcut carried barriers=1
+    // long after the parameter was retired, promising "with a barrier" while
+    // the page it opened had the box unticked. Any tracked file that builds a
+    // link is a surface, so check them all.
+    // Look for a LINK carrying the parameter, not for any mention of it. Several
+    // surfaces legitimately DESCRIBE the removal in prose, and a guard that
+    // cannot tell a description from a link would either fail on the honest
+    // writeup or be deleted for crying wolf. A link here always starts "/?".
+    const linkWithRetired = /\/\?[^"'\s)`]*(?:barriers|shipper|nonreaction)=1/;
+    for (const f of FILES.filter((x) => /\.(tsx?|json|webmanifest|html)$/.test(x))) {
+      const m = linkWithRetired.exec(read(f));
+      expect(m?.[0], `${f} builds a link with a retired parameter: ${m?.[0]}`).toBeUndefined();
     }
     // Non-vacuity: the page really does carry permalinks.
     expect(judge).toContain("load=UN1830,UN1748");

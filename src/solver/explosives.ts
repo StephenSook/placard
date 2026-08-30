@@ -89,14 +89,42 @@ export type ExplosiveIdentity = {
 
 const isFirework = (e: ExplosiveIdentity) => /firework/i.test(e.name);
 const divisionOf = (e: ExplosiveIdentity) => (/^1\.(\d)/.exec(e.hazardClass) ?? [])[1] ?? "";
-/** 172.101 names explosive entries as "Articles, ..." or "Substances, ...". */
-const isExplosiveSubstance = (e: ExplosiveIdentity) =>
-  /^substances?[,\s]/i.test(e.name.trim());
+
+/**
+ * WHETHER A CLASS 1 ENTRY IS AN ARTICLE, and the honest answer is usually "this
+ * corpus cannot tell".
+ *
+ * Footnote 6 permits group G articles with groups C, D and E "provided that
+ * explosive substances are not carried in the same transport vehicle". The
+ * first version tested `/^substances?[,\s]/` on the proper shipping name, which
+ * matches 14 of the 388 Class 1 entries in the table. Black powder, TNT, PETN,
+ * nitroglycerin and every other bulk explosive were invisible to it, so
+ * "Articles, explosive, n.o.s." with black powder passed and the same article
+ * with the literally-named "Substances, explosive, n.o.s." refused. Identical
+ * regulatory situations, opposite verdicts, decided by a word in a name.
+ *
+ * 172.101 does not carry an article/substance column. The name is the only
+ * signal and it covers 40 of 388, so for the other 348 the proviso cannot be
+ * evaluated. An unevaluable condition is not a satisfied one, the same rule
+ * footnote 4 now follows, so anything not provably an article blocks the
+ * permission rather than being assumed harmless.
+ */
+const isProvablyArticle = (e: ExplosiveIdentity) => /^articles?[,\s]/i.test(e.name.trim());
+const isProvablySubstance = (e: ExplosiveIdentity) => /^substances?[,\s]/i.test(e.name.trim());
 
 export function checkGroups(
   groups: Set<CompatibilityGroup>,
-  /** Optional identities. Without them the footnote rules cannot run and say so. */
+  /** The two materials being compared. */
   identities: ExplosiveIdentity[] = [],
+  /**
+   * EVERY explosive in the vehicle, because footnote 6's proviso is written
+   * about the transport vehicle and not about the pair. Evaluating it pairwise
+   * let a group G article and a group C article clear each other while an
+   * explosive substance sat in the same truck, since the G/S and C/S pairs land
+   * on different cells and never run the check. Defaults to the pair so a
+   * caller that has only the pair still gets the stricter, not the laxer, read.
+   */
+  vehicle: ExplosiveIdentity[] = identities,
 ): { ok: true; notes: string[] } | { ok: false; a: CompatibilityGroup; b: CompatibilityGroup; code: string; citation: Citation; reason?: string } {
   const list = [...groups];
   const notes: string[] = [];
@@ -126,25 +154,51 @@ export function checkGroups(
       }
 
       if (code.includes("6")) {
-        // 177.848(g)(vi): group G articles may travel with C, D and E ONLY IF
-        // no explosive SUBSTANCES are in the same vehicle.
-        const substances = identities.filter(isExplosiveSubstance);
-        if (substances.length > 0) {
+        // 177.848(g)(vi) has TWO conditions and the first version checked one.
+        //
+        // The clause reads: explosive articles in compatibility group G, OTHER
+        // THAN FIREWORKS AND THOSE REQUIRING SPECIAL HANDLING, may be loaded
+        // with C, D and E, PROVIDED THAT explosive substances are not carried
+        // in the same transport vehicle. Fireworks were excluded in the quoted
+        // text and permitted by the code.
+        const fireworks = vehicle.filter(isFirework);
+        if (fireworks.length > 0) {
           return {
             ok: false, a, b, code, citation: cite("g6-group-G"),
-            reason: `Footnote 6 permits compatibility group G articles with groups C, D and E only where explosive SUBSTANCES are not carried in the same vehicle, and ${substances[0]!.name} is one.`,
+            reason: `footnote 6 permits compatibility group G articles with groups C, D and E only for articles OTHER THAN FIREWORKS, and ${fireworks[0]!.name} is a firework.`,
           };
         }
-        if (identities.length === 0) {
-          notes.push(`A footnote 6 cell applies and its condition, that no explosive substances share the vehicle, could not be evaluated because no material identities were supplied. Confirm it by hand.`);
+        // The substances proviso is about the whole VEHICLE, not this pair, and
+        // it cannot be evaluated for a material this corpus cannot classify.
+        const blocking = vehicle.filter((e) => isProvablySubstance(e) || !isProvablyArticle(e));
+        if (blocking.length > 0) {
+          const why = isProvablySubstance(blocking[0]!)
+            ? `${blocking[0]!.name} is an explosive substance`
+            : `${blocking[0]!.name} cannot be shown to be an explosive ARTICLE from the 172.101 table, which carries no article-or-substance column, so the proviso cannot be evaluated for it and is therefore not satisfied`;
+          return {
+            ok: false, a, b, code, citation: cite("g6-group-G"),
+            reason: `footnote 6 permits compatibility group G articles with groups C, D and E only where explosive substances are not carried in the same transport vehicle, and ${why}.`,
+          };
         }
       }
 
       if (code.includes("4")) {
-        // 177.848(g)(3)(iv) refers out to 177.835(g), which is NOT in this
-        // corpus. Flag rather than clear: an unevaluated condition is not a
-        // satisfied one.
-        notes.push(`${cite("g3iv-detonators").section}: "${cite("g3iv-detonators").text}" That section is outside this corpus, so this pairing is NOT cleared by this tool. A person must check 177.835(g).`);
+        // FAIL CLOSED. 177.848(g)(3)(iv) refers out to 177.835(g), which is not
+        // in this corpus, so this tool cannot evaluate the condition.
+        //
+        // This used to push a NOTE reading "this pairing is NOT cleared by this
+        // tool" and then return ok, which cleared it. UN0500 with UN0462 hit
+        // the S/C cell "4/5", returned PASS, and exported a shipping paper
+        // while the note beside it said the opposite. An unevaluated condition
+        // is not a satisfied one, and a sentence saying so is not a refusal.
+        //
+        // Refusing is the conservative direction and the honest one: the tool
+        // declines what it cannot verify, names the section a person must read,
+        // and does not hand over a document on the strength of a caveat.
+        return {
+          ok: false, a, b, code, citation: cite("g3iv-detonators"),
+          reason: `their compatibility cell is "${code}", and footnote 4 refers the decision out to 49 CFR 177.835(g) for detonators. That section is outside this tool's corpus, so the condition cannot be evaluated here and is therefore not satisfied. A person must check 177.835(g).`,
+        };
       }
     }
   }

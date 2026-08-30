@@ -113,12 +113,43 @@ export function checkVehicle(items: ResolvedItem[], v: VehicleProposal, vehicleI
       notes.push(`${r.name} carries symbol A or W, so it is regulated only by aircraft or vessel and 49 CFR part 177 highway segregation does not apply to it.`);
     }
     for (const h of r.hazards) {
+      // AN UNPARSED LABEL FAILS CLOSED. A class the table genuinely does not
+      // cover produces a note citing 177.848(e)(1); a label the parser could
+      // not interpret produces a REFUSAL. Both used to produce the note, so a
+      // corrupt column-6 value read as "no restriction applies": UN3535's
+      // "6.1. 4.1" carries a stray period and UN3101's bare "1" has no
+      // division, and both resolved to a material with no matrix keys that
+      // passed against a Division 1.1 explosive.
+      if (h.unparsed) {
+        violations.push({
+          code: "UNRESOLVED_MATERIAL", items: [i], vehicle: vehicleIndex,
+          message: `${r.name}: ${h.notCoveredReason ?? `the hazard label ${JSON.stringify(h.raw)} could not be interpreted`}. This tool will not clear a material whose hazard it cannot read, because an unreadable label is unknown rather than harmless. Check column 6 of the 172.101 entry.`,
+          citations: [cite("e1-blank")],
+        });
+        continue;
+      }
       if (h.matrixKey === null && h.notCoveredReason && !r.forbidden) {
         notes.push(`${r.name}, hazard ${h.raw}: ${h.notCoveredReason}. No restriction arises from the table for this hazard (177.848(e)(1)).`);
       }
     }
     if (r.specialProvisionReview.length) {
-      notes.push(`${r.name} carries special provision ${r.specialProvisionReview.join(", ")}, which can alter the hazard class the segregation table keys on. Verify the classification.`);
+      // SP128 can reclass certain Class 8 packing group II and III materials as
+      // Division 4.3, which changes the row the table is read on. Quote it, so
+      // the reader can check the reclassification rather than take the note.
+      const sp128 = r.specialProvisionReview.includes("128")
+        ? ` ${cite("sp128-reclass").section}: "${cite("sp128-reclass").text}"`
+        : "";
+      notes.push(`${r.name} carries special provision ${r.specialProvisionReview.join(", ")}, which can alter the hazard class the segregation table keys on. Verify the classification.${sp128}`);
+    }
+    // A subsidiary hazard changes which rows this material is read on, and a
+    // PIH zone A material has its own row. Both are why a verdict can look
+    // stricter than the primary class alone suggests, so both are cited where
+    // they actually fire rather than in a helper nothing calls.
+    if (r.hazards.some((h) => h.subsidiary)) {
+      notes.push(`${r.name} carries a subsidiary hazard, so the table is read on every hazard it bears and the most restrictive cell governs. ${cite("e6-subsidiary").section}: "${cite("e6-subsidiary").text}"`);
+    }
+    if (r.pihZone === "A") {
+      notes.push(`${r.name} is a poisonous-by-inhalation material in hazard zone A, which the table gives its own row. ${cite("sp1-zone-A").section}: "${cite("sp1-zone-A").text}"`);
     }
   });
 
@@ -234,10 +265,18 @@ export function checkVehicle(items: ResolvedItem[], v: VehicleProposal, vehicleI
         // CONDITIONS whose truth depends on what the material actually is, and
         // a Set of letters cannot answer "is it a firework" or "is it a
         // substance rather than an article".
-        const g = checkGroups(fp.groups, [
-          { name: a.name, hazardClass: a.hazardClass },
-          { name: b.name, hazardClass: b.hazardClass },
-        ]);
+        // Pass the PAIR and, separately, every explosive in the vehicle, because
+        // footnote 6's proviso is written about the transport vehicle.
+        const g = checkGroups(
+          fp.groups,
+          [
+            { name: a.name, hazardClass: a.hazardClass },
+            { name: b.name, hazardClass: b.hazardClass },
+          ],
+          items
+            .filter((x) => /^1\.[1-6]/.test(x.hazardClass))
+            .map((x) => ({ name: x.name, hazardClass: x.hazardClass })),
+        );
         if (!g.ok) {
           violations.push({
             code: "EXPLOSIVE_INCOMPATIBLE", items: [i, j], vehicle: vehicleIndex, cell: "*",

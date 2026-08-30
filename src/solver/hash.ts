@@ -42,6 +42,15 @@ function canonicalVehicle(v: VehicleProposal): string {
     items.join(""),
     field(v.barriersPresent ? "1" : "0"),
     field(v.singleShipper ? "1" : "0"),
+    // nonReactionAsserted BELONGS IN THE HASH. It is the second half of the
+    // 177.848(e)(3) carve-out, so it changes verdicts, and leaving it out made
+    // the note this tool prints untrue: "the token is bound to a hash of this
+    // exact arrangement" was false for one of the three attestations. The
+    // dangerous direction was already covered, because verifyApproval re-runs
+    // checkLoad and a load that needs the assertion and lacks it is refused
+    // there. Covering it here means the claim matches the code rather than
+    // relying on a second mechanism to make a false statement harmless.
+    field(v.nonReactionAsserted ? "1" : "0"),
   ].join("");
 }
 

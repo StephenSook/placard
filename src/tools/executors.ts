@@ -368,9 +368,57 @@ const ATTESTATION_REFUSAL =
   "they are attestations about the physical vehicle that only the operator at the console can " +
   "make, and they are read from the page. Send items only.";
 
-/** Merge the operator's attestations onto the wire vehicles, by position. */
-const withAttestations = (wire: WireVehicle[], attest: Attestations[]): WireVehicle[] =>
-  wire.map((v, i) => ({ ...v, ...(attest[i] ?? {}) }));
+/**
+ * The page's own load, so an attestation can be checked against the vehicle it
+ * was actually made about. Items only, in page order.
+ */
+export type PageLoad = { items: string[] }[];
+
+/** Compare two vehicles' contents the way the operator sees them: as a set of
+ *  references, order-insensitive, case and whitespace normalised. */
+const sameItems = (a: string[], b: string[]): boolean => {
+  const norm = (xs: string[]) =>
+    xs.map((x) => x.trim().toLowerCase().replace(/\s+/g, " ")).sort();
+  const [x, y] = [norm(a), norm(b)];
+  return x.length === y.length && x.every((v, i) => v === y[i]);
+};
+
+/**
+ * Merge the operator's attestations onto the wire vehicles, BUT ONLY WHERE THE
+ * VEHICLE IS THE ONE THE OPERATOR ATTESTED ABOUT.
+ *
+ * Moving the attestation fields off the wire stopped an agent ASSERTING a
+ * barrier. It did not stop an agent BORROWING one. The merge was positional, so
+ * an agent could send any items it liked as "vehicle 1" and inherit whatever
+ * the operator had ticked for their own vehicle 1. Reproduced: with the
+ * operator's barrier box ticked for their load, an agent checking UN1090 with
+ * UN1479, a pairing the operator had never seen, went from REFUSED to PASS and
+ * committed a shipping paper marked "barriers asserted".
+ *
+ * An attestation is about a specific vehicle with specific contents in it. If
+ * the contents differ, the attestation does not apply, so it is dropped and the
+ * caller is told which vehicles lost theirs rather than silently getting a
+ * stricter answer.
+ */
+function withAttestations(
+  wire: WireVehicle[],
+  attest: Attestations[],
+  pageLoad: PageLoad | undefined,
+): { vehicles: WireVehicle[]; droppedFor: number[] } {
+  const droppedFor: number[] = [];
+  const vehicles = wire.map((v, i) => {
+    const a = attest[i];
+    if (!a || Object.keys(a).length === 0) return { ...v };
+    // No page load supplied means a trusted caller (the console itself, or a
+    // test) is driving the solver directly with its own attestations.
+    if (pageLoad === undefined) return { ...v, ...a };
+    const onPage = pageLoad[i];
+    if (onPage && sameItems(onPage.items, v.items)) return { ...v, ...a };
+    droppedFor.push(i + 1);
+    return { ...v };
+  });
+  return { vehicles, droppedFor };
+}
 
 export function toLoad(vehicles: WireVehicle[]): LoadProposal {
   return {
@@ -389,13 +437,16 @@ export async function checkSegregation(
   input: { vehicles: Array<{ items: string[] }> },
   nonce: string,
   /** From the operator's checkboxes, by vehicle. Never from the caller. */
-  attest: Attestations[] = []
+  attest: Attestations[] = [],
+  /** The page's own load, so an attestation only applies to the vehicle it was
+   *  made about. Omitted by trusted callers driving the solver directly. */
+  pageLoad?: PageLoad
 ) {
   const wire = coerceVehicles(input?.vehicles);
   if (wire === null) {
     return malformed(ATTESTATION_REFUSAL);
   }
-  const vehicles = withAttestations(wire, attest);
+  const { vehicles, droppedFor } = withAttestations(wire, attest, pageLoad);
   const load = toLoad(vehicles);
   const v = await checkLoad(load, nonce);
   if (v.status === "PASS") {
@@ -405,8 +456,12 @@ export async function checkSegregation(
       pairsChecked: v.checked,
       notes: v.notes,
       attestationsInForce: attestationReport(vehicles.map((x) => x)),
+      ...(droppedFor.length ? { attestationsNotApplied: droppedFor } : {}),
       note: "The token is bound to a hash of this exact arrangement. Change anything and it stops validating. " +
-        "attestationsInForce is what the operator has ticked on the page; you cannot set it.",
+        "attestationsInForce is what the operator has ticked on the page; you cannot set it." +
+        (droppedFor.length
+          ? ` The operator's attestations were NOT applied to vehicle ${droppedFor.join(", ")}, because the contents you sent are not the contents they attested about. An attestation is about a specific vehicle.`
+          : ""),
     };
   }
   return {
@@ -421,8 +476,12 @@ export async function checkSegregation(
     })),
     notes: v.notes,
     attestationsInForce: attestationReport(vehicles.map((x) => x)),
+    ...(droppedFor.length ? { attestationsNotApplied: droppedFor } : {}),
     note: "attestationsInForce is what the operator has ticked on the page. If a separation would " +
-      "clear this load, the person loading the vehicle has to assert it; you cannot.",
+      "clear this load, the person loading the vehicle has to assert it; you cannot." +
+      (droppedFor.length
+        ? ` Note that the operator's attestations were NOT applied to vehicle ${droppedFor.join(", ")}: the contents you sent are not the contents they attested about.`
+        : ""),
   };
 }
 
@@ -432,7 +491,9 @@ export async function commitManifest(
   input: { approvalToken: string; vehicles: Array<{ items: string[] }> },
   nonce: string,
   /** From the operator's checkboxes, by vehicle. Never from the caller. */
-  attest: Attestations[] = []
+  attest: Attestations[] = [],
+  /** The page's own load. See checkSegregation. */
+  pageLoad?: PageLoad
 ) {
   // THE SECURITY BOUNDARY. Not the registry: the WebMCP tool map is keyed by
   // name, so any same-origin script can register over a name and absence from
@@ -449,7 +510,7 @@ export async function commitManifest(
   }
   // The attestations come from the page, so a commit is hashed against what the
   // operator actually ticked. An agent cannot alter the bytes being hashed.
-  const load = toLoad(withAttestations(wire, attest));
+  const load = toLoad(withAttestations(wire, attest, pageLoad).vehicles);
   const check = await verifyApproval(load, input.approvalToken, nonce);
   if (!check.ok) {
     return {
@@ -471,6 +532,11 @@ export function buildShippingPaper(load: LoadProposal) {
     vehicle: i + 1,
     barriersPresent: v.barriersPresent === true,
     singleShipper: v.singleShipper === true,
+    // On the DOCUMENT too. The signer is asserting, under 172.204, that the
+    // mixture will not cause a fire or a dangerous evolution of heat or gas.
+    // A shipping paper that was permitted by that assertion and does not record
+    // it is missing the reason it exists.
+    nonReactionAsserted: v.nonReactionAsserted === true,
     lines: v.items.map((item) => {
       const r = resolveItem(item);
       if ("error" in r) return { error: r.error };

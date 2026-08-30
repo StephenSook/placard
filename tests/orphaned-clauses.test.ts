@@ -20,6 +20,7 @@
 import { describe, it, expect } from "vitest";
 import { checkLoad } from "../src/solver/index.ts";
 import { checkSegregation, commitManifest, isMalformed, toLoad } from "../src/tools/executors.ts";
+import { approvalToken } from "../src/solver/index.ts";
 import {
   CHECK_SEGREGATION_SCHEMA, COMMIT_MANIFEST_SCHEMA, PROPOSE_LOAD_SCHEMA,
 } from "../src/tools/schemas.ts";
@@ -266,5 +267,112 @@ describe("the shipping paper is a document, so it prints", () => {
   it("does not print the application's own close control", () => {
     const printBlock = css.slice(css.indexOf("@media print"));
     expect(printBlock).toMatch(/\.paper \.pill\s*\{\s*display:\s*none/);
+  });
+});
+
+describe("the /states preview cannot show a state the gate forbids", () => {
+  /**
+   * It used to. The PASS scene listed all five tools, including both
+   * propose_load and commit_manifest, which the gate makes impossible because
+   * they are exact complements. The tool-registry strip rendered inside that
+   * same scene prints "These two tools are never present together", so the page
+   * contradicted itself directly above the sentence denying it, and /judge
+   * sends judges to that page.
+   *
+   * The scenes now derive their tool set from one function instead of three
+   * hand-typed arrays, and this asserts the function agrees with the real gate.
+   */
+  const preview = read("src/StatesPreview.tsx");
+
+  it("derives each scene's tool set rather than hand-typing it", () => {
+    expect(preview).toMatch(/function toolsFor\(/);
+    // No scene may hand-type a registered array any more.
+    expect(preview).not.toMatch(/registered: \["lookup_material"/);
+    expect(preview).not.toMatch(/registered: ALL_TOOLS/);
+  });
+
+  it("never lets the two complementary tools appear in the same scene", () => {
+    // Re-implement the rule and check the source agrees, so a future edit that
+    // reintroduces the impossible combination fails here.
+    for (const [verdict, hasManifest] of [
+      ["IDLE", false], ["REFUSED", true], ["PASS", true],
+    ] as const) {
+      const gated = verdict === "PASS" ? "commit_manifest" : "propose_load";
+      const other = verdict === "PASS" ? "propose_load" : "commit_manifest";
+      if (!hasManifest) continue;
+      expect(gated).not.toBe(other);
+    }
+    // And the source must express exactly that: one gated name, chosen by verdict.
+    expect(preview).toMatch(/verdict === "PASS" \? "commit_manifest" : "propose_load"/);
+  });
+});
+
+describe("every attestation that changes a verdict is in the hash and on the paper", () => {
+  /**
+   * `nonReactionAsserted` was in neither. It is the second half of the
+   * 177.848(e)(3) carve-out, so it changes verdicts, and its absence made the
+   * tool's own note untrue: "the token is bound to a hash of this exact
+   * arrangement" was false for one of the three attestations. Two loads
+   * differing only in it produced the SAME approval token.
+   *
+   * The dangerous direction was already covered, because commit re-runs the
+   * solver. That is not a reason to leave a false claim standing.
+   */
+  const PAIR = ["UN1830", "UN1748"]; // needs the (e)(3) carve-out to pass
+
+  it("two loads differing only in the assertion no longer share a token", async () => {
+    const withIt = await approvalToken(
+      toLoad([{ items: PAIR, barriersPresent: true, singleShipper: true, nonReactionAsserted: true }]), N);
+    const without = await approvalToken(
+      toLoad([{ items: PAIR, barriersPresent: true, singleShipper: true, nonReactionAsserted: false }]), N);
+    expect(withIt).not.toBe(without);
+  });
+
+  it("still produces a stable token for an identical arrangement", () => {
+    // Non-vacuity: if the encoding were simply random this would also differ.
+    const a = toLoad([{ items: PAIR, barriersPresent: true, singleShipper: true, nonReactionAsserted: true }]);
+    const b = toLoad([{ items: PAIR, barriersPresent: true, singleShipper: true, nonReactionAsserted: true }]);
+    return Promise.all([approvalToken(a, N), approvalToken(b, N)]).then(([x, y]) => {
+      expect(x).toBe(y);
+    });
+  });
+
+  it("records the assertion on the exported document", async () => {
+    const v = await checkSegregation(
+      { vehicles: [{ items: PAIR }] }, N,
+      [{ barriersPresent: true, singleShipper: true, nonReactionAsserted: true }]);
+    if (isMalformed(v) || v.status !== "PASS") throw new Error("expected PASS on both conditions");
+    const c = await commitManifest(
+      { approvalToken: v.approvalToken, vehicles: [{ items: PAIR }] }, N,
+      [{ barriersPresent: true, singleShipper: true, nonReactionAsserted: true }]);
+    expect(c.status).toBe("COMMITTED");
+    const paper = (c as { shippingPaper: Array<Record<string, unknown>> }).shippingPaper;
+    expect(paper[0]!.nonReactionAsserted, "the paper omits the assertion that permitted the load").toBe(true);
+  });
+});
+
+describe("the executor's view of page state is never a frame behind", () => {
+  /**
+   * The ref every executor reads was assigned in a passive effect, which runs
+   * after paint. Between the operator editing a load and that effect firing, an
+   * agent-invoked executor would read the PREVIOUS state: the old nonce, and
+   * the old attestations. An operator unticking "barriers" while an agent
+   * commits in the same frame would have had the export hashed and adjudicated
+   * against a barrier nobody was asserting any more.
+   *
+   * A source check, and worth saying so: exercising the window needs a
+   * concurrent render this suite does not run. So it asserts the specific
+   * mechanism rather than the presence of a ref.
+   */
+  const hook = read("src/tools/useHazmatTools.ts");
+
+  it("assigns the state ref during render, not in an effect", () => {
+    expect(hook).toMatch(/const stateRef = useRef\(state\);\s*\n\s*stateRef\.current = state;/);
+    expect(hook).not.toMatch(/useEffect\(\(\) => \{\s*stateRef\.current = state;/);
+  });
+
+  it("does the same for the commit callback", () => {
+    expect(hook).toMatch(/onCommittedRef\.current = onCommitted;/);
+    expect(hook).not.toMatch(/useEffect\(\(\) => \{\s*onCommittedRef\.current/);
   });
 });

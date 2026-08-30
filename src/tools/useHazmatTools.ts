@@ -37,7 +37,7 @@ import {
   MUTATING, PROPOSE_LOAD_SCHEMA, READ_ONLY,
 } from "./schemas.ts";
 import { checkSegregation, commitManifest, proposeLoad } from "./executors.ts";
-import type { Attestations } from "./executors.ts";
+import type { Attestations, PageLoad } from "./executors.ts";
 import { registerAlwaysOnTools, unregisterAlwaysOnTools, webmcpSupported } from "./registerEarly.ts";
 
 export type Verdict = { status: "PASS" | "REFUSED" } | null;
@@ -61,6 +61,18 @@ export type HazmatToolsState = {
    * registration.
    */
   attestations: Attestations[];
+  /**
+   * The page's own load, by vehicle, so an attestation can be checked against
+   * the vehicle it was actually made about.
+   *
+   * Moving the attestation fields off the wire stopped an agent ASSERTING a
+   * barrier. It did not stop an agent BORROWING one: the merge was positional,
+   * so an agent could send any items as "vehicle 1" and inherit whatever the
+   * operator had ticked for their own vehicle 1. Reproduced end to end, from
+   * REFUSED to a committed paper marked "barriers asserted" for a pairing the
+   * operator had never seen.
+   */
+  pageLoad: PageLoad;
 };
 
 export type ToolRegistryView = {
@@ -90,11 +102,23 @@ export function useHazmatTools(
 ): ToolRegistryView {
   // Every executor reads state through this ref, so a tool invoked mid-render
   // sees current values rather than the values captured when it registered.
+  //
+  // ASSIGNED DURING RENDER, NOT IN AN EFFECT, and the difference is a real
+  // window rather than a style preference. A passive effect runs after paint,
+  // so between the operator editing a load and that effect firing, an executor
+  // called by the agent would read the PREVIOUS state: the old nonce and, worse,
+  // the old attestations. An operator who unticks "barriers" and an agent that
+  // commits in the same frame would otherwise have the export hashed and
+  // adjudicated against a barrier nobody is asserting any more.
+  //
+  // Assigning in the render body closes the window: the ref is current before
+  // any handler this render can reach. It is safe here because the value is
+  // derived state, not a subscription, and nothing reads the ref during render.
   const stateRef = useRef(state);
-  useEffect(() => { stateRef.current = state; });
+  stateRef.current = state;
 
   const onCommittedRef = useRef(onCommitted);
-  useEffect(() => { onCommittedRef.current = onCommitted; });
+  onCommittedRef.current = onCommitted;
 
   const hasManifest = state.manifestSize > 0;
   const passes = state.verdict?.status === "PASS";
@@ -129,12 +153,12 @@ export function useHazmatTools(
   );
   const execCheck = useCallback(
     (a: { vehicles: Array<{ items: string[] }> }) =>
-      checkSegregation(a, stateRef.current.nonce, stateRef.current.attestations),
+      checkSegregation(a, stateRef.current.nonce, stateRef.current.attestations, stateRef.current.pageLoad),
     []
   );
   const execCommit = useCallback(
     async (a: { approvalToken: string; vehicles: Array<{ items: string[] }> }) => {
-      const out = await commitManifest(a, stateRef.current.nonce, stateRef.current.attestations);
+      const out = await commitManifest(a, stateRef.current.nonce, stateRef.current.attestations, stateRef.current.pageLoad);
       if (out.status === "COMMITTED") onCommittedRef.current?.(out.shippingPaper);
       return out;
     },

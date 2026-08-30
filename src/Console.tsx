@@ -259,10 +259,45 @@ export function Console() {
       },
     );
     if (r.status === "PROPOSED") {
-      const byRef = new Map(manifest.map((m) => [m.item.id ?? m.name, m] as const));
+      /**
+       * KEY ON THE CANONICAL FORM, AND REFUSE RATHER THAN DROP.
+       *
+       * This map used to be keyed on the raw reference while proposeLoad echoes
+       * back a CANONICALISED identification number (whitespace stripped, upper
+       * cased). Any ref that was not already upper case therefore missed, and
+       * the `.filter(Boolean)` threw it away in silence. Loading
+       * `?load=UN1090,un1830,un1748` and pressing propose emptied two of the
+       * three items into bays of [0, 1], the manifest panel still showed three,
+       * the check then passed because nothing was left to object to, and the
+       * exported paper described a load nobody submitted. The two materials it
+       * dropped were the sulfuric acid and the calcium hypochlorite: this
+       * project's own headline refusal, silently deleted.
+       *
+       * So the key is normalised the same way, and a reference that does not
+       * round-trip is a bug rather than an item to discard.
+       */
+      const canon = (x: string) => x.trim().replace(/\s+/g, "").toUpperCase();
+      const byRef = new Map(manifest.map((m) => [canon(m.item.id ?? m.name), m] as const));
+      const missing: string[] = [];
+      const bayItems = r.vehicles.map((v) =>
+        v.items.map((ref) => {
+          const hit = byRef.get(canon(ref));
+          if (!hit) missing.push(ref);
+          return hit;
+        }).filter((x): x is ResolvedItem => !!x)
+      );
+      if (missing.length) {
+        setAnnounce(
+          `The proposal referred to ${missing.length} item(s) this page could not match back to the manifest: ` +
+          `${missing.join(", ")}. The load was NOT changed, because silently dropping them would leave you ` +
+          `checking a load you did not submit.`
+        );
+        setBusy(false);
+        return;
+      }
       setBays(
-        r.vehicles.map((v) => ({
-          items: v.items.map((ref) => byRef.get(ref)).filter((x): x is ResolvedItem => !!x),
+        r.vehicles.map((_v, vi) => ({
+          items: bayItems[vi]!,
           barriersPresent: bays[0]?.barriersPresent ?? false,
           singleShipper: bays[0]?.singleShipper ?? false,
           // Never inherited. Splitting a load changes which materials sit
@@ -428,6 +463,10 @@ export function Console() {
           singleShipper: b.singleShipper,
           nonReactionAsserted: b.nonReactionAsserted,
         })),
+        // The page's own load, so an attestation only applies to the vehicle it
+        // was made about. Without this the merge is positional and an agent can
+        // point the operator's barrier at any cargo it likes.
+        pageLoad: bays.map((b) => ({ items: b.items.map((i) => i.item.id ?? i.name) })),
       }),
       [manifest.length, verdict.status, nonce, bays, urlProblem.length]
     ),

@@ -17,7 +17,25 @@ import { checkLoad, resolveItem } from "./solver/index.ts";
 import type { Violation } from "./solver/types.ts";
 import "./ui/preview.css";
 
-const ALL_TOOLS = ["lookup_material", "classify_line_item", "propose_load", "check_segregation", "commit_manifest"];
+/**
+ * The tool set for each scene, derived from the SAME rule the page uses rather
+ * than typed by hand, because a hand-typed one was wrong.
+ *
+ * The PASS scene used to list all five, which is a combination the gate makes
+ * impossible: propose_load and commit_manifest are exact complements. The strip
+ * rendered inside that very scene prints "These two tools are never present
+ * together", so the preview was contradicting itself directly above the
+ * sentence denying it, on a page /judge sends judges to.
+ */
+const ALWAYS = ["lookup_material", "classify_line_item"];
+/** Every tool the page can ever offer, for the strip to render absence against. */
+const ALL_TOOLS = [...ALWAYS, "propose_load", "check_segregation", "commit_manifest"];
+
+function toolsFor(verdict: "IDLE" | "PASS" | "REFUSED", hasManifest: boolean): string[] {
+  if (!hasManifest) return [...ALWAYS];
+  const gated = verdict === "PASS" ? "commit_manifest" : "propose_load";
+  return [...ALWAYS, "check_segregation", gated];
+}
 
 type Scene = {
   id: string;
@@ -49,7 +67,7 @@ export function StatesPreview() {
         caption: "Nothing checked yet. Two read-only tools are already live, so an agent can look a material up on arrival.",
         status: "IDLE",
         pairsChecked: 0,
-        registered: ["lookup_material", "classify_line_item"],
+        registered: toolsFor("IDLE", false),
       });
 
       // The money shot. The cell is O and a barrier is asserted, and it still
@@ -68,7 +86,7 @@ export function StatesPreview() {
           pair: [a.cls, b.cls],
           names: [a.name, b.name],
           pairsChecked: hard.checked,
-          registered: ["lookup_material", "classify_line_item", "propose_load", "check_segregation"],
+          registered: toolsFor("REFUSED", true),
         });
       }
 
@@ -83,7 +101,7 @@ export function StatesPreview() {
           pair: ["Forbidden", "Forbidden"],
           names: ["Ammonium chlorate", "no lawful configuration"],
           pairsChecked: forbidden.checked,
-          registered: ["lookup_material", "classify_line_item", "propose_load", "check_segregation"],
+          registered: toolsFor("REFUSED", true),
         });
       }
 
@@ -101,7 +119,7 @@ export function StatesPreview() {
           pair: [a.cls, b.cls],
           names: [a.name, b.name],
           pairsChecked: pass.checked,
-          registered: ALL_TOOLS,
+          registered: toolsFor("PASS", true),
         });
       }
 

@@ -44,7 +44,11 @@ export async function measureResponse(): Promise<Response> {
       method: {
         what_is_measured:
           "Every ordered pair of the 18 hazard categories the table indexes, in " +
-          "each of the four barrier and single-shipper configurations. The naive " +
+          "each of the four barrier and truckload-carve-out configurations. The " +
+          "second axis is the 177.848(e)(3) carve-out AS A WHOLE, a single-shipper " +
+          "truckload plus the explicit non-reaction assertion, because the clause " +
+          "requires both and sweeping the shipper alone produced two identical " +
+          "halves. The naive " +
           "arm applies the published cell alone. The full arm applies all four " +
           "axes. A configuration is divergent when the first clears and the " +
           "second refuses.",

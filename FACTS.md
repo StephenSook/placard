@@ -91,12 +91,12 @@ from this table so they cannot diverge from one another.
 | Claim | Value |
 |---|---:|
 | Hazard categories the table indexes | 18 |
-| Configurations examined (ordered pairs x barrier x single shipper) | 1296 |
+| Configurations examined (ordered pairs x barrier x truckload carve-out) | 1296 |
 | Configurations the 177.848(d) table alone clears | 792 |
-| Of those, configurations the full regulation forbids | 32 |
-| Share of table-cleared configurations that are actually prohibited | 4.0% |
+| Of those, configurations the full regulation forbids | 24 |
+| Share of table-cleared configurations that are actually prohibited | 3.0% |
 | Divergent on ground `EXPLOSIVE_INCOMPATIBLE` | 16 |
-| Divergent on ground `CORROSIVE_OVER_OXIDIZER` | 16 |
+| Divergent on ground `CORROSIVE_OVER_OXIDIZER` | 8 |
 
 This measures the SIZE OF THE GAP an agent reasons across when it treats the
 table as the whole rule. It is not a measurement of any model's accuracy, and no

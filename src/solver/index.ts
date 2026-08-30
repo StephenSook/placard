@@ -36,6 +36,30 @@ export async function checkLoad(load: LoadProposal, nonce: string): Promise<Chec
     return { status: "REFUSED", violations: [], checked: 0, notes: ["No vehicles were proposed."], digest: await loadDigest(load) };
   }
 
+  // A LOAD WITH NOTHING IN IT IS NOT A PASSING LOAD. Zero vehicles was already
+  // refused; zero ITEMS was not, so `{vehicles:[{items:[]}]}` returned PASS with
+  // pairsChecked 0, issued an approval token, and committed a shipping paper
+  // whose lines array was empty. It is also the exit door for any bug upstream
+  // that empties the manifest: whatever silently drops the cargo, the check
+  // then has nothing left to object to.
+  //
+  // An individual empty vehicle stays legal, because adding a second truck
+  // before filling it is an ordinary intermediate state. What is refused is a
+  // load that, taken as a whole, carries nothing.
+  if (load.vehicles.every((v) => v.items.length === 0)) {
+    return {
+      status: "REFUSED",
+      violations: [{
+        code: "UNRESOLVED_MATERIAL", items: [], vehicle: 0,
+        message: "This load contains no line items at all. There is nothing to adjudicate and nothing to describe on a shipping paper, so no approval token is issued.",
+        citations: [],
+      }],
+      checked: 0,
+      notes: [],
+      digest: await loadDigest(load),
+    };
+  }
+
   load.vehicles.forEach((v, vi) => {
     const resolved: ResolvedItem[] = [];
     v.items.forEach((item, ii) => {

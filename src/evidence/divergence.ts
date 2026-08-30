@@ -156,8 +156,19 @@ export function measureDivergence(): Divergence {
       if (!a || !b) continue;
       const cell = segregationCell(ka, kb);
 
+      // THE SECOND AXIS IS THE TRUCKLOAD CARVE-OUT AS A WHOLE, not singleShipper
+      // alone. 177.848(e)(3) needs BOTH a single-shipper truckload AND an
+      // explicit non-reaction assertion before its exception applies, so
+      // sweeping singleShipper while leaving nonReactionAsserted false produced
+      // two identical halves: measured, 0 of 648 combinations flipped on it, and
+      // every published count was exactly twice the number of distinct
+      // configurations. The share was unaffected, the absolute numbers were not.
+      //
+      // Sweeping the carve-out itself makes all four configurations real.
       for (const barriersPresent of [false, true]) {
-        for (const singleShipper of [false, true]) {
+        for (const truckloadCarveOut of [false, true]) {
+          const singleShipper = truckloadCarveOut;
+          const nonReactionAsserted = truckloadCarveOut;
           examined++;
           const naiveClears = tableAloneClears(cell, barriersPresent);
           // `checkVehicle` takes the RESOLVED items as its first argument and
@@ -165,7 +176,7 @@ export function measureDivergence(): Divergence {
           // `items` is correct here rather than a stub. Typed as the real
           // VehicleProposal with no cast: a cast would hide exactly the kind of
           // shape drift that has already caused one runtime crash in this repo.
-          const proposal: VehicleProposal = { items: [], barriersPresent, singleShipper };
+          const proposal: VehicleProposal = { items: [], barriersPresent, singleShipper, nonReactionAsserted };
           const { violations } = checkVehicle([a, b], proposal, 0);
           const regulationRefuses = violations.length > 0;
 

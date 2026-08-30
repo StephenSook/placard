@@ -70,6 +70,18 @@ export type Hazard = {
   matrixKey: MatrixKey | null;
   /** Why there is no matrix key, when there is none. */
   notCoveredReason?: string;
+  /**
+   * True when the label string could not be PARSED at all, as opposed to being
+   * a class the 177.848(d) table genuinely does not cover.
+   *
+   * The distinction is the whole point. "6.2 has no row" and "I do not
+   * understand this string" were both reported as "no restriction arises from
+   * the table", so a corrupt label read as a clean bill of health. UN3535's
+   * column 6 reads "6.1. 4.1" with a stray period and UN3101's reads "1" with
+   * no division; both produced a material with NO matrix keys that passed
+   * against everything, including a Division 1.1 explosive.
+   */
+  unparsed?: boolean;
   compatibilityGroup: CompatibilityGroup | null;
   subsidiary: boolean;
 };
