@@ -218,13 +218,30 @@ export function checkGroups(
       }
 
       if (code.includes("6")) {
-        // 177.848(g)(vi) has TWO conditions and the first version checked one.
+        // 177.848(g)(vi) HAS THREE CONDITIONS. This code checked one, then two,
+        // then all three, each time because a review found the missing one.
+        // The articles must be in group G; they must be OTHER THAN fireworks
+        // AND OTHER THAN those requiring special handling; and no explosive
+        // substance may ride in the same transport vehicle.
         //
-        // The clause reads: explosive articles in compatibility group G, OTHER
-        // THAN FIREWORKS AND THOSE REQUIRING SPECIAL HANDLING, may be loaded
-        // with C, D and E, PROVIDED THAT explosive substances are not carried
-        // in the same transport vehicle. Fireworks were excluded in the quoted
-        // text and permitted by the code.
+        // Two of the three can be decided from the corpus. The third cannot,
+        // and that is why this cell refuses unconditionally today. 172.101
+        // designates no material as requiring special handling: the phrase is
+        // not a column, a symbol or a special provision code, and 177.848 does
+        // not define it. An unevaluable condition is not a satisfied one, the
+        // rule footnote 4 already follows.
+        //
+        // It is worth saying plainly that this is the hole pinning 173.52
+        // opened. Deriving article status from the compatibility group was
+        // right, and it removed a blanket fail-closed that had been standing in
+        // for every unevaluable condition at once, so UN0428 with UN0321 went
+        // straight to PASS and COMMITTED with a shipping paper.
+        //
+        // The order below is not decoration. A condition the corpus can prove
+        // VIOLATED is a better refusal than one it merely cannot evaluate, so a
+        // firework is named as a firework and an explosive substance as an
+        // explosive substance, and the special-handling gap is what is left
+        // when neither of those fired.
         const fireworks = vehicle.filter(isFirework);
         if (fireworks.length > 0) {
           return {
@@ -232,28 +249,51 @@ export function checkGroups(
             reason: `footnote 6 permits compatibility group G articles with groups C, D and E only for articles OTHER THAN FIREWORKS, and ${fireworks[0]!.name} is a firework.`,
           };
         }
-        // The substances proviso is about the whole VEHICLE, not this pair, and
-        // it cannot be evaluated for a material this corpus cannot classify.
-        const blocking = vehicle.filter((e) => isProvablySubstance(e) || !isProvablyArticle(e));
-        if (blocking.length > 0) {
-          const bad = blocking[0]!;
+
+        const substances = vehicle.filter(isProvablySubstance);
+        if (substances.length > 0) {
+          const bad = substances[0]!;
           const def = formOf(bad);
-          const why = isProvablySubstance(bad)
-            ? `${bad.name} is an explosive substance` +
+          return {
+            ok: false, a, b, code, citation: cite("g6-group-G"),
+            reason:
+              `footnote 6 permits compatibility group G articles with groups C, D and E only where ` +
+              `explosive substances are not carried in the same transport vehicle, and ${bad.name} ` +
+              `is an explosive substance` +
               (def?.form === "substance"
                 ? `, because 49 CFR 173.52(b) defines its compatibility group as "${definitionText(def.citation)}"`
-                : "")
-            : `${bad.name} cannot be shown to be an explosive ARTICLE. The 172.101 table carries no ` +
-              `article-or-substance column, and ` +
+                : "") + ".",
+          };
+        }
+
+        const unproven = vehicle.filter((e) => !isProvablyArticle(e));
+        if (unproven.length > 0) {
+          const bad = unproven[0]!;
+          const def = formOf(bad);
+          return {
+            ok: false, a, b, code, citation: cite("g6-group-G"),
+            reason:
+              `footnote 6 permits compatibility group G ARTICLES with groups C, D and E, and ` +
+              `${bad.name} cannot be shown to be an explosive article. The 172.101 table carries ` +
+              `no article-or-substance column, and ` +
               (def
                 ? `49 CFR 173.52(b) defines its compatibility group as "${definitionText(def.citation)}", which admits either. `
                 : `its compatibility group could not be read from the hazard class ${JSON.stringify(bad.hazardClass)}. `) +
-              `So the proviso cannot be evaluated for it and is therefore not satisfied`;
-          return {
-            ok: false, a, b, code, citation: cite("g6-group-G"),
-            reason: `footnote 6 permits compatibility group G articles with groups C, D and E only where explosive substances are not carried in the same transport vehicle, and ${why}.`,
+              `So the permission cannot be shown to apply and is not granted.`,
           };
         }
+
+        const g = vehicle.find((e) => groupOf(e) === "G") ?? identities[0];
+        return {
+          ok: false, a, b, code, citation: cite("g6-group-G"),
+          reason:
+            `footnote 6 permits compatibility group G articles with groups C, D and E only for ` +
+            `articles OTHER THAN FIREWORKS AND THOSE REQUIRING SPECIAL HANDLING. Every other ` +
+            `condition is satisfied here, but the 49 CFR 172.101 table designates no material as ` +
+            `requiring special handling and 177.848 does not define the phrase, so that exclusion ` +
+            `cannot be evaluated` + (g ? ` for ${g.name}` : "") + ` and the permission is not ` +
+            `granted. This is a stated gap in coverage, not a judgement about the load.`,
+        };
       }
 
       if (code.includes("4")) {
