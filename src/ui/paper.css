@@ -13,6 +13,7 @@
 }
 
 .paper__head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.paper__actions { display: flex; gap: 8px; flex-shrink: 0; }
 .paper__eyebrow { margin: 0; font-size: var(--t-nano); letter-spacing: 0.18em; text-transform: uppercase; color: var(--cleared); }
 .paper__title { font-size: var(--t-display); text-transform: uppercase; letter-spacing: -0.025em; }
 
@@ -44,3 +45,76 @@
 .paper__cert { padding-top: 14px; border-top: 1px solid var(--paper-edge); }
 .paper__certTitle { margin: 0 0 6px; font-size: var(--t-nano); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-faint); }
 .paper__cert p { margin: 0; font-size: var(--t-micro); line-height: 1.55; color: var(--ink-soft); max-width: 78ch; }
+
+/* ── PRINT ───────────────────────────────────────────────────────────────────
+   The shipping paper is a DOCUMENT. A compliance officer prints it, signs the
+   172.204 certification, and it rides in the cab. Until now the page had no
+   print rules at all, so printing produced the whole application: the hazard
+   rail, the matrix, the attack panel, the tool registry, all of it, in colours
+   chosen for a screen.
+
+   So: everything except the paper is removed from the printed page, the sheet
+   is set in black on white for a laser printer, and a signature block is added
+   that only exists on paper, because 172.204 requires a signature and a screen
+   cannot take one.
+
+   The disclaimer prints too. A document that looks official and is not must say
+   so on the sheet itself, not only on the screen it came from.
+   ────────────────────────────────────────────────────────────────────────── */
+@media print {
+  /* Hide the application. `visibility` rather than `display` so the paper can
+     still be positioned against the page box. */
+  body * { visibility: hidden; }
+  .paper, .paper * { visibility: visible; }
+
+  .paper {
+    position: absolute;
+    inset: 0 auto auto 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    gap: 14pt;
+    background: #fff;
+    color: #000;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    animation: none;
+  }
+
+  /* The close button is an application control, not part of the document. */
+  .paper .pill { display: none !important; }
+
+  .paper__eyebrow { color: #000; }
+  .paper__title { font-size: 20pt; }
+  .paper__vn, .paper__flag { color: #000; background: none; padding: 0; }
+  .paper__flag::before { content: "[ "; }
+  .paper__flag::after { content: " ]"; }
+
+  .paper__table { font-size: 9.5pt; }
+  .paper__table th { color: #000; border-bottom: 1.5pt solid #000; }
+  .paper__table td { border-bottom: 0.5pt solid #666; }
+
+  /* A vehicle's lines must not be split across a page break. */
+  .paper__vehicle { break-inside: avoid; page-break-inside: avoid; }
+
+  /* Everything on a printed sheet is black. Screen greys that read as
+     "secondary" read as "faded toner" on paper. */
+  .paper__cert, .paper__cert p, .paper__certTitle { color: #000; }
+  .paper__cert { border-top: 1pt solid #000; padding-top: 10pt; font-size: 9pt; }
+  .paper__table td { color: #000; }
+
+  /* THE SIGNATURE BLOCK EXISTS ONLY ON PAPER. 172.204 requires the shipper's
+     certification to be signed, and the screen version says in as many words
+     that this page does not sign anything. The sheet is where a person does. */
+  .paper__cert::after {
+    content: "Signature of shipper _______________________________   "
+             "Printed name _______________________________   Date ____________";
+    display: block;
+    margin-top: 26pt;
+    font-size: 9pt;
+    letter-spacing: 0.02em;
+  }
+
+  @page { size: letter portrait; margin: 16mm; }
+}

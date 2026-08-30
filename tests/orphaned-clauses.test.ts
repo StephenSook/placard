@@ -223,3 +223,43 @@ describe("the toolset is anticorrelated, which is the demonstration", () => {
     expect(d).toContain("only present while");
   });
 });
+
+describe("the shipping paper is a document, so it prints", () => {
+  /**
+   * It is signed under 49 CFR 172.204 and rides in the cab. Before these rules
+   * existed the page had no print stylesheet at all, so printing the deliverable
+   * produced the whole application, hazard rail and attack panel included, in
+   * colours chosen for a screen.
+   */
+  const css = read("src/ui/paper.css");
+  const tsx = read("src/ui/ShippingPaper.tsx");
+
+  it("has print rules that hide the application and keep the paper", () => {
+    expect(css).toMatch(/@media print/);
+    expect(css).toMatch(/body \*\s*\{\s*visibility:\s*hidden/);
+    expect(css).toMatch(/\.paper,\s*\.paper \*\s*\{\s*visibility:\s*visible/);
+  });
+
+  it("sets a real page box rather than leaving the browser default", () => {
+    expect(css).toMatch(/@page\s*\{[^}]*size:\s*letter portrait/);
+  });
+
+  it("prints a signature block, because 172.204 wants a signature", () => {
+    // The screen says in as many words that this page does not sign anything.
+    // The sheet is where a person does, so the block exists only in print.
+    const printBlock = css.slice(css.indexOf("@media print"));
+    expect(printBlock).toContain("Signature of shipper");
+    expect(printBlock).toContain("Date");
+    // And it must NOT be on screen: everything before the print block is screen.
+    expect(css.slice(0, css.indexOf("@media print"))).not.toContain("Signature of shipper");
+  });
+
+  it("offers the affordance rather than hiding it behind the browser menu", () => {
+    expect(tsx).toContain("window.print()");
+  });
+
+  it("does not print the application's own close control", () => {
+    const printBlock = css.slice(css.indexOf("@media print"));
+    expect(printBlock).toMatch(/\.paper \.pill\s*\{\s*display:\s*none/);
+  });
+});

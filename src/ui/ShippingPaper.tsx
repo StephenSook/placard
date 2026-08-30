@@ -12,6 +12,13 @@
  * text is on screen rather than buried, because 172.204 makes signing a
  * regulated act and the person doing it becomes a hazmat employee under
  * subpart H. Hiding it would misrepresent what the button does.
+ *
+ * AND IT PRINTS. That sounds minor and is not: this document's whole purpose is
+ * to be signed and to ride in the cab, and until the print rules in paper.css
+ * existed, printing produced the entire application, hazard rail and attack
+ * panel and all, in screen colours. The print sheet drops everything else, sets
+ * black on white, and adds a signature block that exists only on paper, because
+ * 172.204 wants a signature and a screen cannot take one.
  */
 import "./paper.css";
 
@@ -35,7 +42,12 @@ export function ShippingPaper({ paper, onClose }: { paper: unknown; onClose: () 
           <p className="paper__eyebrow mono">Exported</p>
           <h2 id="paper-heading" className="paper__title">Shipping paper</h2>
         </div>
-        <button type="button" className="pill" onClick={onClose}>Close</button>
+        <div className="paper__actions">
+          <button type="button" className="pill" onClick={() => window.print()}>
+            Print
+          </button>
+          <button type="button" className="pill" onClick={onClose}>Close</button>
+        </div>
       </header>
 
       {vehicles.map((v) => (
