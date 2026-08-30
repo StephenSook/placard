@@ -66,8 +66,25 @@ export function lookupMaterial(input: { query: string }): LookupResult | Malform
   }
 
   // Exact name, then the table's own synonym pointers, then substring.
+  //
+  // SUBSTRING MATCHES ARE RANKED, and the ranking is load-bearing rather than
+  // cosmetic. It used to be table order truncated at eight, so a query for
+  // "sulfuric acid" returned eight alkyl and aryl sulfonic acids and NOT
+  // UN1830, "Sulfuric acid with more than 51 percent acid", which is what the
+  // operator meant and what this project's own demonstration uses. Manual entry
+  // took the first of those and put the wrong material on the manifest; after
+  // that was fixed to refuse on ambiguity, the refusal listed eight candidates
+  // that did not include the right answer, which is a different way of being
+  // useless. A prefix match beats an interior one, and a shorter name beats a
+  // longer one, so the plainest entry that starts with what you typed is first.
   const exact = lookupByName(input.query);
-  const subs = HMT.filter((e) => norm(e.name).includes(q)).slice(0, 8);
+  const subs = HMT
+    .filter((e) => norm(e.name).includes(q))
+    .sort((a, b) => {
+      const pa = norm(a.name).startsWith(q) ? 0 : 1, pb = norm(b.name).startsWith(q) ? 0 : 1;
+      return pa - pb || a.name.length - b.name.length;
+    })
+    .slice(0, 8);
   const seen = new Set<number>();
   const matches: ReturnType<typeof brief>[] = [];
   for (const e of [...(exact ? [exact] : []), ...subs]) {
@@ -240,6 +257,41 @@ export const isMalformed = (r: unknown): r is MalformedInput =>
   typeof r === "object" && r !== null && (r as { status?: unknown }).status === "REFUSED"
   && typeof (r as { reason?: unknown }).reason === "string"
   && (r as { reason: string }).reason.startsWith("malformed request:");
+
+/**
+ * Pick the ONE table entry a free-text query names, or refuse to pick.
+ *
+ * Manual entry on the page used to take `matches[0]`. Typing "sulfuric acid",
+ * the material in this project's own headline demonstration, added UN2584
+ * Alkyl sulfonic acids: a different material in a different hazard class, on
+ * the manifest, with no signal. Substituting one entry for another is the exact
+ * failure this project exists to expose, and it was in the page's own input box.
+ *
+ * An exact proper shipping name or identification number is taken. Anything
+ * that matches more than one entry is REFUSED with the candidates named,
+ * because choosing between "Sulfuric acid with more than 51 percent acid" and
+ * "Alkyl sulfonic acids" is a regulated decision that belongs to a person and
+ * not to a sort order.
+ */
+export type MaterialChoice =
+  | { kind: "one"; match: MaterialBrief; exact: boolean }
+  | { kind: "none" }
+  | { kind: "ambiguous"; candidates: MaterialBrief[] };
+
+export function chooseMaterial(query: string): MaterialChoice {
+  const matches = lookupMatches(lookupMaterial({ query }));
+  if (matches.length === 0) return { kind: "none" };
+  const q = query.trim().toLowerCase().replace(/\s+/g, " ");
+  const qId = q.replace(/\s/g, "");
+  const exact = matches.filter(
+    (m) => m.name.toLowerCase() === q || (m.id ?? "").toLowerCase() === qId
+  );
+  if (exact.length === 1) return { kind: "one", match: exact[0]!, exact: true };
+  if (exact.length === 0 && matches.length === 1) {
+    return { kind: "one", match: matches[0]!, exact: false };
+  }
+  return { kind: "ambiguous", candidates: matches };
+}
 
 /** Matches from a lookup, or an empty list when the arguments were refused. */
 export function lookupMatches(r: LookupResult | MalformedInput) {

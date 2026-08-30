@@ -24,7 +24,7 @@ import { AttackPanel } from "./ui/AttackPanel.tsx";
 import { MatrixPanel } from "./ui/MatrixPanel.tsx";
 import { AgentView } from "./ui/AgentView.tsx";
 import { useHazmatTools, useSessionNonce } from "./tools/useHazmatTools.ts";
-import { buildShippingPaper, lookupMaterial, lookupMatches, proposeLoad, toLoad } from "./tools/executors.ts";
+import { buildShippingPaper, chooseMaterial, proposeLoad, toLoad } from "./tools/executors.ts";
 import { checkLoad, resolveItem, verifyApproval } from "./solver/index.ts";
 import type { MatrixKey, ResolvedItem, Violation } from "./solver/types.ts";
 import "./ui/console.css";
@@ -81,11 +81,51 @@ export function Console() {
     setPaper(null);
   }, []);
 
+  /**
+   * MANUAL ENTRY MUST NEVER SUBSTITUTE, AND IT MUST NEVER FAIL SILENTLY.
+   *
+   * This took the first lookup match and added it. Typing "sulfuric acid", the
+   * material in this project's own headline demonstration, added UN2584 Alkyl
+   * sulfonic acids: a different material in a different hazard class, on the
+   * manifest, with no signal of any kind. Typing something the table does not
+   * contain did nothing at all, which reads as "accepted".
+   *
+   * Substituting one entry for another is precisely the failure this page
+   * exists to expose, and it was in the page's own input box. So: an exact
+   * name or identification number is taken; anything else that matches more
+   * than one entry is REFUSED with the candidates named, because choosing
+   * between "Sulfuric acid with more than 51 percent acid" and "Alkyl sulfonic
+   * acids" is a regulated decision and it belongs to the person, not to a sort
+   * order; and nothing is ever added without saying what was added.
+   */
   const addItem = useCallback((query: string) => {
-    const found = lookupMatches(lookupMaterial({ query }))[0];
-    if (!found) return;
+    const choice = chooseMaterial(query);
+    if (choice.kind === "none") {
+      setAnnounce(
+        `Nothing in the 49 CFR 172.101 table matches "${query}", so nothing was added. ` +
+        `Try the identification number, or the proper shipping name as the table writes it.`
+      );
+      return;
+    }
+    if (choice.kind === "ambiguous") {
+      setAnnounce(
+        `"${query}" matches ${choice.candidates.length} entries in the table, so nothing was added. ` +
+        `Substituting one of them for what you typed is the failure this page exists to catch. ` +
+        `Candidates: ${choice.candidates.slice(0, 4).map((m) => `${m.id ?? "no identification number"}, ${m.name}`).join("; ")}` +
+        `${choice.candidates.length > 4 ? ", and others" : ""}. Type the identification number, or the full name.`
+      );
+      return;
+    }
+    const found = choice.match;
     const r = resolveItem(found.id ? { id: found.id } : { name: found.name });
-    if ("error" in r) return;
+    if ("error" in r) {
+      setAnnounce(`"${query}" resolved to ${found.name}, which could not be loaded: ${r.error}`);
+      return;
+    }
+    setAnnounce(
+      `Added ${found.id ?? "no identification number"}, ${found.name}` +
+      (choice.exact ? "." : `. You typed "${query}".`)
+    );
     setManifest((m) => [...m, r]);
     setBays((b) => {
       const next = b.map((x) => ({ ...x, items: [...x.items] }));
@@ -307,6 +347,13 @@ export function Console() {
     if (unresolved.length) {
       // NEVER quietly load a subset. A shipping paper for a manifest nobody
       // submitted is the worst thing this page could produce.
+      //
+      // This used to set the banner and stop, which is not the same thing. The
+      // subset still loaded, still checked, still passed, and still exported,
+      // and the exported paper said nothing about the items that had gone
+      // missing. Writing a hole down is not closing it. So an unresolved
+      // reference now BLOCKS the export, for the operator and for the agent
+      // alike, until a person has acknowledged which items were dropped.
       setUrlProblem(unresolved);
     }
     if (resolved.length === 0) return;
@@ -335,6 +382,14 @@ export function Console() {
 
   const commit = useCallback(async () => {
     if (verdict.status !== "PASS") return;
+    if (urlProblem.length > 0) {
+      setAnnounce(
+        `Export blocked. ${urlProblem.length} item${urlProblem.length === 1 ? "" : "s"} from the ` +
+        `link did not resolve, so this manifest is not the one that was asked for. ` +
+        `Acknowledge the notice at the top of the page, or fix the link.`
+      );
+      return;
+    }
     setBusy(true);
     const load = toLoad(toWire());
     // The same boundary the agent's commit_manifest crosses: the token is
@@ -349,7 +404,7 @@ export function Console() {
       setAgentViewRevision((n) => n + 1);
     }
     setBusy(false);
-  }, [verdict, toWire, nonce]);
+  }, [verdict, toWire, nonce, urlProblem]);
 
   // The agent's view of the page. commit_manifest is registered only while the
   // verdict is PASS, so it appears and disappears as the load changes.
@@ -357,7 +412,13 @@ export function Console() {
     useMemo(
       () => ({
         manifestSize: manifest.length,
-        verdict: verdict.status === "IDLE" ? null : { status: verdict.status },
+        // An outstanding unresolved reference reads as NOT PASSING, so
+        // commit_manifest leaves the agent's registry as well. The registry is
+        // not the boundary, but offering a tool that must refuse is a trap.
+        verdict:
+          verdict.status === "IDLE" ? null
+          : urlProblem.length > 0 ? { status: "REFUSED" as const }
+          : { status: verdict.status },
         nonce,
         // The operator's checkboxes. These are the ONLY route by which an
         // attestation reaches the solver: the tool schemas no longer carry the
@@ -368,7 +429,7 @@ export function Console() {
           nonReactionAsserted: b.nonReactionAsserted,
         })),
       }),
-      [manifest.length, verdict.status, nonce, bays]
+      [manifest.length, verdict.status, nonce, bays, urlProblem.length]
     ),
     setPaper
   );
@@ -435,7 +496,12 @@ export function Console() {
           <p>
             The manifest below is therefore not the one the link asked for. Nothing has been
             silently substituted, and any verdict shown covers only what actually loaded.
+            <strong> The shipping paper cannot be exported until you acknowledge this</strong>,
+            because a paper for a manifest nobody submitted is worse than no paper.
           </p>
+          <button type="button" className="pill" onClick={() => setUrlProblem([])}>
+            I have read which items were dropped
+          </button>
         </div>
       )}
 
