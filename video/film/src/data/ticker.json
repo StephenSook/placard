@@ -1,0 +1,51 @@
+{
+  "source": "data/clauses.json, verbatim",
+  "count": 9,
+  "items": [
+    {
+      "id": "e2-X",
+      "cite": "49 CFR 177.848(e)(2)",
+      "text": "The letter \"X\" in the table indicates that these materials may not be loaded, transported, or stored together in the same transport vehicle or storage facility during the course of transp..."
+    },
+    {
+      "id": "e3-O",
+      "cite": "49 CFR 177.848(e)(3)",
+      "text": "The letter \"O\" in the table indicates that these materials may not be loaded, transported, or stored together in the same transport vehicle or storage facility during the course of transp..."
+    },
+    {
+      "id": "e3-corrosive-hard-block",
+      "cite": "49 CFR 177.848(e)(3)",
+      "text": "Notwithstanding the methods of separation employed, Class 8 (corrosive) liquids may not be loaded above or adjacent to Class 4 (flammable) or Class 5 (oxidizing) materials; except that sh..."
+    },
+    {
+      "id": "e4-asterisk",
+      "cite": "49 CFR 177.848(e)(4)",
+      "text": "The \"*\" in the table indicates that segregation among different Class 1 (explosive) materials is governed by the compatibility table in paragraph (f) of this section."
+    },
+    {
+      "id": "c-cyanide-acid",
+      "cite": "49 CFR 177.848(c)",
+      "text": "cyanides, cyanide mixtures or solutions may not be stored, loaded and transported with acids if a mixture of the materials would generate hydrogen cyanide;"
+    },
+    {
+      "id": "c-42-vs-8",
+      "cite": "49 CFR 177.848(c)",
+      "text": "Division 4.2 materials may not be stored, loaded and transported with Class 8 liquids;"
+    },
+    {
+      "id": "g2-X",
+      "cite": "49 CFR 177.848(g)(2)",
+      "text": "The letter \"X\" in the table indicates that explosives of different compatibility groups may not be carried on the same transport vehicle."
+    },
+    {
+      "id": "g3i-group-L",
+      "cite": "49 CFR 177.848(g)(3)(i)",
+      "text": "\"1\" means an explosive from compatibility group L shall only be carried on the same transport vehicle with an identical explosive."
+    },
+    {
+      "id": "17321-a-forbidden",
+      "cite": "49 CFR 173.21(a)",
+      "text": "Materials that are designated \"Forbidden\" in Column 3 of the § 172.101 table."
+    }
+  ]
+}

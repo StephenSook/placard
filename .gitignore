@@ -100,3 +100,24 @@ lighthouse-report.*
 /test-results/
 /playwright-report/
 /blob-report/
+
+# ── Film production ──────────────────────────────────────────────────────────
+# The pipeline SOURCE is tracked: the capture script, the narration generator,
+# the Remotion project and the beat clock. What it produces is not: captures,
+# narration wavs, the music bed, the composited masters. A judge cloning this
+# repo wants the code that made the film, not 900 MB of intermediates.
+/video/captures/
+/video/narration/
+/video/public/
+/video/film/public/
+/video/film/node_modules/
+/video/film/out/
+/video/film/.remotion/
+
+# Operator brief material dropped at the root, and every research PDF.
+/DEMO VIDEO
+*.pdf
+
+# Agent skill caches installed by `npx skills add`, machine-local tooling.
+/.agents/
+/skills-lock.json
