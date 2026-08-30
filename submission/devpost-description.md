@@ -1,6 +1,6 @@
 ## Try it before you read anything
 
-https://segregation-console.netlify.app
+https://segregation-console.vercel.app
 
 No account, no key, no login. WebMCP is enabled on that origin by a registered
 Chrome origin trial, so there is no browser flag to set either. **Open it in
@@ -23,12 +23,12 @@ including the examples, so you can check the arithmetic rather than take my word
 for it. Nothing there is cached and nothing there needs a key.
 
 ```
-curl -s https://segregation-console.netlify.app/api/measure
-curl -s https://segregation-console.netlify.app/api/forbidden-audit
+curl -s https://segregation-console.vercel.app/api/measure
+curl -s https://segregation-console.vercel.app/api/forbidden-audit
 ```
 
 A numbered three-minute walk of every live surface, with what would falsify each
-claim: https://segregation-console.netlify.app/judge
+claim: https://segregation-console.vercel.app/judge
 
 Then paste the demo manifest and press check. An agent proposes a load, the page
 refuses it, and quotes the clause that says why.
@@ -325,7 +325,7 @@ The agent surface has its own evaluations, runnable with no LLM and no key:
 
 ```bash
 npx webmcp-evals smoke \
-  -u "https://segregation-console.netlify.app/?load=UN1090&check=1" \
+  -u "https://segregation-console.vercel.app/?load=UN1090&check=1" \
   -e evals/segregation.evals.json -v
 ```
 

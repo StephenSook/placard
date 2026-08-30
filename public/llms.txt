@@ -28,17 +28,17 @@ independent refusal axes and three of them are not in it.
 
 ## What will refuse you, and why the table alone is not enough
 
-- [173.21(a) Forbidden materials](https://segregation-console.netlify.app/api/forbidden-audit): may not be offered for transportation at all.
+- [173.21(a) Forbidden materials](https://segregation-console.vercel.app/api/forbidden-audit): may not be offered for transportation at all.
 - 177.848(d): the 18 by 18 matrix, taken at its most restrictive across both hazard sets.
 - 177.848(c): narrative prohibitions that are stricter than the matrix.
 - 177.848(e)(3): corrosive liquids over oxidizers, which no barrier rescues.
 
 ## Evidence, all reachable without a key or an account
 
-- [The three-minute itinerary](https://segregation-console.netlify.app/judge)
-- [Measured divergence between the table and the regulation](https://segregation-console.netlify.app/api/measure)
-- [The Forbidden-materials audit](https://segregation-console.netlify.app/api/forbidden-audit)
-- [Every verdict state side by side](https://segregation-console.netlify.app/states)
+- [The three-minute itinerary](https://segregation-console.vercel.app/judge)
+- [Measured divergence between the table and the regulation](https://segregation-console.vercel.app/api/measure)
+- [The Forbidden-materials audit](https://segregation-console.vercel.app/api/forbidden-audit)
+- [Every verdict state side by side](https://segregation-console.vercel.app/states)
 - [Source, tests and the pinned corpus](https://github.com/StephenSook/placard)
 
 ## Honest limits

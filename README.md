@@ -4,9 +4,9 @@ Paste a chemical manifest and watch an agent load a truck legally: it proposes, 
 exactly which federal rule each pair breaks, and the shipping paper cannot be exported until the
 load actually passes.
 
-**Live:** https://segregation-console.netlify.app
-**Check it in three minutes:** https://segregation-console.netlify.app/judge
-**Component states:** https://segregation-console.netlify.app/states
+**Live:** https://segregation-console.vercel.app
+**Check it in three minutes:** https://segregation-console.vercel.app/judge
+**Component states:** https://segregation-console.vercel.app/states
 
 WebMCP is enabled on that origin by a registered Chrome origin trial, so **no browser flag is
 needed**. Open it in ChatGPT's in-app browser or in Chrome 149 or later and the tools are there.
@@ -37,9 +37,9 @@ claim here is checkable from a URL:
 
 | Surface | What it answers |
 |---|---|
-| [`/judge`](https://segregation-console.netlify.app/judge) | A numbered three-minute itinerary. Each step states a claim, gives the one click that checks it, and names what would falsify it. |
-| [`/api/measure`](https://segregation-console.netlify.app/api/measure) | The headline number, recomputed from the committed corpus per request. |
-| [`/api/forbidden-audit`](https://segregation-console.netlify.app/api/forbidden-audit) | The 256 Forbidden entries, with the steps to verify the count against ecfr.gov yourself. |
+| [`/judge`](https://segregation-console.vercel.app/judge) | A numbered three-minute itinerary. Each step states a claim, gives the one click that checks it, and names what would falsify it. |
+| [`/api/measure`](https://segregation-console.vercel.app/api/measure) | The headline number, recomputed from the committed corpus per request. |
+| [`/api/forbidden-audit`](https://segregation-console.vercel.app/api/forbidden-audit) | The 256 Forbidden entries, with the steps to verify the count against ecfr.gov yourself. |
 
 ### The headline number, and what it is not
 
@@ -67,7 +67,7 @@ Smoke mode executes the expected tool calls against the live page with no LLM:
 
 ```bash
 npx webmcp-evals smoke \
-  -u "https://segregation-console.netlify.app/?load=UN1090&check=1" \
+  -u "https://segregation-console.vercel.app/?load=UN1090&check=1" \
   -e evals/segregation.evals.json -v
 ```
 

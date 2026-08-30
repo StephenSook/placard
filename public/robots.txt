@@ -5,4 +5,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://segregation-console.netlify.app/sitemap.xml
+Sitemap: https://segregation-console.vercel.app/sitemap.xml

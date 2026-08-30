@@ -39,7 +39,7 @@ none of these is waiting on anyone.
 | 28249 Submitter Type | **Individual** | Built solo. The writeup says so and the git history is one author. |
 | 28250 Country | **United States** | Author is a computer science student at Kennesaw State, Georgia. |
 | 28252 App Status | **New** | First commit is inside the submission window. Nothing predates it. |
-| 28254 Live URL | `https://segregation-console.netlify.app` | Origin-trial token is bound to this exact origin, so it cannot move. |
+| 28254 Live URL | `https://segregation-console.vercel.app` | Moved off Netlify on Aug 29 when its credits ran out mid-build and froze the site on a stale commit. The origin-trial token is bound to this exact origin and was re-registered for it, so this URL cannot move again without registering a third. |
 | 28256 Public repo | `https://github.com/StephenSook/placard` | Public, Apache-2.0 detected in the About sidebar, 100% community health. |
 | 28259 Level of learning | **Significant** | The WebMCP runtime facts in the writeup were learned by driving the client, not read. |
 | 28260 Career AI value | **Yes** | The adversarial-review discipline transfers to any codebase. |

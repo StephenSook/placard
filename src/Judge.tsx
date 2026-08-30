@@ -245,7 +245,7 @@ npm test              # exhaustive, property, metamorphic, fixed point, gate`}</
           <pre className="jcode mono">{`brew install --cask google-chrome@canary
 
 npx webmcp-evals smoke \\
-  -u "https://segregation-console.netlify.app/?load=UN1090&check=1" \\
+  -u "https://segregation-console.vercel.app/?load=UN1090&check=1" \\
   -e evals/segregation.evals.json -v`}</pre>
           <p className="jwhy">
             <strong>Two things that are not obvious.</strong> The harness hardcodes the Canary
