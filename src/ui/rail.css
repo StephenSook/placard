@@ -119,15 +119,27 @@
    DELIBERATELY NOT `order`: the DOM sequence is the reading sequence and the
    assistive-technology sequence, and this file has never reordered it. */
 @media (max-width: 640px) {
+  /* min-width: 0 IS LOAD-BEARING, and leaving it out was a real regression that
+     only WebKit showed. A grid item and a flex item both default to
+     `min-width: auto`, which refuses to shrink below the content's intrinsic
+     width. So the `overflow-x: auto` below did not clip: the rail grew to fit
+     all eight cards and took the whole document with it. Measured on an
+     iPhone 13 viewport: window 390px, document 1286px, the page scrolling
+     sideways. Chromium's mobile emulation reported no overflow at all, which is
+     why this is asserted in the WebKit project of the e2e suite. */
+  .rail { min-width: 0; }
   .rail__list {
+    min-width: 0;
     flex-wrap: nowrap;
     overflow-x: auto;
     gap: 8px;
     padding-bottom: 4px;
     scroll-snap-type: x proximity;
-    /* Bleed to the viewport edges so the row reads as scrollable. */
-    margin-inline: calc(var(--pad) * -1);
-    padding-inline: var(--pad);
+    /* No edge bleed. A negative margin plus matching padding overshot the
+       viewport by 2px once --pad stopped matching the console's own gutter at
+       this breakpoint, and 2px of horizontal document scroll is still
+       horizontal document scroll. The row reads as scrollable from the card cut
+       off at the right edge, which is enough. */
   }
   .rail__card { flex: 0 0 auto; min-width: 148px; scroll-snap-align: start; }
 }

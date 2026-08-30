@@ -42,3 +42,40 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  # END TO END, through the real WebMCP runtime.
+  #
+  # A separate job because it installs browsers and takes longer, and because a
+  # unit suite that is green while the page is broken is exactly the failure
+  # this project keeps finding. Chromium exposes document.modelContext behind
+  # --enable-features=WebMCP, so tool registration, the anticorrelated gate and
+  # the hash-bound commit are all exercised here rather than asserted at the
+  # source level.
+  #
+  # WebKit runs too, and it is not optional. A mobile overflow regression was
+  # invisible in Chromium's phone emulation and 1286px wide in WebKit.
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install browsers
+        run: npx playwright install --with-deps chromium webkit
+
+      - name: End-to-end
+        run: npm run test:e2e
+
+      - name: Upload traces on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces
+          path: test-results/
+          retention-days: 7

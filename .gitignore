@@ -95,3 +95,8 @@ lighthouse-report.*
 
 # Judge-facing screenshots, uploaded to Devpost. Not part of the build.
 /.gallery/
+
+# Playwright output. Traces and screenshots from failed e2e runs.
+/test-results/
+/playwright-report/
+/blob-report/
