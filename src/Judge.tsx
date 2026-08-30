@@ -105,17 +105,21 @@ export function Judge() {
         <Step n={1} title="Watch a legal-looking load get refused">
           <p>
             One link, nothing to press. It opens sulfuric acid and calcium hypochlorite on one
-            truck with the barrier already asserted. The 177.848(d) table cell for that pair is{" "}
+            truck. The 177.848(d) table cell for that pair is{" "}
             <code>O</code>, which reads as "separate them and they may travel together", and the
             page refuses anyway, quoting 177.848(e)(3) word for word, because that clause blocks
             Class 8 liquids above or adjacent to Class 4 and 5 materials notwithstanding the
-            methods of separation employed.
+            methods of separation employed. Tick the barrier box yourself and it still refuses,
+            which is the point: no separation reaches this clause.
           </p>
           <p className="jwhy">
             <strong>Why it matters:</strong> an agent reasoning from the table alone clears this
-            load. The table is one of four independent refusal axes.
+            load. The table is one of four independent refusal axes. And note what this link
+            canNOT do: a URL may describe a load, never attest to one, so the barrier box opens
+            unticked no matter what the link says. Only the person at the console can assert what
+            is physically in the vehicle.
           </p>
-          <a className="jbtn" href="/?load=UN1830,UN1748&barriers=1&check=1">
+          <a className="jbtn" href="/?load=UN1830,UN1748&check=1">
             Open the refusal
           </a>
           <a className="jbtn jbtn--ghost" href="/?demo=1&check=1">
@@ -259,7 +263,7 @@ npx webmcp-evals smoke \\
           <a className="jbtn jbtn--ghost" href={`${REPO}/blob/main/evals/segregation.evals.json`} rel="noreferrer">
             The eval suite
           </a>
-          <a className="jbtn jbtn--ghost" href="/?load=UN1830,UN1748&barriers=1&check=1">
+          <a className="jbtn jbtn--ghost" href="/?load=UN1830,UN1748&check=1">
             Open the signature refusal directly
           </a>
         </Step>

@@ -524,7 +524,20 @@ describe("the judge itinerary covers what actually ships", () => {
   it("opens on a permalink rather than an instruction to press something", () => {
     // Step one used to say "press Load the demonstration manifest". A judge
     // should not have to operate the product to see the thing it is famous for.
-    expect(judge).toMatch(/load=UN1830,UN1748&barriers=1&check=1/);
+    expect(judge).toMatch(/load=UN1830,UN1748&check=1/);
+  });
+
+  it("does not offer a link that claims to assert what only a person can", () => {
+    // These parameters used to work. A link carrying &barriers=1 attested, on
+    // the operator's behalf, that physical barriers were installed in a truck
+    // it had never seen, and that turned a refused load into a passing one.
+    // The parameters are refused now, so a link still carrying one would be
+    // promising an effect it cannot have, which is its own kind of lie.
+    for (const p of ["barriers=1", "shipper=1", "nonreaction=1"]) {
+      expect(judge, `/judge still links with ${p}`).not.toContain(p);
+    }
+    // Non-vacuity: the page really does carry permalinks.
+    expect(judge).toContain("load=UN1830,UN1748");
   });
 });
 
