@@ -67,10 +67,12 @@ where segregation stops being an occasional question and becomes a daily one,
 because you need two incompatible materials and one truck before any of this
 matters at all.
 
-Corrosive liquids go out from 1,619 of them, and flammable liquids from 2,617.
-Those are the two sides of the pairing this page refuses in its first
-screenshot. The demonstration is not a contrived edge case. It is the two most
-commonly shipped hazard classes in the country meeting on one vehicle.
+The single most frequently shipped entry in that survey is UN1993, flammable
+liquids not otherwise specified, shipped by 2,617 establishments. UN1760,
+corrosive liquids not otherwise specified, is shipped by 1,619. A Class 8
+corrosive is one half of the refusal in the first screenshot on this page, and
+the other half is a Class 5.1 oxidizer. Neither is exotic. This is ordinary
+freight.
 
 Source: U.S. Census Bureau, 2022 Commodity Flow Survey, Expanded Hazardous
 Materials Supplement, Tables 1 and 2, published by PHMSA at
