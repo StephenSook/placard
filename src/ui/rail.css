@@ -112,3 +112,22 @@
   .rail__list { flex-direction: row; flex-wrap: wrap; }
   .rail__card { flex: 1 1 150px; }
 }
+
+/* On a phone the rail wrapped to four rows of two, about 500px of mostly-zero
+   tallies sitting between the hero and the manifest. It becomes one
+   horizontally scrolling row instead, roughly a fifth of the height.
+   DELIBERATELY NOT `order`: the DOM sequence is the reading sequence and the
+   assistive-technology sequence, and this file has never reordered it. */
+@media (max-width: 640px) {
+  .rail__list {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 4px;
+    scroll-snap-type: x proximity;
+    /* Bleed to the viewport edges so the row reads as scrollable. */
+    margin-inline: calc(var(--pad) * -1);
+    padding-inline: var(--pad);
+  }
+  .rail__card { flex: 0 0 auto; min-width: 148px; scroll-snap-align: start; }
+}

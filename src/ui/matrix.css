@@ -44,6 +44,13 @@
 /* Wide content scrolls inside its own container. The page never scrolls sideways. */
 .matrix__scroll { overflow-x: auto; padding-bottom: 0.5rem; }
 
+/* Centre the table when it is narrower than its container. It used to sit hard
+   left inside a full-width card, leaving a dead column roughly a third of the
+   page wide next to the single densest object in the project. `margin-inline:
+   auto` on the table itself does nothing once the table overflows, so the
+   horizontal scroller still starts at the left edge and nothing is cut off. */
+.matrix__scroll > table { margin-inline: auto; }
+
 .matrix__table { border-collapse: collapse; font-size: var(--t-nano); }
 
 .matrix__corner { width: 190px; }

@@ -94,12 +94,20 @@
   color: var(--ink-soft);
   text-align: center;
   line-height: 1.25;
-  max-width: 15ch;
-  /* Proper shipping names are long by regulation. Two lines, then ellipsis. */
+  /* A PROPER SHIPPING NAME IS THE LEGAL NAME OF THE MATERIAL, so truncating it
+     on a compliance tool is not a layout decision, it is dropping the
+     identifier the regulation cares about. This card is also the first thing a
+     reader sees, and "Sulfuric acid with more than 51..." reads as broken.
+     Wider box, three lines, and it wraps on words rather than clipping. Four
+     lines would start to unbalance the card against the placard above it, so
+     the clamp stays as a backstop for the handful of n.o.s. names that run
+     past 60 characters. */
+  max-width: 22ch;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  overflow-wrap: break-word;
 }
 
 .verdict__cell {
