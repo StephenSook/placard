@@ -238,4 +238,28 @@ export const CLAUSES: ClauseSpec[] = [
     from: "Substance or article so packed or designed",
     to: "1.4S",
   },
+
+  // ── 172.202 and 172.204, what the shipping paper must say ─────────────────
+  //
+  // The exported document quoted both of these before either was pinned. The
+  // certification wording on the paper was a paraphrase presented as what the
+  // signer is taking on, and the video script's own source table claimed
+  // data/clauses.json as its source for two sections the corpus did not
+  // contain. A quote is where fabrication hides, so both are now sliced from
+  // the pinned XML like every other clause and the document quotes the slice.
+  {
+    id: "172202-a-sequence", section: "49 CFR 172.202(a)", slug: "172-202-shipping-paper-description",
+    from: "The shipping description of a hazardous material on the shipping paper must include:",
+    to: "The packing group in Roman numerals, as designated for the hazardous material in Column (5) of the",
+  },
+  {
+    id: "172204-a-general", section: "49 CFR 172.204(a)", slug: "172-204-shippers-certification",
+    from: "each person who offers a hazardous material for transportation shall certify",
+    to: "the certification contained in paragraph (a)(1) of this section",
+  },
+  {
+    id: "172204-a1-certification", section: "49 CFR 172.204(a)(1)", slug: "172-204-shippers-certification",
+    from: "This is to certify that the above-named materials are properly classified",
+    to: "according to the applicable regulations of the Department of Transportation.",
+  },
 ];

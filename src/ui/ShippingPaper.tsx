@@ -8,10 +8,11 @@
  * 172.202(a) requires, in the order the regulation requires it: identification
  * number, proper shipping name, hazard class or division, packing group.
  *
- * It also carries the certification the signer is actually taking on. That
- * text is on screen rather than buried, because 172.204 makes signing a
- * regulated act and the person doing it becomes a hazmat employee under
- * subpart H. Hiding it would misrepresent what the button does.
+ * It also carries the certification the signer is actually taking on, QUOTED
+ * from the pinned corpus rather than paraphrased. That text is on screen rather
+ * than buried because 172.204 makes signing a regulated act, and a paraphrase
+ * of what someone is certifying, printed on the document they certify, is the
+ * one place a paraphrase is least excusable.
  *
  * AND IT PRINTS. That sounds minor and is not: this document's whole purpose is
  * to be signed and to ride in the cab, and until the print rules in paper.css
@@ -21,6 +22,7 @@
  * 172.204 wants a signature and a screen cannot take one.
  */
 import "./paper.css";
+import { shipperCertification } from "../tools/executors.ts";
 
 type Line = {
   identificationNumber?: string | null;
@@ -33,6 +35,7 @@ type Line = {
 type Vehicle = { vehicle: number; barriersPresent: boolean; singleShipper: boolean; lines: Line[] };
 
 export function ShippingPaper({ paper, onClose }: { paper: unknown; onClose: () => void }) {
+  const cert = shipperCertification();
   const vehicles = (Array.isArray(paper) ? paper : []) as Vehicle[];
 
   return (
@@ -89,13 +92,10 @@ export function ShippingPaper({ paper, onClose }: { paper: unknown; onClose: () 
       ))}
 
       <footer className="paper__cert">
-        <p className="paper__certTitle mono">Shipper certification, 49 CFR 172.204</p>
-        <p>
-          Signing this certifies that the materials are properly classified, described, packaged,
-          marked and labeled, and are in proper condition for transportation. The person who signs
-          becomes a hazmat employee under 49 CFR 172 subpart H and retains that responsibility. This
-          page does not sign anything and is not legal advice.
-        </p>
+        <p className="paper__certTitle mono">{cert.heading}</p>
+        <blockquote className="paper__quote">{cert.quote.text}</blockquote>
+        <p className="paper__certSource mono">{cert.obligation.section}</p>
+        <p>{cert.disclaimer}</p>
       </footer>
     </section>
   );

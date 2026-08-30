@@ -125,3 +125,19 @@
 
   @page { size: letter portrait; margin: 16mm; }
 }
+
+/* The certification is a QUOTE, so it is set as one: indented, ruled on the
+   left, and followed by its section. A paraphrase set in body copy is what this
+   block used to be, and on the one document this tool produces that was the
+   worst possible place for it. */
+.paper__quote {
+  margin: 8px 0 6px;
+  padding: 8px 0 8px 14px;
+  border-left: 2px solid var(--paper-edge);
+  font-style: italic;
+}
+.paper__certSource {
+  margin: 0 0 10px 14px;
+  font-size: 0.82em;
+  color: var(--ink-faint);
+}

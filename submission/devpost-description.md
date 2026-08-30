@@ -339,7 +339,7 @@ npm test
 having checked nothing is indistinguishable from one that works:
 
 ```
-PASS  checked 11 hashes, 37 verbatim clauses (7150 characters), 493 table cells, 3293 table entries
+PASS  checked 13 hashes, 40 verbatim clauses (8962 characters), 493 table cells, 3293 table entries
 ```
 
 Every clause the app quotes is proven to be a verbatim substring of the pinned

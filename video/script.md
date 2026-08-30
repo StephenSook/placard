@@ -107,6 +107,15 @@ One action, stated once: open the live URL. No second or third call to action.
 | Forbidden entries with no identification number | 256 | FACTS.md, /api/forbidden-audit |
 | US establishments shipping hazmat, 2022 | 20,460 | Census 2022 CFS, Expanded Hazmat Supplement |
 | clause quoted | 177.848(e)(3) | data/clauses.json, gate-checked verbatim |
-| basic description sequence | 172.202 | data/clauses.json |
-| signer responsibility | 172.204 | data/clauses.json |
+| basic description sequence | 172.202(a) | data/clauses.json, gate-checked verbatim |
+| signer responsibility | 172.204(a) | data/clauses.json, gate-checked verbatim |
+
+Two of those rows were false when this table was written. 172.202 and 172.204
+were not in the corpus, so the sources column claimed a file that did not
+contain them, while the shipping paper printed a PARAPHRASE of the
+certification and the film's second beat said the signer "becomes a hazmat
+employee under subpart H", which cites the training subpart for a definition
+that lives in 171.8. Both sections are now pinned at the same snapshot, the
+paper quotes 172.204(a)(1) verbatim, and the beat says only what 172.204(a)
+itself says. A source table is a claim like any other.
 | corpus snapshot | 2026-08-27 | data/PROVENANCE.md |

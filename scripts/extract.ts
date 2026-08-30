@@ -38,6 +38,8 @@ const API = "https://www.ecfr.gov/api/versioner/v1";
 const SECTIONS = [
   { part: "172", section: "172.101", slug: "172-101-hmt" },
   { part: "172", section: "172.102", slug: "172-102-special-provisions" },
+  { part: "172", section: "172.202", slug: "172-202-shipping-paper-description" },
+  { part: "172", section: "172.204", slug: "172-204-shippers-certification" },
   { part: "173", section: "173.21", slug: "173-21-forbidden" },
   { part: "173", section: "173.52", slug: "173-52-compatibility-groups" },
   { part: "177", section: "177.848", slug: "177-848-segregation" },

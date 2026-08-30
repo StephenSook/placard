@@ -54,6 +54,13 @@ export const SignerScene: React.FC<{ durationInFrames: number }> = ({ durationIn
           <Chip key={l} delay={16 + i * 5}>{l}</Chip>
         ))}
       </div>
+      {/*
+        This said "becomes a hazmat employee under subpart H", which cites the
+        TRAINING subpart for a definition that lives in 171.8, on a claim the
+        pinned corpus could not check. 172.204(a) is now pinned and it says
+        exactly this much, so the line says exactly this much. The chips above
+        are verbatim fragments of 172.204(a)(1).
+      */}
       <div
         style={{
           marginTop: 40, fontFamily: FONT_BODY, fontSize: 40, lineHeight: 1.35,
@@ -61,8 +68,8 @@ export const SignerScene: React.FC<{ durationInFrames: number }> = ({ durationIn
           opacity: useReveal(40),
         }}
       >
-        The signer becomes a hazmat employee under subpart H and keeps that
-        responsibility. Not the software.
+        172.204 puts that certification on the person who offers the material.
+        Not on the software.
       </div>
     </SceneWrap>
   );

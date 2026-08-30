@@ -1,6 +1,6 @@
 {
   "source": "verbatim slices of the pinned eCFR sections",
-  "count": 37,
+  "count": 40,
   "clauses": {
     "e1-blank": {
       "section": "49 CFR 177.848(e)(1)",
@@ -149,6 +149,18 @@
     "17352-group-S": {
       "section": "49 CFR 173.52(b), table 1, compatibility group S",
       "text": "Substance or article so packed or designed that any hazardous effects arising from accidental functioning are limited to the extent that they do not significantly hinder or prohibit fire fighting or other emergency response efforts in the immediate vicinity of the package S 1.4S"
+    },
+    "172202-a-sequence": {
+      "section": "49 CFR 172.202(a)",
+      "text": "The shipping description of a hazardous material on the shipping paper must include: (1) The identification number prescribed for the material as shown in Column (4) of the § 172.101 table; (2) The proper shipping name prescribed for the material in Column (2) of the § 172.101 table; (3) The hazard class or division number prescribed for the material, as shown in Column (3) of the § 172.101 table. The subsidiary hazard class or division number is not required to be entered when a corresponding subsidiary hazard label is not required. Except for combustible liquids, the subsidiary hazard class(es) or subsidiary division number(s) must be entered in parentheses immediately following the primary hazard class or division number. In addition- (i) The words \"Class\" or \"Division\" may be included preceding the primary and subsidiary hazard class or division numbers. (ii) The hazard class need not be included for the entry \"Combustible liquid, n.o.s.\" (iii) For domestic shipments, primary and subsidiary hazard class or division names may be entered following the numerical hazard class or division, or following the basic description. (4) The packing group in Roman numerals, as designated for the hazardous material in Column (5) of the"
+    },
+    "172204-a-general": {
+      "section": "49 CFR 172.204(a)",
+      "text": "each person who offers a hazardous material for transportation shall certify that the material is offered for transportation in accordance with this subchapter by printing (manually or mechanically) on the shipping paper containing the required shipping description the certification contained in paragraph (a)(1) of this section"
+    },
+    "172204-a1-certification": {
+      "section": "49 CFR 172.204(a)(1)",
+      "text": "This is to certify that the above-named materials are properly classified, described, packaged, marked and labeled, and are in proper condition for transportation according to the applicable regulations of the Department of Transportation."
     }
   }
 }

@@ -14,7 +14,7 @@ no account, no API key and no network.
 | Endpoint | `https://www.ecfr.gov/api/versioner/v1/full/2026-08-27/title-49.xml?part=&section=` |
 | Authentication | none required |
 
-Sections pulled: `172.101`, `172.102`, `173.21`, `173.52`, `177.848`, `177.835`.
+Sections pulled: `172.101`, `172.102`, `172.202`, `172.204`, `173.21`, `173.52`, `177.848`, `177.835`.
 
 ## Legal status
 
@@ -100,12 +100,14 @@ shasum -a 256 -c data/SHA256SUMS
 | `raw/177-848-segregation@2026-08-27.xml` | 35,705 | `b227fdffaabec275a185933fb419f1ed4706d5dd8e7af2ab13f73794c8b236ed` |
 | `raw/173-52-compatibility-groups@2026-08-27.xml` | 13,162 | `fc211c1f3515e95b6e8e510e0cdc3edfd82ef6a45fceeaf4a5b76982060909b1` |
 | `raw/173-21-forbidden@2026-08-27.xml` | 11,984 | `aaf0b3b81ec56b17f85878d902ae90bad9f579eb01e97ba04d07c0536facaf3c` |
+| `raw/172-204-shippers-certification@2026-08-27.xml` | 7,150 | `db175e9dad85e704be435832ad07bc16f9e9a974d60abeec5bc80f2b64c09b1c` |
+| `raw/172-202-shipping-paper-description@2026-08-27.xml` | 8,290 | `91941f25daff62da00ed679f05b5855f24da570628005c76078b74d8c0db6d0b` |
 | `raw/172-102-special-provisions@2026-08-27.xml` | 183,872 | `21d55d2ff2ea6e070c079fe24a8a8c84b073910dc4dc3fcbec29401bab321c9e` |
 | `raw/172-101-hmt@2026-08-27.xml` | 2,920,078 | `3c69730904a09dbea4adc96b44d0a8298f86eda9efb4f184def25e4ed52a6ab1` |
 | `hmt.json` | 2,275,271 | `2ce32a2e81aaec8cb25d015a6c9df7ce3026a17810c0b106181750a4d9a3d026` |
 | `synonyms.json` | 48,075 | `8db6792a3fcc3cc5f13217304890514b56bc13d3ede2d383ea556b6c77c73d14` |
 | `segregation_table.json` | 10,618 | `25f0ab940458c09d543817045943536fed7d0e7962670d539e4afac18e49f2e5` |
-| `clauses.json` | 10,900 | `ecc939156d00f2a6590f29f0f670de3efd449995ea4a7e580583a9cae49e8ffc` |
+| `clauses.json` | 12,996 | `efebf5dd98f6bfa6173299533de31bba76230e46e349badcb99b3885faad1be0` |
 | `compatibility_table.json` | 3,165 | `b23cec599899b4f36b85467e65c0be40a1fe5dd093ae899a23b4f6315d2e4b3f` |
 
 The raw eCFR XML is hashed here but not committed: it is large and it is

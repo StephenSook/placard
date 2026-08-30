@@ -60,6 +60,8 @@ const SLUG_FOR = (section: string): string =>
   : section.includes("173.21") ? "173-21-forbidden"
   : section.includes("173.52") ? "173-52-compatibility-groups"
   : section.includes("172.102") ? "172-102-special-provisions"
+  : section.includes("172.202") ? "172-202-shipping-paper-description"
+  : section.includes("172.204") ? "172-204-shippers-certification"
   : section.includes("172.101") ? "172-101-hmt"
   : "";
 const SNAPSHOT = /eCFR snapshot requested \| `([\d-]+)`/.exec(readFileSync(join(DATA, "PROVENANCE.md"), "utf8"))?.[1] ?? "";
