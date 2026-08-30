@@ -166,11 +166,26 @@ export function classifyLineItem(input: { text: string }) {
 
 // ── propose_load ─────────────────────────────────────────────────────────────
 
-export function proposeLoad(
-  input: { items: string[]; maxVehicles: number },
-  /** From the operator's checkboxes. Never from the caller. */
-  attest: Attestations = {}
-) {
+/**
+ * A PROPOSAL CARRIES NO PHYSICAL ATTESTATION, and this used to take one.
+ *
+ * Moving the attestation fields off the wire stopped an agent asserting a
+ * barrier, and binding them to vehicle contents stopped an agent borrowing one
+ * on the CHECK path. The PROPOSE path still took the page's vehicle 1
+ * attestation positionally and applied it to every vehicle in an arrangement
+ * that does not exist yet. Reproduced: with the operator's barrier box ticked
+ * for a vehicle holding UN1090 and UN1830, an agent proposing UN1090 with
+ * UN1479 and maxVehicles 1 received PROPOSED with barriersPresent true, a legal
+ * arrangement resting on a physical fact nobody had asserted about that truck.
+ *
+ * There is no correct binding available here, because the vehicles a proposal
+ * describes have not been loaded and nobody has walked out and looked at them.
+ * So the proposal is computed with no attestation in force, which is the
+ * conservative direction: it may propose more vehicles than the operator
+ * ultimately needs, and the operator then ticks the boxes for the arrangement
+ * that actually exists and re-checks.
+ */
+export function proposeLoad(input: { items: string[]; maxVehicles: number }) {
   for (const k of ATTESTATION_KEYS) {
     if ((input as Record<string, unknown>)?.[k] !== undefined) return malformed(ATTESTATION_REFUSAL);
   }
@@ -183,11 +198,7 @@ export function proposeLoad(
   const items: LineItem[] = input.items.map((ref) =>
     looksLikeId(ref) ? { id: ref.replace(/\s/g, "").toUpperCase() } : { name: ref }
   );
-  const r = proposePartition(items, {
-    maxVehicles: input.maxVehicles,
-    ...(attest.barriersPresent !== undefined ? { barriersPresent: attest.barriersPresent } : {}),
-    ...(attest.singleShipper !== undefined ? { singleShipper: attest.singleShipper } : {}),
-  });
+  const r = proposePartition(items, { maxVehicles: input.maxVehicles });
 
   if (r.status === "UNRESOLVED") {
     return { status: "UNRESOLVED" as const, errors: r.errors };
@@ -209,13 +220,12 @@ export function proposeLoad(
     vehicles: r.load.vehicles.map((v, i) => ({ vehicle: i + 1, items: v.items.map((x) => x.id ?? x.name ?? "") })),
     vehiclesUsed: r.vehiclesUsed,
     conflictsAvoided: r.conflicts.length,
-    attestationsInForce: {
-      barriersPresent: attest.barriersPresent === true,
-      singleShipper: attest.singleShipper === true,
-    },
-    note: "This is a proposal, computed under the attestations the operator has ticked on the page, " +
-      "which are reported above and which you cannot set. Run check_segregation on it to obtain an " +
-      "approval token; nothing can be exported without one.",
+    attestationsInForce: { barriersPresent: false, singleShipper: false },
+    note: "This is a proposal, computed with NO physical attestation in force. Barriers and " +
+      "single-shipper status are claims about a loaded truck, and these vehicles are not loaded " +
+      "yet, so no such claim can apply to them and none was borrowed from the page. The operator " +
+      "ticks the boxes for the arrangement that actually exists. Run check_segregation on it to " +
+      "obtain an approval token; nothing can be exported without one.",
   };
 }
 
@@ -374,11 +384,31 @@ const ATTESTATION_REFUSAL =
  */
 export type PageLoad = { items: string[] }[];
 
-/** Compare two vehicles' contents the way the operator sees them: as a set of
- *  references, order-insensitive, case and whitespace normalised. */
+/**
+ * Compare two vehicles' contents the way the operator sees them: as a set of
+ * references, order-insensitive, case and whitespace normalised.
+ *
+ * IDENTIFICATION NUMBERS NORMALISE DIFFERENTLY FROM NAMES, and collapsing both
+ * to single spaces revoked a valid attestation. 49 CFR prints "UN 1090" with a
+ * space and the resolver deliberately accepts both spellings, so an agent
+ * echoing the printed form back sent references that resolve to exactly the
+ * operator's materials, failed this comparison, lost the barrier it was
+ * entitled to, and got SEPARATION_REQUIRED for a load the operator had
+ * attested. Two spellings of one number reaching two answers is the defect
+ * class this project exists to expose, and it was in the binding check.
+ *
+ * An identification number therefore loses ALL its whitespace and upper-cases,
+ * exactly as `toLoad` and `resolveItem` do. A proper shipping name keeps word
+ * boundaries, because there the spaces carry meaning.
+ */
 const sameItems = (a: string[], b: string[]): boolean => {
   const norm = (xs: string[]) =>
-    xs.map((x) => x.trim().toLowerCase().replace(/\s+/g, " ")).sort();
+    xs
+      .map((x) => {
+        const t = x.trim();
+        return looksLikeId(t) ? t.replace(/\s/g, "").toUpperCase() : t.toLowerCase().replace(/\s+/g, " ");
+      })
+      .sort();
   const [x, y] = [norm(a), norm(b)];
   return x.length === y.length && x.every((v, i) => v === y[i]);
 };

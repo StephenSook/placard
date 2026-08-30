@@ -146,11 +146,9 @@ export function useHazmatTools(
   // commit_manifest, and its gate is untouched.
   const notPassing = !passes;
 
-  const execPropose = useCallback(
-    (a: { items: string[]; maxVehicles: number }) =>
-      proposeLoad(a, stateRef.current.attestations[0] ?? {}),
-    []
-  );
+  // No attestation is threaded in. See proposeLoad: an arrangement that does
+  // not exist yet cannot have been walked out to and looked at.
+  const execPropose = useCallback((a: { items: string[]; maxVehicles: number }) => proposeLoad(a), []);
   const execCheck = useCallback(
     (a: { vehicles: Array<{ items: string[] }> }) =>
       checkSegregation(a, stateRef.current.nonce, stateRef.current.attestations, stateRef.current.pageLoad),

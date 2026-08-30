@@ -262,13 +262,10 @@ export function Console() {
         // that a smaller one would have missed.
         maxVehicles: Math.max(bays.length, refs.length, 2),
       },
-      // The operator's checkboxes, passed as trust context. proposeLoad no
-      // longer accepts these as arguments: an agent that could set them was
-      // attesting, on the operator's behalf, to barriers in a truck it cannot see.
-      {
-        barriersPresent: bays[0]?.barriersPresent ?? false,
-        singleShipper: bays[0]?.singleShipper ?? false,
-      },
+      // Deliberately no attestations, for the operator's button exactly as for
+      // the agent's tool. A tick on bay 1 is a claim about the truck bay 1
+      // currently describes; a proposal replaces those contents, so the claim
+      // does not survive the rearrangement. Re-tick and re-check after.
     );
     if (r.status === "PROPOSED") {
       /**
