@@ -6,11 +6,12 @@ No account, no key, no login. WebMCP is enabled on that origin by a registered
 Chrome origin trial, so there is no browser flag to set either. **Open it in
 Chrome 149 or later** and `document.modelContext` is live.
 
-One honest warning, because I tried it and it did not work the way the rules
-imply: asking ChatGPT to open the URL used its TEXT CRAWLER, which does not
-execute page JavaScript and therefore reports no tools. It said so itself. If
-you look for the tool surface there and find nothing, that is the crawler rather
-than the page, and Chrome shows you the real thing.
+One practical note, so you do not lose a minute to it. If you ask ChatGPT to
+*browse* the URL, that request can be served by its text crawler, which does not
+execute page JavaScript, so no tools appear. That is the crawler rather than the
+page. Open the URL in Chrome and the surface is there, and the agent's-eye panel
+prints the live `getTools()` result so you can confirm it rather than take my
+word for it.
 
 The page opens on a number it recomputes while you are looking at it:
 
