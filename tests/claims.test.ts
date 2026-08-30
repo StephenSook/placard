@@ -104,6 +104,58 @@ describe("wired or cut", () => {
   });
 });
 
+describe("every clause is either ENFORCED or declared reference-only", () => {
+  /**
+   * THE GUARD THAT SHOULD HAVE EXISTED FROM THE START.
+   *
+   * The citation gate proves each quoted clause is verbatim. It proves nothing
+   * about whether the rule is implemented, and ten of twenty-four were not.
+   * Two were live prohibitions: sodium cyanide with sulfuric acid returned PASS
+   * and exported, and so did 1.4S fireworks with 1.1G fireworks.
+   *
+   * A verbatim quote of a rule you do not apply is worse than no quote at all,
+   * because it reads as evidence of diligence that is not there.
+   */
+  const solverSrc = FILES
+    .filter((f) => /^src\/(solver|tools|evidence)\/.*\.ts$/.test(f))
+    .map(read)
+    .join("\n");
+  const ids = Object.keys(
+    (JSON.parse(read("data/clauses.json")) as { clauses: Record<string, unknown> }).clauses,
+  );
+
+  it("accounts for every clause in the corpus, with no gaps and no stale entries", () => {
+    const refOnly = read("src/solver/coverage.ts");
+    const declared = [...refOnly.matchAll(/^\s*"([a-z0-9-]+)":/gim)].map((m) => m[1]!);
+    const advisory = [...refOnly.matchAll(/^\s*"([a-z0-9-]+)",\s*$/gim)].map((m) => m[1]!);
+
+    const unaccounted: string[] = [];
+    for (const id of ids) {
+      const cited = new RegExp(`cite\\("${id}"\\)`).test(solverSrc);
+      if (!cited && !declared.includes(id) && !advisory.includes(id)) unaccounted.push(id);
+    }
+    expect(ids.length).toBe(24);
+    expect(
+      unaccounted,
+      `clauses shipped and verified verbatim but neither enforced nor declared reference-only:\n${unaccounted.join("\n")}`,
+    ).toEqual([]);
+
+    // And no stale declarations: a clause declared reference-only must exist.
+    for (const d of [...declared, ...advisory]) {
+      expect(ids, `coverage.ts declares ${d}, which is not in the corpus`).toContain(d);
+    }
+  });
+
+  it("the specific prohibitions that were silently missing are now enforced", () => {
+    for (const id of ["c-cyanide-acid", "g5-fireworks", "g6-group-G"]) {
+      expect(
+        new RegExp(`cite\\("${id}"\\)`).test(solverSrc),
+        `${id} is a prohibition and must be enforced by code, not merely quoted`,
+      ).toBe(true);
+    }
+  });
+});
+
 describe("citations", () => {
   it("every cite() id exists in the committed corpus", () => {
     const ids = new Set(
