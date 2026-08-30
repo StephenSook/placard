@@ -29,6 +29,8 @@
     "src",
     "scripts",
     "tests",
+    "api",
+    "netlify",
     "vite.config.ts"
   ]
 }

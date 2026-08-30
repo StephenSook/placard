@@ -9,7 +9,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && npm run build:api",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -19,7 +19,8 @@
     "capture:reference": "tsx scripts/capture-reference.ts",
     "facts": "tsx scripts/fact-sheet.ts",
     "provenance": "tsx scripts/provenance.ts",
-    "icons": "node scripts/icons.mjs"
+    "icons": "node scripts/icons.mjs",
+    "build:api": "node scripts/build-api.mjs"
   },
   "dependencies": {
     "@fontsource/archivo": "^5.3.0",
