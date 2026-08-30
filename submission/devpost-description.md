@@ -526,37 +526,41 @@ index that silently returns the wrong entry is worse than one that returns
 nothing. That is the thesis of this project, and the page was doing it to its own
 operator.
 
-**Round eight bound the identity into the boundary.** The approval token's
-canonical encoding omitted packing group and inhalation hazard zone, so UN1744
-"Bromine solutions" PG I Zone A and the same material at Zone B serialised to
-identical bytes and a token issued for one verified against the other. 6.1 PG I
-Zone A has its own row in the 177.848(d) table and Zone B does not, so the
-security boundary was treating two different loads as one. The same round found
-that the resolver refuses an ambiguous reference and names the field that would
-settle it, while the wire accepted only strings, so the remedy was unreachable:
-a refusal whose remedy nobody can send is a dead end dressed as guidance. And
-that removing a vehicle shifted every later bay left, so a truck whose contents
-had not changed was compared against the empty bay that used to sit at its index
-and lost a barrier the operator had genuinely asserted.
+**Round eight found the boundary was not binding the identity.** The approval
+token's canonical encoding left out packing group and inhalation hazard zone, so
+UN1744 "Bromine solutions" PG I Zone A and the same material at Zone B serialised
+to identical bytes and a token issued for one verified against the other. Those
+are two different loads. 6.1 PG I Zone A has its own row in the 177.848(d) table
+and Zone B does not.
 
-**Round nine was run by a different model family, on the whole repository rather
-than on a diff, and that is why it found what eight diff-scoped rounds had not.**
-It reported four findings and two reproduced. The two that did not include the
-one it ranked most severe, which is the argument for reproducing every finding
-before touching anything. The real ones: 177.848(e)(3) reaches Class 8 LIQUIDS
-and the predicate asked for "not solid", which also catches GASES, so UN1048
-hydrogen bromide, Division 2.3 with a subsidiary Class 8, was hard-blocked by a
-clause that does not reach it. And PROPOSE_LOAD_SCHEMA advertised a structured
-item form that its own executor rejected as malformed.
+The same round found the wire could not say the thing the refusal asked for. The
+resolver refuses an ambiguous reference and names the field that would settle it,
+and the wire took strings only. A refusal whose remedy nobody can send is a dead
+end dressed as guidance. It also found that removing a vehicle shifted every
+later bay left, so a truck whose contents had not changed was compared against
+the empty bay that used to sit at its index and lost a barrier the operator had
+genuinely asserted.
+
+**Round nine ran on a different model family, over the whole repository instead
+of a diff.** That is why it found what eight diff-scoped rounds had not. It
+reported four things and two reproduced, and the two that did not include the one
+it ranked most severe, which is the whole argument for reproducing a finding
+before touching anything.
+
+The real ones. 177.848(e)(3) reaches Class 8 LIQUIDS, and my predicate asked for
+"not solid", which also catches gases: UN1048 hydrogen bromide is Division 2.3
+with a subsidiary Class 8 and was being hard-blocked by a clause that does not
+reach it. Separately, PROPOSE_LOAD_SCHEMA advertised a structured item form that
+its own executor threw out as malformed.
 
 That round also confirmed a lead from a review that DIED mid-turn, which is worth
-saying because a failed round is no verdict rather than a pass: physical state
-had become an agent-settable wire field when I added structured references.
-177.848(d) covers Class 8 liquids only, so an agent re-sending the operator's own
-load with the sulfuric acid declared SOLID walked this project's headline pair
-out of the row that forbids it, borrowed the operator's barrier, and reached
-COMMITTED. One word, through a field I had introduced an hour earlier. State is
-refused by name now, like the other three physical claims.
+saying because a failed round is no verdict rather than a pass. Physical state had
+become an agent-settable field when I added structured references, and 177.848(d)
+covers Class 8 liquids only. So an agent re-sent the operator's own load with the
+sulfuric acid declared SOLID, walked this project's headline pair out of the row
+that forbids it, borrowed the operator's barrier, and committed a shipping paper.
+One word, through a field I had added an hour earlier. State is refused by name
+now, like the other three physical claims.
 
 I am putting all of this in the writeup rather than quietly fixing it because
 the alternative is a submission that claims a safety property and hides the
