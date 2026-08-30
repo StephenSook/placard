@@ -53,6 +53,29 @@ Then the officer signs. Under 49 CFR 172.204, signing the shipper certification
 makes them personally responsible for the load being right, and makes them a
 hazmat employee under subpart H. They are the person holding the pen.
 
+## How many people this is
+
+**20,460.** That is how many US establishments shipped hazardous materials in
+DOT-regulated packaging in 2022. The number is not an estimate I made. PHMSA
+paid the Census Bureau to add hazmat questions to the 2022 Commodity Flow
+Survey specifically to find this out, and the result is published as the
+Expanded Hazmat Supplement, Table 1.
+
+14,450 of those establishments ship between one and four distinct materials.
+The other six thousand ship five or more out of a single location, and that is
+where segregation stops being an occasional question and becomes a daily one,
+because you need two incompatible materials and one truck before any of this
+matters at all.
+
+Corrosive liquids go out from 1,619 of them, and flammable liquids from 2,617.
+Those are the two sides of the pairing this page refuses in its first
+screenshot. The demonstration is not a contrived edge case. It is the two most
+commonly shipped hazard classes in the country meeting on one vehicle.
+
+Source: U.S. Census Bureau, 2022 Commodity Flow Survey, Expanded Hazardous
+Materials Supplement, Tables 1 and 2, published by PHMSA at
+phmsa.dot.gov/hazmat-program-management-data-and-statistics/hazardous-material-commodity-flow-statistics
+
 Ask an agent to do this and it will read the segregation table, because the
 segregation table is the thing that looks like the answer. That is the failure I
 built this to make visible.
