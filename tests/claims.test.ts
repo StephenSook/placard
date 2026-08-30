@@ -13,6 +13,7 @@
  * CI on the first commit of the new file.
  */
 import { describe, it, expect } from "vitest";
+import { reachableCitedIds, type Source } from "./reachability.ts";
 import { execFileSync } from "node:child_process";
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
@@ -117,8 +118,7 @@ describe("every clause is either ENFORCED or declared reference-only", () => {
    * because it reads as evidence of diligence that is not there.
    */
   /**
-   * The source the coverage gate is allowed to count, with UNREACHABLE
-   * FUNCTIONS REMOVED.
+   * The clause ids cited from code something actually REACHES.
    *
    * `resolutionCitations` in hazards.ts was the only cite() site for three
    * clause ids and nothing in the repository called it. Those three passed this
@@ -127,34 +127,24 @@ describe("every clause is either ENFORCED or declared reference-only", () => {
    * to nobody. The gate could not see it because it greps source text, and dead
    * code is still text.
    *
-   * So every exported function in the scanned files is checked for a caller,
-   * and one with none is stripped before the citation scan runs.
+   * Two rounds patched that by SPLITTING the text on exported declarations. The
+   * split understood `export function` and then also `export const x = (`, and
+   * round ten found it still counted default exports, class methods,
+   * object-literal methods and private module helpers, because none of those
+   * starts with either form, so each sat inside a retained neighbour's chunk.
+   * It also read a bare `export { foo } from "./x"` as a caller.
+   *
+   * Text splitting cannot see any of that, so this parses. See
+   * tests/reachability.ts, which the mutation test in codex-findings drives
+   * against every declaration form.
    */
-  const reachableSrc = (() => {
-    const all = FILES.filter((f) => /^src\/.*\.tsx?$/.test(f));
-    const whole = all.map(read).join("\n");
-    let out = "";
-    for (const f of FILES.filter((f) => /^src\/(solver|tools|evidence)\/.*\.ts$/.test(f))) {
-      const text = read(f);
-      // Split on exported declarations and drop the uncalled ones.
-      //
-      // THIS ONLY UNDERSTOOD `export function`, and that gap was real: two
-      // citation helpers were `export const x = () => cite(...)`, never called,
-      // and they sat inside a retained neighbour's chunk where the filter could
-      // not see them. The 41-clause accounting stayed green on dead code, which
-      // is precisely the failure this gate exists to prevent. Arrow exports are
-      // split on too now.
-      const parts = text.split(/(?=^export (?:function |const \w+ = (?:\(|async )))/m);
-      for (const part of parts) {
-        const m = /^export (?:function (\w+)|const (\w+) = )/.exec(part);
-        if (!m) { out += part + "\n"; continue; }
-        const name = (m[1] ?? m[2])!;
-        // A caller is any use of the bare name that is not its own declaration.
-        const uses = (whole.match(new RegExp(`\\b${name}\\b`, "g")) ?? []).length;
-        if (uses > 1) out += part + "\n";
-      }
-    }
-    return out;
+  const reachableIds = (() => {
+    const src = (f: string): Source => ({ path: f, text: read(f) });
+    // The universe must be WIDER than the scanned set, or a helper called only
+    // from the UI would look dead and its clause would be reported as orphaned.
+    const universe = FILES.filter((f) => /^src\/.*\.tsx?$/.test(f)).map(src);
+    const scanned = FILES.filter((f) => /^src\/(solver|tools|evidence)\/.*\.ts$/.test(f)).map(src);
+    return reachableCitedIds(scanned, universe);
   })();
 
   const solverSrc = FILES
@@ -172,7 +162,7 @@ describe("every clause is either ENFORCED or declared reference-only", () => {
 
     const unaccounted: string[] = [];
     for (const id of ids) {
-      const cited = new RegExp(`cite\\("${id}"\\)`).test(reachableSrc);
+      const cited = reachableIds.has(id);
       if (!cited && !declared.includes(id) && !advisory.includes(id)) unaccounted.push(id);
     }
     expect(ids.length).toBe(41);

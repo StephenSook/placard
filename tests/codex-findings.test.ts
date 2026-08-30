@@ -16,6 +16,7 @@ import { attestOf, wireOf } from "./attest.ts";
 import { resolveItem } from "../src/solver/hazards.ts";
 import { entriesByName } from "../src/solver/corpus.ts";
 import { readFileSync } from "node:fs";
+import { reachableCitedIds, type Source } from "./reachability.ts";
 import { join } from "node:path";
 
 const N = "codex-regression";
@@ -994,12 +995,15 @@ describe("30. the coverage gate must not count dead citation helpers", () => {
     for (const s of sections) expect(cert.scope).toContain(s);
   });
 
-  it("the reachability filter understands exported arrow functions", () => {
-    // It only split on `export function`, so `export const x = () => cite(...)`
-    // sat inside a retained neighbour's chunk and satisfied the gate while
-    // being entirely unreachable.
+  it("the reachability filter no longer infers reachability from text at all", () => {
+    // RETIRED ONTO THE SUCCESSOR STATE. This asserted the literal regex
+    // `export (?:function |const`, which round ten showed was still blind to
+    // four declaration forms. A guard retires by asserting what replaced it,
+    // never by being deleted, so it now pins the parser and the mutation test
+    // below drives every form.
     const src = readFileSync(join(process.cwd(), "tests/claims.test.ts"), "utf8");
-    expect(src).toContain("export (?:function |const");
+    expect(src).not.toContain("export (?:function |const");
+    expect(src).toContain("reachableCitedIds");
   });
 });
 
@@ -1117,5 +1121,61 @@ describe("32. a named denylist only refuses the claims somebody already thought 
     const src = readFileSync(join(process.cwd(), "src/tools/executors.ts"), "utf8");
     expect(src).not.toContain("packingGroup, pihZone or quantity");
     expect(src).toContain("packingGroup or pihZone");
+  });
+});
+
+describe("33. the clause gate inferred reachability from text, and text cannot see scope", () => {
+  const cited = (files: Source[]) => reachableCitedIds(files, files);
+  const one = (text: string) => cited([{ path: "src/solver/x.ts", text }]);
+
+  it("counts a citation that something actually calls", () => {
+    // The positive control. Without this the test below passes on a filter
+    // that simply returns nothing, which is the vacuous-gate failure this
+    // whole family of guards exists to prevent.
+    expect(one(`
+      export function live() { return cite("e2-X"); }
+      export function caller() { return live(); }
+    `).has("e2-X")).toBe(true);
+  });
+
+  it("does not count a private module helper", () => {
+    // Not exported, never called. The old split only ever looked at lines
+    // beginning `export`, so this sat inside a retained neighbour's chunk.
+    expect(one(`
+      function dead() { return cite("e2-X"); }
+      export function other() { return 1; }
+    `).has("e2-X")).toBe(false);
+  });
+
+  it("does not count a named default export nobody imports", () => {
+    expect(one(`export default function dead() { return cite("e2-X"); }`).has("e2-X")).toBe(false);
+  });
+
+  it("does not count a class method on a class nobody uses", () => {
+    expect(one(`export class Dead { cites() { return cite("e2-X"); } }`).has("e2-X")).toBe(false);
+  });
+
+  it("does not count an object-literal method nobody calls", () => {
+    expect(one(`export const bag = { cites: () => cite("e2-X") };`).has("e2-X")).toBe(false);
+  });
+
+  it("does not treat a bare re-export as a caller", () => {
+    // `export { dead } from "./x"` puts the name in the text a second time, so
+    // the old use-count read it as a call. Re-exporting a function does not
+    // reach it.
+    expect(cited([
+      { path: "src/solver/x.ts", text: `export function dead() { return cite("e2-X"); }` },
+      { path: "src/solver/index.ts", text: `export { dead } from "./x.ts";` },
+    ]).has("e2-X")).toBe(false);
+  });
+
+  it("does not count a live inner function inside a dead outer one", () => {
+    // Nesting is why every enclosing name is checked rather than the innermost.
+    expect(one(`
+      export function dead() {
+        function inner() { return cite("e2-X"); }
+        return inner();
+      }
+    `).has("e2-X")).toBe(false);
   });
 });
