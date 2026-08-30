@@ -49,9 +49,10 @@ stricter than the matrix, and a rule in 177.848(e)(3) that no amount of
 separation rescues. Underneath it is the 172.101 table, 3,293 entries, of which
 717 carry a subsidiary hazard that changes which row you are even reading.
 
-Then the officer signs. Under 49 CFR 172.204, signing the shipper certification
-makes them personally responsible for the load being right, and makes them a
-hazmat employee under subpart H. They are the person holding the pen.
+Then the officer signs. Under 49 CFR 172.204, each person who offers a hazardous
+material for transportation certifies that it is offered in accordance with the
+subchapter. The certification is on the person, not on the software. They are
+the one holding the pen.
 
 ## How many people this is
 
@@ -371,7 +372,7 @@ written down rather than left for you to discover:
 That is 6 of 6. It was 2 of 6 until I actually ran it.
 
 
-13 test files. Lighthouse on the live origin, desktop, 58 audits passed and
+14 test files, 288 tests. Lighthouse on the live origin, desktop, 58 audits passed and
 none failed: agentic browsing 100, accessibility 100, best practices 100, SEO
 100, performance 100. Agentic browsing at 100 is itself the proof the origin
 trial is live, because those audits report nothing at all rather than failing
@@ -505,10 +506,71 @@ operator.
 
 I am putting all of this in the writeup rather than quietly fixing it because
 the alternative is a submission that claims a safety property and hides the
-evidence that the claim was tested. Sixteen defects across four rounds, every
-one reproduced before being touched, every one with a regression test that pairs
+evidence that the claim was tested. Twenty-seven defects across seven rounds,
+every one reproduced before being touched, every one with a regression test that pairs
 the load which used to clear against a load that must still clear, so no fix can
 degenerate into a blunt refusal. Every guard mutation-checked.
+
+**Three more rounds after I thought it was finished, and eleven more defects.**
+Every one of them was opened or left open by a previous round's FIX, which is
+the strongest argument I have for the rule that the exit condition is a clean
+round rather than a declared finish.
+
+**Round five: a proposal was borrowing a physical fact.** propose_load took the
+page's vehicle 1 attestation positionally and applied it to every vehicle in an
+arrangement that does not exist yet, so an agent proposing a pair the operator
+had never seen received PROPOSED with barriersPresent true. There is no correct
+binding available there, because the vehicles a proposal describes have not been
+loaded and nobody has walked out and looked at them, so proposals now carry no
+attestation at all. The same round found that the binding check compared
+reference STRINGS: the page holding UN1090 and an agent writing "UN 1090", the
+spelling 49 CFR itself uses, failed the comparison and lost a barrier the
+operator had genuinely asserted. And that a supplied packing group was being
+overruled by a severity heuristic, so a legal PG II load came back prohibited.
+
+**Round six found that my own fix had opened a hole.** I pinned 49 CFR 173.52
+so that whether an explosive is an article or a substance comes from the
+regulation's own definitions rather than from whether its name happens to start
+with the word "Article". That was right, and it removed a blanket fail-closed
+that had been standing in for every unevaluable condition at once. 177.848(g)(vi)
+has THREE conditions, not two: group G articles may load with C, D and E "other
+than fireworks and those requiring special handling". Nothing in 172.101
+designates a material as requiring special handling, so that exclusion cannot be
+evaluated at all, and a pair that should refuse went straight to a committed
+shipping paper. Worse, the regression test I had written in the same commit
+ASSERTED that pass, so the suite would have defended it. An unevaluable
+condition is not a satisfied one, and the refusal now says so in those words.
+
+**Round seven found the paper omitting what it rested on.** Subsidiary hazards
+were not printed, though 172.202(a)(3) requires them in parentheses after the
+primary and the document model already carried the labels, so acetyl chloride
+printed "3" rather than "3 (8)" on a document produced by a tool whose entire
+argument is that subsidiary hazards decide verdicts. The non-reaction assertion
+was dropped the same way, beside an executor comment reading "a shipping paper
+that was permitted by that assertion and does not record it is missing the
+reason it exists". The renderer's types are now derived from the executor's
+output rather than hand-narrowed, which is how a field came to be discarded in
+silence.
+
+That round also caught the attestation problem in its last hiding place. Four
+rounds had fixed it one path at a time: the tool stopped accepting barriers as
+arguments, the check stopped applying them to contents they were not made about,
+the proposal stopped copying them onto invented vehicles, and dragging an item
+between bays was STILL carrying them. Put a corrosive in one bay, tick all three
+assertions, put an oxidizer in another, drag it across, and the pair arrives
+holding claims made when the bay contained something else. The invalidation now
+lives at the single place bays are written rather than in the six handlers that
+write them, because a handler cannot forget a rule it does not have to remember.
+
+**And a reproduction step nobody could run.** /api/forbidden-audit prints "how
+to check this yourself", and step one was the eCFR endpoint as a TEMPLATE, with
+both query parameters empty. It answers HTTP 400. I found it by running the URL
+this repository publishes, which is the whole point: a reproduction step that
+does not work is worse than none, because it reads as evidence.
+
+The corpus grew through all of this rather than being trimmed to fit. It is now
+seven pinned sections and 40 verbatim clauses, 8,962 characters of regulation
+text, each proven byte for byte against the committed source.
 
 The discipline is the durable part, and it is reproducible: the review command,
 the loads that reproduced each defect, and the tests are all in the repository.
