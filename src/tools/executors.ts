@@ -48,6 +48,8 @@ export type LookupResult = {
 };
 
 export function lookupMaterial(input: { query: string }): LookupResult | MalformedInput {
+  const bad = unknownProperty(input, LOOKUP_KEYS);
+  if (bad) return malformed(unknownPropertyRefusal(bad));
   if (typeof input?.query !== "string" || input.query.trim() === "") {
     return malformed("query must be a non-empty string, an identification number such as UN1090 or a proper shipping name.");
   }
@@ -132,6 +134,10 @@ function score(entryName: string, text: string): number {
 }
 
 export function classifyLineItem(input: { text: string }) {
+  const bad = unknownProperty(input, CLASSIFY_KEYS);
+  if (bad) {
+    return { ...malformed(unknownPropertyRefusal(bad)), candidates: [] as never[], confirmationRequired: true as const };
+  }
   if (typeof input?.text !== "string" || input.text.trim() === "") {
     return { ...malformed("text must be a non-empty string."), candidates: [] as never[], confirmationRequired: true as const };
   }
@@ -186,9 +192,10 @@ export function classifyLineItem(input: { text: string }) {
  * that actually exists and re-checks.
  */
 export function proposeLoad(input: { items: WireRef[]; maxVehicles: number }) {
-  for (const k of ATTESTATION_KEYS) {
-    if ((input as Record<string, unknown>)?.[k] !== undefined) return malformed(ATTESTATION_REFUSAL);
-  }
+  // An exact allowlist, which subsumes the attestation-name check this used to
+  // do and also catches every property nobody has thought to forbid yet.
+  const bad = unknownProperty(input, PROPOSE_KEYS);
+  if (bad) return malformed(unknownPropertyRefusal(bad));
   // THE SCHEMA ADVERTISES THE STRUCTURED FORM, SO THIS PATH MUST ACCEPT IT.
   //
   // Items became "a string OR an identity object" for check_segregation and
@@ -318,6 +325,12 @@ function coerceRef(x: unknown): WireRef | null {
   // An attestation smuggled inside an item is the same forgery one level down.
   for (const k of ATTESTATION_KEYS) if (raw[k] !== undefined) return null;
   for (const k of CLAIM_KEYS) if (raw[k] !== undefined) return null;
+  // And anything else: an unrecognised item property was copied over silently,
+  // so `{ id: "UN1090", quantityShipped: "999 railcars" }` hashed as a bare
+  // UN1090 and the token covered bytes the caller never sent.
+  for (const k of Object.keys(raw)) {
+    if (!(REF_KEYS as readonly string[]).includes(k)) return null;
+  }
   const out: Record<string, string> = {};
   for (const k of REF_KEYS) {
     const v = raw[k];
@@ -427,8 +440,11 @@ export function coerceVehicles(input: unknown): WireVehicle[] | null {
     // separate trust-context argument and the wire may not carry them at all.
     // Refusing is deliberate: silently dropping the field leaves the caller
     // unable to learn that its input was ignored.
-    for (const k of ATTESTATION_KEYS) {
-      if (raw[k] !== undefined) return null;
+    // Exact allowlist, not a denylist: `quantity` at VEHICLE level was accepted
+    // and dropped for the life of this project because only the three
+    // attestation names were checked here.
+    for (const k of Object.keys(raw)) {
+      if (!(VEHICLE_KEYS as readonly string[]).includes(k)) return null;
     }
     out.push({ items: refs });
   }
@@ -461,10 +477,91 @@ export const attestationReport = (attest: Attestations[]) =>
     nonReactionAsserted: a.nonReactionAsserted === true,
   }));
 
+/**
+ * EVERY PROPERTY EACH WIRE OBJECT MAY CARRY, BY LAYER.
+ *
+ * A NAMED DENYLIST ONLY REFUSES THE CLAIMS SOMEBODY ALREADY THOUGHT OF.
+ * `coerceRef` rejected the three attestations and then `state` and `quantity`
+ * by name, and `coerceVehicles` rejected only the three attestations, so every
+ * other property at every layer was accepted and silently dropped. Reproduced
+ * at three layers, not the one the review named:
+ *
+ *   { items: ["UN1090"], quantity: "999 railcars" }          -> PASS, dropped
+ *   { items: [{ id: "UN1090", quantityShipped: "999" }] }    -> PASS, dropped
+ *   { vehicles: [...], quantity: "999 railcars" }            -> PASS, dropped
+ *
+ * Each returned an approval token, and the token hashes the COERCED load, so
+ * the caller received approval for bytes it did not send and the shipping
+ * paper recorded a different shipment than the one described. JSON Schema
+ * `additionalProperties: false` is not a runtime boundary: the WebMCP executor
+ * hands these handlers whatever the model produced.
+ *
+ * So the rule is an exact allowlist per layer, which removes the class instead
+ * of extending a list of forbidden names one review at a time.
+ */
+const VEHICLE_KEYS = ["items"] as const;
+const LOOKUP_KEYS = ["query"] as const;
+const CLASSIFY_KEYS = ["text"] as const;
+const PROPOSE_KEYS = ["items", "maxVehicles"] as const;
+const CHECK_KEYS = ["vehicles"] as const;
+const COMMIT_KEYS = ["vehicles", "approvalToken"] as const;
+
+/** Where an unsupported property was found, and which one it was. */
+type BadKey = { path: string; key: string };
+
+const outsideOf = (obj: unknown, allowed: readonly string[], path: string): BadKey | null => {
+  if (typeof obj !== "object" || obj === null || Array.isArray(obj)) return null;
+  for (const k of Object.keys(obj as Record<string, unknown>)) {
+    if (!(allowed as readonly string[]).includes(k)) return { path: path ? `${path}.${k}` : k, key: k };
+  }
+  return null;
+};
+
+/** The first property anywhere in the request that this tool does not read. */
+export function unknownProperty(input: unknown, allowedTop: readonly string[]): BadKey | null {
+  const top = outsideOf(input, allowedTop, "");
+  if (top) return top;
+  const raw = (input ?? {}) as Record<string, unknown>;
+  const inItems = (xs: unknown, base: string): BadKey | null => {
+    if (!Array.isArray(xs)) return null;
+    for (let i = 0; i < xs.length; i++) {
+      const bad = outsideOf(xs[i], REF_KEYS, `${base}[${i}]`);
+      if (bad) return bad;
+    }
+    return null;
+  };
+  if (Array.isArray(raw.vehicles)) {
+    for (let i = 0; i < raw.vehicles.length; i++) {
+      const v = raw.vehicles[i] as Record<string, unknown> | undefined;
+      const bad = outsideOf(v, VEHICLE_KEYS, `vehicles[${i}]`);
+      if (bad) return bad;
+      const inner = inItems(v?.items, `vehicles[${i}].items`);
+      if (inner) return inner;
+    }
+  }
+  return inItems(raw.items, "items");
+}
+
+/**
+ * Why the property was refused. A physical claim keeps the attestation wording,
+ * because being told "not a property" would hide the reason it can never be one.
+ */
+export function unknownPropertyRefusal(bad: BadKey): string {
+  const claim =
+    (ATTESTATION_KEYS as readonly string[]).includes(bad.key) ||
+    (CLAIM_KEYS as readonly string[]).includes(bad.key);
+  return claim
+    ? ATTESTATION_REFUSAL
+    : `${bad.path} is not a property this tool reads, and nothing was evaluated. It is refused ` +
+      `by name rather than dropped: a property this tool ignores would leave you holding an ` +
+      `approval token for different bytes than the ones you sent, and a shipping paper that ` +
+      `records a different shipment than the one you described. Remove it and call again.`;
+}
+
 const ATTESTATION_REFUSAL =
   "vehicles must be an array of objects, each with an items array. An item is either a string " +
   "(an identification number or a proper shipping name) or an object carrying id, name, " +
-  "packingGroup, pihZone or quantity, for when a bare reference names more than one material. " +
+  "packingGroup or pihZone, for when a bare reference names more than one material. " +
   "Physical state and quantity are NOT among them: each is a claim about the physical shipment " +
   "that only the operator at the console can make. State is derived from the 172.101 entry. " +
   "barriersPresent, singleShipper and nonReactionAsserted are NOT arguments to this tool: " +
@@ -656,6 +753,8 @@ export async function checkSegregation(
    *  made about. Omitted by trusted callers driving the solver directly. */
   pageLoad?: PageLoad
 ) {
+  const bad = unknownProperty(input, CHECK_KEYS);
+  if (bad) return malformed(unknownPropertyRefusal(bad));
   const wire = coerceVehicles(input?.vehicles);
   if (wire === null) {
     return malformed(ATTESTATION_REFUSAL);
@@ -714,6 +813,14 @@ export async function commitManifest(
   // the registry is a UX affordance plus defence in depth, never the
   // guarantee. The guarantee is that this function re-derives the verdict from
   // the exact bytes it is about to export.
+  const bad = unknownProperty(input, COMMIT_KEYS);
+  if (bad) {
+    return {
+      status: "REFUSED" as const,
+      reason: `malformed request: ${unknownPropertyRefusal(bad)} Nothing was exported.`,
+      note: "No shipping paper was produced. Re-run check_segregation on the arrangement you intend to ship.",
+    };
+  }
   const wire = coerceVehicles(input?.vehicles);
   if (wire === null || typeof input?.approvalToken !== "string") {
     return {

@@ -8,7 +8,10 @@
  */
 import { describe, it, expect } from "vitest";
 import { checkLoad } from "../src/solver/index.ts";
-import { checkSegregation, commitManifest, proposeLoad, toLoad } from "../src/tools/executors.ts";
+import {
+  checkSegregation, classifyLineItem, commitManifest, isMalformed, lookupMaterial, proposeLoad,
+  toLoad,
+} from "../src/tools/executors.ts";
 import { attestOf, wireOf } from "./attest.ts";
 import { resolveItem } from "../src/solver/hazards.ts";
 import { entriesByName } from "../src/solver/corpus.ts";
@@ -1045,5 +1048,74 @@ describe("31. note A granted an X-cell exemption on a condition nothing can eval
     // The negative half, so the fix cannot degenerate into one blunt refusal
     // that hides the distinction the previous round recovered.
     expect(await clears([{ items: ["UN1942", "UN0171"] }])).toBe(false);
+  });
+});
+
+describe("32. a named denylist only refuses the claims somebody already thought of", () => {
+  const N32 = "round-ten-allowlist";
+
+  it("refuses a quantity at VEHICLE level, where only attestations were checked", async () => {
+    // REPRODUCED BEFORE THE FIX. coerceRef rejected state and quantity by name
+    // at the ITEM level; coerceVehicles checked only the three attestation
+    // names, so this returned PASS with an approval token and the quantity was
+    // dropped on the floor. The token hashes the COERCED load, so the caller
+    // held approval for bytes it had not sent.
+    const r = await checkSegregation(
+      { vehicles: [{ items: [{ id: "UN1090" }], quantity: "999 railcars" }] } as never, N32, [{}],
+    );
+    expect(r.status).toBe("REFUSED");
+  });
+
+  it("refuses an unrecognised property at every layer, and names the path", async () => {
+    // The review named ONE layer. An audit's examples are a sample, not an
+    // inventory, so the fix is an exact allowlist per layer rather than three
+    // more forbidden names, and the refusal says exactly where the property was.
+    const top = await checkSegregation({ vehicles: [{ items: ["UN1090"] }], foo: 1 } as never, N32, [{}]);
+    const veh = await checkSegregation({ vehicles: [{ items: ["UN1090"], foo: 1 }] } as never, N32, [{}]);
+    const item = await checkSegregation({ vehicles: [{ items: [{ id: "UN1090", foo: 1 }] }] } as never, N32, [{}]);
+    expect(top.status).toBe("REFUSED");
+    expect(veh.status).toBe("REFUSED");
+    expect(item.status).toBe("REFUSED");
+    expect((top as { reason: string }).reason).toContain("foo");
+    expect((veh as { reason: string }).reason).toContain("vehicles[0].foo");
+    expect((item as { reason: string }).reason).toContain("vehicles[0].items[0].foo");
+  });
+
+  it("covers commit_manifest, propose_load, lookup_material and classify_line_item", async () => {
+    // commit_manifest re-derives the verdict from the bytes it exports, so an
+    // ignored property there is the one that reaches the shipping paper.
+    const c = await commitManifest(
+      { vehicles: [{ items: ["UN1090"] }], approvalToken: "x", foo: 1 } as never, N32, [{}],
+    );
+    expect(c.status).toBe("REFUSED");
+    expect(proposeLoad({ items: ["UN1090"], maxVehicles: 2, foo: 1 } as never).status).toBe("REFUSED");
+    expect(isMalformed(lookupMaterial({ query: "acetone", foo: 1 } as never))).toBe(true);
+    expect(isMalformed(classifyLineItem({ text: "acetone", foo: 1 } as never))).toBe(true);
+  });
+
+  it("does not become a blunt refusal: the published shapes still work", async () => {
+    // The negative half. Every form the schemas advertise must still pass.
+    expect((await checkSegregation({ vehicles: [{ items: ["UN1090"] }] }, N32, [{}])).status).toBe("PASS");
+    // All four allowed identity keys at once, on the material whose Zone A and
+    // Zone B rows are two different loads. This is the shape round eight added
+    // so a refusal's own remedy could be sent, and the allowlist must not undo it.
+    expect(
+      (await checkSegregation(
+        { vehicles: [{ items: [{ id: "UN1744", name: "Bromine", packingGroup: "I", pihZone: "A" }] }] },
+        N32, [{}],
+      )).status,
+    ).not.toBe("REFUSED");
+    expect(proposeLoad({ items: ["UN1090"], maxVehicles: 2 }).status).toBe("PROPOSED");
+    expect(isMalformed(lookupMaterial({ query: "acetone" }))).toBe(false);
+    expect(isMalformed(classifyLineItem({ text: "2 drums acetone" }))).toBe(false);
+  });
+
+  it("stops offering a property it refuses two sentences later", () => {
+    // The refusal text listed `quantity` among an item's allowed properties and
+    // then said quantity is not among them. A contradictory refusal is a
+    // refusal an agent cannot act on.
+    const src = readFileSync(join(process.cwd(), "src/tools/executors.ts"), "utf8");
+    expect(src).not.toContain("packingGroup, pihZone or quantity");
+    expect(src).toContain("packingGroup or pihZone");
   });
 });
