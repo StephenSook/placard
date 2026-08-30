@@ -265,10 +265,10 @@ separator, because a separator inside a free-text field lets two distinct loads
 collide to one identity.
 
 **Structural.** A static single-origin site with no third-party JavaScript and
-`script-src 'self'`, so no foreign script is running to register anything. If you
-open DevTools you will see two CSP refusals. Those are Netlify's own injected
-toolbar, refused by the policy. Our built HTML contains no inline script and no
-inline style, and a test asserts it.
+`script-src 'self'`, so no foreign script is running to register anything. Open
+DevTools and the console is empty: no errors, no warnings, and nothing injected
+by the host. The built HTML contains no inline script and no inline style, and a
+test asserts it.
 
 ## Try to break it, on the page
 
@@ -344,8 +344,11 @@ written down rather than left for you to discover:
 That is 6 of 6. It was 2 of 6 until I actually ran it.
 
 
-162 tests. Lighthouse on the live origin: agentic browsing 100, accessibility
-100, best practices 100, SEO 100, performance 98.
+13 test files. Lighthouse on the live origin, desktop, 58 audits passed and
+none failed: agentic browsing 100, accessibility 100, best practices 100, SEO
+100, performance 100. Agentic browsing at 100 is itself the proof the origin
+trial is live, because those audits report nothing at all rather than failing
+when the token is missing.
 
 Verified by hand in Chrome 151 against the live origin with no flag, driving
 `document.modelContext` directly: `getTools` returns 2 tools at mount and 4 once
@@ -397,8 +400,12 @@ it on the single shipper alone and demoted the second condition to a note that
 admitted it could not determine the fact. So sulfuric acid over calcium
 hypochlorite with a barrier and a single shipper returned PASS and exported: the
 exact pair this project exists to refuse, cleared by the tool built to refuse
-it. The signer now asserts non-reaction explicitly, and the tool schema tells an
-agent in as many words not to assert it on the operator's behalf.
+it. The signer now asserts non-reaction explicitly.
+
+The first fix for that one was itself wrong, in a way worth reporting. I added
+the assertion to the tool schema with a description telling the agent, in as
+many words, not to assert it on the operator's behalf. Writing a hole down is
+not closing it. See the round below.
 
 **And my own attack demo could leave the page compromised**, because its
 AbortController was scoped inside the runner and aborted only on the happy path.
@@ -415,11 +422,69 @@ merely that some `finally` existed and survived deleting the very cleanup it was
 written to guard, because another function in the same file also had one. It now
 asserts the specific block, and is caught three separate ways.
 
-I am putting this in the writeup rather than quietly fixing it because the
-alternative is a submission that claims a safety property and hides the evidence
-that the claim was tested. The five defects are gone. The discipline that found
-them is the more durable thing, and it is reproducible: the review command, the
-loads that reproduced each defect, and the tests are all in the repository.
+### I kept going until a round came back empty, and that took four more
+
+Stopping after one round would have shipped everything below. The rule I now
+follow is that the exit condition is a clean round, not a declared finish,
+because each fix is itself a fresh diff nobody has reviewed.
+
+**Round two found four more, and one of them I had introduced two hours
+earlier.** The URL state I added so that `webmcp-evals` could reach a populated
+page also accepted `&barriers=1&shipper=1&nonreaction=1`. A link could therefore
+attest, on the operator's behalf, that physical barriers were installed in a
+truck it had never seen. A URL may describe a load. It may never attest to one.
+
+**Round three found six more**, including a subset of a manifest that still
+exported. When a `?load=` link named materials that did not resolve, the loader
+raised a banner whose own comment read "NEVER quietly load a subset", and then
+loaded the subset, which checked, passed, and produced a shipping paper that
+said nothing about the missing items.
+
+**Then I audited which clauses the code actually applies, and that was the worst
+of it.** The citation gate proves every quoted clause is a verbatim substring of
+the pinned eCFR. It ran green from the first commit and it never once checked
+whether the RULE exists in code. Ten of twenty-four clauses were quoted,
+verified, counted in the receipt the README prints, and enforced by nothing. Two
+were live prohibitions reachable from the demo corpus: sodium cyanide with
+sulfuric acid returned PASS and exported, and so did 1.4S fireworks with 1.1G
+fireworks, because the compatibility footnotes were being read as permission
+when a footnote is a condition. A verbatim quote of a rule you do not apply is
+worse than no quote, because it reads as evidence of diligence that is not
+there. Every clause is now either cited by a code path or listed in a coverage
+file with a written reason, and the build fails on any that is neither.
+
+**And the forgery I had already fixed once was still live on the surface that is
+actually judged.** `barriersPresent`, `singleShipper` and `nonReactionAsserted`
+were ordinary arguments on the tool schemas. An agent that sent
+`barriersPresent: true` turned a refused load into a committed shipping paper in
+one call, and the schema description for one of them said, in these words, that
+an agent must not assert it on the operator's behalf. They are gone from every
+schema. They arrive from the operator's checkboxes as a separate trust context,
+a wire that carries one is refused by name rather than having it silently
+dropped, and every result reports `attestationsInForce` so an agent can see what
+was assumed and ask the operator to change it.
+
+That is the division of labour this whole project argues for, and I had to be
+shown twice that my own code did not implement it: the agent searches the
+arrangement space, the person attests to the world.
+
+**Two more from the page's own input box.** Typing "sulfuric acid", the material
+in my own headline demonstration, added UN2584 Alkyl sulfonic acids: a different
+material in a different hazard class, with no signal. Typing something the table
+does not contain did nothing at all, which reads to a person as accepted. An
+index that silently returns the wrong entry is worse than one that returns
+nothing. That is the thesis of this project, and the page was doing it to its own
+operator.
+
+I am putting all of this in the writeup rather than quietly fixing it because
+the alternative is a submission that claims a safety property and hides the
+evidence that the claim was tested. Sixteen defects across four rounds, every
+one reproduced before being touched, every one with a regression test that pairs
+the load which used to clear against a load that must still clear, so no fix can
+degenerate into a blunt refusal. Every guard mutation-checked.
+
+The discipline is the durable part, and it is reproducible: the review command,
+the loads that reproduced each defect, and the tests are all in the repository.
 
 ## Challenges
 
