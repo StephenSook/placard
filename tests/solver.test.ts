@@ -182,7 +182,7 @@ describe("citation integrity at the code level", () => {
       expect(c.text.length).toBeGreaterThan(19);
       expect(c.section).toMatch(/^49 CFR /);
     }
-    expect(CLAUSE_IDS.length).toBe(37);
+    expect(CLAUSE_IDS.length).toBe(40);
   });
 
   it("an unknown clause id throws rather than returning an empty quote", () => {
@@ -235,7 +235,10 @@ describe("properties that mutation testing found untested", () => {
   it("keeps Division 2.3 Zone A and Zone B on their own rows", async () => {
     // Against a Class 3 material the published table gives Zone A an X and
     // Zone B an O, so Zone B is rescuable by a barrier and Zone A is not.
-    const zoneA = await checkLoad({ vehicles: [{ items: [{ id: "UN1955" }, { id: "UN1088" }], barriersPresent: true }] }, N);
+    // UN2188 arsine, not UN1955, which the resolver now refuses outright: that
+    // number covers four different materials under one entry and the shipping
+    // paper cannot name one of them without the operator saying which.
+    const zoneA = await checkLoad({ vehicles: [{ items: [{ id: "UN2188" }, { id: "UN1088" }], barriersPresent: true }] }, N);
     expect(zoneA.status).toBe("REFUSED");
     if (zoneA.status === "REFUSED") expect(zoneA.violations[0]!.cell).toBe("X");
 

@@ -157,23 +157,28 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
     const all = lookupByUn(id);
     if (all.length === 0) return { error: `${id} is not in the 49 CFR 172.101 table` };
 
-    // A SUPPLIED PACKING GROUP IS IDENTITY, NOT A HINT, AND DISCARDING IT IS A
-    // FALSE REFUSAL. The conservative row sort below reaches for the lowest
-    // packing group on the reasoning that the most severe row is the safe
-    // choice when the caller has not said which row they mean. When the caller
-    // HAS said, that reasoning does not apply and the sort silently overrules
-    // them. Reproduced: UN2810 has PG I, II and III rows, all Division 6.1;
-    // asking for PG II selected the PG I row, and PG I Division 6.1 zone A has
-    // its own row in the 177.848(d) table, so a legal PG II load came back
-    // PROHIBITED_TOGETHER and the shipping paper would have named a material
-    // the operator had not described.
+    // NARROW BY EVERY IDENTITY FIELD THE CALLER SUPPLIED, THEN REFUSE IF WHAT
+    // IS LEFT IS STILL MORE THAN ONE MATERIAL.
     //
-    // Narrow to the supplied packing group first, refuse an impossible one
-    // rather than falling back to a different material, and let the sort run
-    // only among rows that are still genuinely ambiguous.
+    // An identification number is not always an identifier. Several rows share
+    // a UN number: usually one per packing group, which is harmless because
+    // they share a class and a name, but some span CLASSES and some span
+    // NAMES. UN1950 runs across Division 2.1 and 2.2, so taking the first row
+    // picked a 2.2 aerosol and UN1950 with UN2910 and no barrier returned PASS
+    // and exported, while the 2.1 row is an O cell against Class 7. NA1993 PG I
+    // holds a cleaning liquid and a tree-killing liquid under one number and
+    // one packing group. UN2031 PG II runs three nitric-acid strengths, one of
+    // them carrying a 5.1 subsidiary the others do not.
+    //
+    // Severity ordering is the right answer for rows that differ ONLY by
+    // packing group, because the lowest group is genuinely the strictest read
+    // of an under-specified reference. It is the wrong answer for rows that
+    // differ by name, class or hazard labels, because there is no "stricter"
+    // among different materials: picking one prints a proper shipping name the
+    // operator never described, on a document they sign.
     let rows = all;
     if (item.packingGroup) {
-      rows = all.filter((r) => r.pg === item.packingGroup);
+      rows = rows.filter((r) => r.pg === item.packingGroup);
       if (rows.length === 0) {
         const offered = [...new Set(all.map((r) => r.pg ?? "none"))].join(", ");
         return {
@@ -183,53 +188,48 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
         };
       }
     }
-
-    // AN IDENTIFICATION NUMBER IS NOT ALWAYS AN IDENTIFIER EITHER, and this is
-    // the same defect that was fixed for proper shipping names and left in
-    // place here, which is worse, because a number LOOKS authoritative.
-    //
-    // Several rows share a UN number, usually one per packing group, and those
-    // share a hazard class so they share a segregation verdict. But some span
-    // CLASSES. UN1950 has five rows across Division 2.1 and Division 2.2, and
-    // taking rows[0] picked a 2.2 aerosol. Verified: UN1950 with UN2910 and no
-    // barrier returned PASS and exported, while the 2.1 row is an O cell
-    // against Class 7 and needs separation. The shipping paper also carried the
-    // wrong proper shipping name, so the document named a material the operator
-    // had not described.
-    const classes = [...new Set(rows.map((r) => r.class))];
-    if (classes.length > 1) {
-      const pgMatch = item.packingGroup ? rows : [];
-      const pgClasses = [...new Set(pgMatch.map((r) => r.class))];
-      if (pgMatch.length === 0 || pgClasses.length > 1) {
+    if (item.name) {
+      const wanted = item.name.trim().toLowerCase();
+      const byName = rows.filter((r) => r.name.toLowerCase() === wanted);
+      if (byName.length === 0) {
         return {
           error:
-            `${id} covers ${rows.length} entries in the 172.101 table spanning hazard classes ` +
-            `${classes.join(", ")}, and the segregation verdict depends on which one it is. ` +
-            `Give the proper shipping name, or a packing group that selects one: ` +
-            `${rows.map((r) => `${r.class}${r.pg ? ` PG ${r.pg}` : ""} ${r.name}`).slice(0, 4).join("; ")}` +
-            (rows.length > 4 ? "; and others" : ""),
+            `${id} has no entry named ${JSON.stringify(item.name)} in the 49 CFR 172.101 table` +
+            (item.packingGroup ? ` at packing group ${item.packingGroup}` : "") +
+            `. That number is listed as: ${[...new Set(rows.map((r) => r.name))].slice(0, 4).join("; ")}` +
+            (new Set(rows.map((r) => r.name)).size > 4 ? "; and others" : "") + ".",
         };
       }
-      entry = mostSevere(pgMatch);
-    } else {
-      // One class across every row, so the verdict cannot turn on which row is
-      // chosen for the CLASS. It can still turn on the SUBSIDIARY hazards, and
-      // it always determines what the shipping paper prints.
-      //
-      // This used to take rows[0] on the reasoning that the first row is the
-      // lowest packing group and therefore the most severe. The corpus
-      // falsifies that: UN2031's rows run II, II, II, I and NA1760's run II, I,
-      // II, III, I, II, III, II. Worse, UN1831 has two PG I rows, one labelled
-      // ["8"] and one ["8","6.1"] carrying special provision 2, and rows[0] is
-      // the one WITHOUT the poison-by-inhalation subsidiary. A 6.1 PG I zone A
-      // liquid has its own row in the 177.848(d) table, so dropping it drops a
-      // restriction, and the exported paper named a material the operator had
-      // not described.
-      //
-      // Choose the genuinely most severe: lowest packing group first, then the
-      // row bearing the most hazard labels. Ties keep table order.
-      entry = mostSevere(rows);
+      rows = byName;
     }
+
+    // What makes two rows the SAME material for every purpose downstream: the
+    // name printed on the paper, the class the matrix is indexed by, and the
+    // labels that raise subsidiary hazards. Packing group is deliberately not
+    // in the key, because that is the one axis severity ordering can settle.
+    const identityOf = (r: HmtEntry) =>
+      `${r.name.toLowerCase()}|${r.class}|${[...(r.labels ?? [])].sort().join(",")}`;
+    const distinct = [...new Set(rows.map(identityOf))];
+    if (distinct.length > 1) {
+      const shown = [...new Map(rows.map((r) => [identityOf(r), r])).values()];
+      return {
+        error:
+          `${id} covers ${distinct.length} different materials in the 172.101 table` +
+          (item.packingGroup ? ` at packing group ${item.packingGroup}` : "") +
+          `, and the verdict and the shipping paper both depend on which one it is. ` +
+          `Give the proper shipping name: ` +
+          `${shown.map((r) => `${r.class}${r.pg ? ` PG ${r.pg}` : ""} ${r.name}`).slice(0, 4).join("; ")}` +
+          (shown.length > 4 ? "; and others" : "") + ".",
+      };
+    }
+
+    // One material, possibly several packing groups. Take the strictest: lowest
+    // packing group first, then the row bearing the most hazard labels, ties
+    // keeping table order. UN1831 has two PG I rows, one labelled ["8"] and one
+    // ["8","6.1"] carrying special provision 2, and the first is the one
+    // WITHOUT the poison-by-inhalation subsidiary; a 6.1 PG I zone A liquid has
+    // its own row in the 177.848(d) table, so taking it drops a restriction.
+    entry = mostSevere(rows);
   } else if (item.name) {
     const r = resolveName(item.name);
     if (r.kind === "ambiguous") {

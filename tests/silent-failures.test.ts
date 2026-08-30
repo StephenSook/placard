@@ -205,26 +205,63 @@ describe("a UN number spanning several rows resolves to the most severe", () => 
    * III, II. UN1831 has TWO PG I rows, one labelled ["8"] and one ["8","6.1"]
    * carrying special provision 2, and rows[0] was the one without the
    * poison-by-inhalation subsidiary.
+   *
+   * Severity ordering was the fix, and it was only ever right for rows that
+   * differ by PACKING GROUP. A later round found it also being applied to rows
+   * that differ by NAME and LABELS, where there is no "stricter" among
+   * different materials and picking one prints a proper shipping name the
+   * operator never described. Those numbers now refuse; the packing-group case
+   * still resolves, and both are asserted below.
    */
-  it("keeps the 6.1 subsidiary UN1831 carries on its other PG I row", () => {
+  it("refuses UN1831, whose two PG I rows are different materials", () => {
     const r = resolveItem({ id: "UN1831" });
-    if ("error" in r) throw new Error(r.error);
-    expect(r.packingGroup).toBe("I");
-    expect(r.hazards.map((h) => h.raw)).toContain("6.1");
+    expect("error" in r).toBe(true);
+    const e = (r as { error: string }).error;
+    expect(e).toMatch(/2 different materials/);
+    expect(e).toContain("free sulfur trioxide");
   });
 
-  it("picks the lowest packing group, not the first row", () => {
+  it("refuses UN2031 and NA1760, which span nitric acid strengths under one number", () => {
     for (const id of ["UN2031", "NA1760"]) {
       const r = resolveItem({ id });
-      if ("error" in r) throw new Error(r.error);
-      expect(r.packingGroup, `${id} did not resolve to its lowest packing group`).toBe("I");
+      expect("error" in r, `${id} resolved to one row when it covers several materials`).toBe(true);
+      expect((r as { error: string }).error).toMatch(/different materials/);
     }
   });
 
+  it("still orders by packing group when that is the only thing that differs", () => {
+    // UN2810 is one material, "Toxic, liquids, organic, n.o.s.", listed at PG I,
+    // II and III. There the lowest group genuinely is the strictest read of an
+    // under-specified reference, so the sort still runs.
+    const r = resolveItem({ id: "UN2810" });
+    if ("error" in r) throw new Error(r.error);
+    expect(r.packingGroup).toBe("I");
+    expect(r.name).toBe("Toxic, liquids, organic, n.o.s.");
+  });
+
+  it("resolves UN2031 once the operator names the strength", () => {
+    // The refusal is not a dead end: it lists the names and one of them works.
+    const r = resolveItem({
+      id: "UN2031",
+      name: "Nitric acid other than red fuming, with more than 70 percent nitric acid",
+    });
+    if ("error" in r) throw new Error(r.error);
+    expect(r.packingGroup).toBe("I");
+    expect(r.hazards.map((h) => h.raw)).toContain("5.1");
+  });
+
   it("that subsidiary changes a verdict, which is why it matters", async () => {
-    // UN2031 nitric acid with UN1090 acetone. Class 8 against Class 3 carries
-    // no restriction, so dropping the 5.1 subsidiary cleared this pair.
-    expect(await clears([{ items: ["UN2031", "UN1090"] }])).toBe(false);
+    // Nitric acid at more than 70 percent carries a 5.1 subsidiary. Class 8
+    // against Class 3 carries no restriction, so dropping it cleared this pair.
+    const v = await checkLoad({
+      vehicles: [{
+        items: [
+          { id: "UN2031", name: "Nitric acid other than red fuming, with more than 70 percent nitric acid" },
+          { id: "UN1090" },
+        ],
+      }],
+    }, "subsidiary-regression");
+    expect(v.status).toBe("REFUSED");
   });
 
   it("still resolves a single-row identification number unchanged", () => {

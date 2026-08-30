@@ -49,7 +49,7 @@ describe("2. an identification number spanning hazard classes must refuse", () =
   it("refuses UN1950, which covers Divisions 2.1 and 2.2", () => {
     const r = resolveItem({ id: "UN1950" });
     expect(r).toHaveProperty("error");
-    expect((r as { error: string }).error).toMatch(/spanning hazard classes/);
+    expect((r as { error: string }).error).toMatch(/different materials/);
   });
 
   it("does not export UN1950 with UN2910", async () => {
@@ -331,15 +331,33 @@ describe("12. two spellings of one identification number are one attestation", (
 });
 
 describe("13. footnote 6 asks what a material IS, not how its name is spelled", () => {
-  it("clears a group G article with a group E article, which the name test refused", async () => {
+  it("names the article condition rather than the spelling of a name", async () => {
     // UN0428 "Articles, pyrotechnic for technical purposes" is 1.1G and its name
     // says article. UN0321 "Cartridges for weapons, with bursting charge" is
     // 1.2E and its name does not, so the old prefix test could not see that
-    // 173.52(b) DEFINES group E as an article, and refused a pairing footnote 6
-    // permits. Two loads with identical regulatory standing, opposite verdicts,
-    // decided by a word.
+    // 173.52(b) DEFINES group E as an article, and blamed UN0321.
+    //
+    // THIS TEST ASSERTED PASS AND THAT WAS THE DEFECT. Footnote 6 has a third
+    // condition, "other than ... those requiring special handling", which this
+    // corpus cannot evaluate for anything, and the assertion locked in a
+    // permission that had never been earned. The pair still refuses; what
+    // changed is that the refusal now names the condition that actually blocks.
     const v = await checkLoad(toLoad([{ items: ["UN0428", "UN0321"] }]), N);
-    expect(v.status).toBe("PASS");
+    expect(v.status).toBe("REFUSED");
+    const text = v.status === "REFUSED" ? v.violations.map((x) => x.message).join(" ") : "";
+    expect(text).toContain("REQUIRING SPECIAL HANDLING");
+    expect(text).toContain("stated gap in coverage");
+    // And it must NOT blame UN0321, whose group settles the article question.
+    expect(text).not.toContain("cannot be shown to be an explosive article");
+  });
+
+  it("no footnote 6 pairing reaches COMMITTED while special handling is unevaluable", async () => {
+    // The gate that the assertion above used to hold open. Broad rather than
+    // pointed on purpose: a permission nothing can earn must be earned by
+    // nothing.
+    for (const items of [["UN0428", "UN0321"], ["UN0428", "UN0027"], ["UN0333", "UN0321"]]) {
+      expect(await clears([{ items }]), `${items.join(" + ")} exported`).toBe(false);
+    }
   });
 
   it("still refuses when a group A material rides along, whatever its name says", async () => {
@@ -359,6 +377,9 @@ describe("13. footnote 6 asks what a material IS, not how its name is spelled", 
     expect(text).toContain("49 CFR 173.52(b)");
     expect(text).toContain("Pyrotechnic substance or article containing a pyrotechnic substance");
     expect(text).toContain("which admits either");
+    // And the article condition is reported BEFORE the special-handling gap,
+    // because a condition the corpus can weigh beats one it cannot evaluate.
+    expect(text).not.toContain("stated gap in coverage");
   });
 
   it("every quoted group definition is verbatim in the committed corpus", () => {
@@ -376,5 +397,108 @@ describe("13. footnote 6 asks what a material IS, not how its name is spelled", 
       checked++;
     }
     expect(checked).toBe(13);
+  });
+});
+
+// ── round four ───────────────────────────────────────────────────────────────
+//
+// Three of these four were opened or left open BY THE ROUND THREE FIXES, which
+// is the argument for iterating a review until a round comes back empty rather
+// than until it declares itself finished. A fix is a fresh reviewable diff.
+
+describe("14. a split clears every physical attestation, not just one of them", () => {
+  it("the console copies no attestation onto a vehicle the proposal invented", () => {
+    // proposeLoad stopped taking attestations, and this caller undid it: it
+    // copied bay 1's barrier and single-shipper ticks onto every vehicle the
+    // proposal returned, so a split produced two trucks marked attested and an
+    // exported paper that said "barriers asserted" for both. The reaction
+    // assertion was already cleared here, with a comment stating the reason
+    // that applies to all three.
+    const src = readFileSync(join(process.cwd(), "src/Console.tsx"), "utf8");
+    const setBays = /setBays\(\s*r\.vehicles\.map\([\s\S]*?\)\s*\);/.exec(src)?.[0] ?? "";
+    expect(setBays, "the proposal's setBays call was not found").not.toBe("");
+    expect(setBays).toContain("barriersPresent: false");
+    expect(setBays).toContain("singleShipper: false");
+    expect(setBays).toContain("nonReactionAsserted: false");
+    expect(setBays).not.toContain("bays[0]");
+  });
+});
+
+describe("15. an attestation is bound to MATERIALS, not to how they were spelled", () => {
+  const page = [{ items: ["UN1090", "UN1479"] }];
+
+  it("keeps the barrier when the agent names the material instead of numbering it", async () => {
+    // "Acetone" and UN1090 are the same 172.101 row. Comparing reference
+    // STRINGS dropped the barrier and turned PASS into REFUSED for a truck the
+    // operator had genuinely walked out to and inspected.
+    const v = await checkSegregation(
+      { vehicles: [{ items: ["Acetone", "UN1479"] }] }, N, [{ barriersPresent: true }], page,
+    );
+    expect(v.status).toBe("PASS");
+    expect((v as { attestationsNotApplied?: unknown }).attestationsNotApplied).toBeUndefined();
+  });
+
+  it("keeps it for the spaced form 49 CFR itself prints", async () => {
+    const v = await checkSegregation(
+      { vehicles: [{ items: ["UN 1090", "UN1479"] }] }, N, [{ barriersPresent: true }], page,
+    );
+    expect(v.status).toBe("PASS");
+  });
+
+  it("counts duplicates, so a repeated material is not the same load", async () => {
+    const v = await checkSegregation(
+      { vehicles: [{ items: ["UN1090", "UN1090"] }] }, N, [{ barriersPresent: true }],
+      [{ items: ["UN1090", "UN1479"] }],
+    );
+    expect((v as { attestationsNotApplied?: number[] }).attestationsNotApplied).toEqual([1]);
+  });
+
+  it("never lets two DIFFERENT materials compare equal", async () => {
+    const v = await checkSegregation(
+      { vehicles: [{ items: ["Acetone", "UN1748"] }] }, N, [{ barriersPresent: true }], page,
+    );
+    expect((v as { attestationsNotApplied?: number[] }).attestationsNotApplied).toEqual([1]);
+  });
+});
+
+describe("16. narrowing by packing group must not pick between different materials", () => {
+  it("refuses NA1993 PG I, which is two liquids under one number and one group", () => {
+    const r = resolveItem({ id: "NA1993", packingGroup: "I" });
+    expect("error" in r).toBe(true);
+    expect((r as { error: string }).error).toMatch(/different materials/);
+  });
+
+  it("refuses UN2031 PG II, whose rows differ by nitric acid strength", () => {
+    const r = resolveItem({ id: "UN2031", packingGroup: "II" });
+    expect("error" in r).toBe(true);
+    const e = (r as { error: string }).error;
+    expect(e).toMatch(/different materials/);
+    expect(e).toContain("packing group II");
+  });
+
+  it("resolves once the proper shipping name is supplied alongside the number", () => {
+    const r = resolveItem({
+      id: "UN2031",
+      packingGroup: "II",
+      name: "Nitric acid other than red fuming, with more than 20 percent and less than 65 percent nitric acid",
+    });
+    if ("error" in r) throw new Error(r.error);
+    expect(r.packingGroup).toBe("II");
+    expect(r.name).toContain("less than 65 percent");
+  });
+
+  it("refuses a name that number does not carry, rather than ignoring it", () => {
+    const r = resolveItem({ id: "UN1090", name: "Sulfuric acid" });
+    expect("error" in r).toBe(true);
+    expect((r as { error: string }).error).toMatch(/no entry named/);
+  });
+
+  it("still resolves the whole demo manifest, which is the non-vacuity check", () => {
+    // A rule this strict is worth nothing if it also refuses the load the
+    // README, the video and the judge itinerary all walk through.
+    for (const id of ["UN1090", "UN1830", "UN1748", "UN1309", "UN0360"]) {
+      const r = resolveItem({ id });
+      expect("error" in r, `${id} no longer resolves`).toBe(false);
+    }
   });
 });
