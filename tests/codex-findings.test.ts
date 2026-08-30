@@ -880,11 +880,38 @@ describe("27. note A names two divisions, and the table merges three", () => {
     expect(await clears([{ items: ["UN1942", "UN0171"] }])).toBe(false);
   });
 
-  it("still clears the divisions the clause actually names", async () => {
-    // The other half, so the fix is not a blunt refusal. UN0027 is black
-    // powder, Division 1.1D, which note A permits.
-    const v = await checkLoad(toLoad([{ items: ["UN1942", "UN0027"] }]), N);
-    expect(v.status).toBe("PASS");
+  it("still distinguishes the divisions the clause names, in the refusal", async () => {
+    // THIS TEST ASSERTED THE HOLE, and it is the second time in this project
+    // that a regression test written in the same commit as a fix defended the
+    // gap the NEXT round found. It read `expect(v.status).toBe("PASS")` for
+    // UN1942 with UN0027, so the suite would have defended an X cell reaching
+    // a committed shipping paper on a condition the tool cannot evaluate.
+    //
+    // A guard retires by asserting the SUCCESSOR state, never by being
+    // deleted. What this test exists to protect is the 1.1-versus-1.2
+    // distinction, and that distinction is still observable, now in the GROUND
+    // of the refusal rather than in the verdict: a Division 1.1 material gets
+    // note A's own clause and the unevaluable-condition wording, a Division 1.2
+    // material never reaches note A at all and is refused as a plain X.
+    const eleven = await checkLoad(toLoad([{ items: ["UN1942", "UN0027"] }]), N);
+    const twelve = await checkLoad(toLoad([{ items: ["UN1942", "UN0171"] }]), N);
+    expect(eleven.status).toBe("REFUSED");
+    expect(twelve.status).toBe("REFUSED");
+
+    const sections = (v: typeof eleven) =>
+      v.status === "REFUSED" ? v.violations.flatMap((x) => x.citations.map((c) => c.section)) : [];
+    const text = (v: typeof eleven) =>
+      v.status === "REFUSED" ? v.violations.map((x) => x.message).join(" ") : "";
+
+    // The 1.1D pair is refused THROUGH note A, naming the condition it cannot
+    // evaluate. 177.835(c) is not in the pinned corpus.
+    expect(sections(eleven)).toContain("49 CFR 177.848(e)(5)");
+    expect(text(eleven)).toContain("177.835(c)");
+    expect(text(eleven)).toContain("stated gap in coverage");
+
+    // The 1.2G pair never gets there: note A does not mention Division 1.2.
+    expect(sections(twelve)).not.toContain("49 CFR 177.848(e)(5)");
+    expect(text(twelve)).not.toContain("177.835(c)");
   });
 
   it("reads the resolved division rather than the merged row key", () => {
@@ -970,5 +997,53 @@ describe("30. the coverage gate must not count dead citation helpers", () => {
     // being entirely unreachable.
     const src = readFileSync(join(process.cwd(), "tests/claims.test.ts"), "utf8");
     expect(src).toContain("export (?:function |const");
+  });
+});
+
+// ── round ten ────────────────────────────────────────────────────────────────
+
+describe("31. note A granted an X-cell exemption on a condition nothing can evaluate", () => {
+  it("does not export ammonium nitrate with a Division 1.1 explosive", async () => {
+    // REPRODUCED BEFORE THE FIX: two real records, UN1942 ammonium nitrate and
+    // UN0027 black powder (Division 1.1D), in one vehicle returned PASS and
+    // then COMMITTED, exporting a shipping paper for a cell the 177.848(d)
+    // table marks X. The only thing standing between that load and the export
+    // was a NOTE reading "Confirm 177.835(c) does not apply".
+    //
+    // 177.835(c) is not in this tool's pinned corpus, so there was nothing to
+    // confirm it against, and the vehicle-combination facts it turns on are
+    // not in the 172.101 table either. An unevaluable condition is not a
+    // satisfied one.
+    expect(await clears([{ items: ["UN1942", "UN0027"] }])).toBe(false);
+  });
+
+  it("names the condition it cannot evaluate instead of asking for a promise", async () => {
+    // The refusal has to say WHICH fact is missing. "Confirm 177.835(c) does
+    // not apply" put the burden on a reader who has no way to discharge it,
+    // which is the documenting-a-hole move this project argues against.
+    const v = await checkLoad(toLoad([{ items: ["UN1942", "UN0027"] }]), N);
+    expect(v.status).toBe("REFUSED");
+    const text = v.status === "REFUSED" ? v.violations.map((x) => x.message).join(" ") : "";
+    expect(text).toContain("cannot be evaluated");
+    expect(text).toContain("stated gap in coverage");
+    expect(text).not.toContain("Confirm 177.835(c) does not apply");
+  });
+
+  it("keeps the same shape as the 177.848(g)(vi) refusal it should have matched", () => {
+    // This defect survived nine rounds because round six fixed the EXAMPLE it
+    // was handed, 177.848(g)(vi), and not the PATTERN behind it. Both clauses
+    // carry a condition the corpus cannot evaluate, and both must now decline
+    // the permission in the same words, so the next unevaluable condition is
+    // recognisable as one.
+    const seg = readFileSync(join(process.cwd(), "src/solver/segregation.ts"), "utf8");
+    const exp = readFileSync(join(process.cwd(), "src/solver/explosives.ts"), "utf8");
+    expect(seg).toContain("stated gap in coverage");
+    expect(exp).toContain("stated gap in coverage");
+  });
+
+  it("still refuses ammonium nitrate with Division 1.2, which note A never named", async () => {
+    // The negative half, so the fix cannot degenerate into one blunt refusal
+    // that hides the distinction the previous round recovered.
+    expect(await clears([{ items: ["UN1942", "UN0171"] }])).toBe(false);
   });
 });

@@ -47,7 +47,6 @@ export const REFERENCE_ONLY: Record<string, string> = {
  * cited at the point the note is raised.
  */
 export const ADVISORY: readonly string[] = [
-  "e5-note-A",
   "e6-same-class-carveout",
   "g3iv-detonators",
 ];

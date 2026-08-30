@@ -338,7 +338,30 @@ export function checkVehicle(items: ResolvedItem[], v: VehicleProposal, vehicleI
           (AMMONIUM_NITRATE.has(a.item.id ?? "") && isDivision11or15(b)) ||
           (AMMONIUM_NITRATE.has(b.item.id ?? "") && isDivision11or15(a));
         if (anCarveOut) {
-          notes.push(`${a.name} and ${b.name} would be X in the table, but note A permits ammonium nitrate to load with Division 1.1 or 1.5 unless 177.835(c) prohibits it. Confirm 177.835(c) does not apply. ${cite("e5-note-A").section}: "${cite("e5-note-A").text}"`);
+          // AN UNEVALUABLE CONDITION IS NOT A SATISFIED ONE, and this branch
+          // granted an X-cell exemption on one. Note A permits ammonium nitrate
+          // with Division 1.1 or 1.5 material "unless otherwise prohibited by
+          // 177.835(c)". 177.835(c) is NOT in this tool's pinned corpus, and
+          // the facts it turns on (vehicle-combination topology, cargo tank and
+          // portable tank status, placarding) are not in the 172.101 table
+          // either, so the condition cannot be evaluated here at all.
+          //
+          // The old branch pushed a note reading "Confirm 177.835(c) does not
+          // apply" and then continued, which issued an approval token and
+          // exported a shipping paper for an X cell. Reproduced: UN1942 with
+          // UN0027, Division 1.1D black powder, returned PASS then COMMITTED.
+          //
+          // This is the SAME SHAPE round six fixed for 177.848(g)(vi), left
+          // standing here because that audit fixed the example it was handed
+          // rather than the pattern behind it. Asking the operator to "confirm"
+          // a section the tool does not carry is the documenting-a-hole move
+          // this project exists to argue against: the note satisfies the reader
+          // who would otherwise have checked.
+          violations.push({
+            code: "PROHIBITED_TOGETHER", items: [i, j], vehicle: vehicleIndex, cell: "X",
+            message: `${a.name} and ${b.name} are marked X in the 177.848(d) table. Note A permits ammonium nitrate to load with Division 1.1 or 1.5 material unless 177.835(c) prohibits it, and every other condition of that note is satisfied here, but 177.835(c) is not part of this tool's pinned corpus and the vehicle-combination facts it turns on are not in the 172.101 table, so that condition cannot be evaluated and the permission is not granted. This is a stated gap in coverage, not a judgement about the load.`,
+            citations: [cite("e5-note-A"), cite("e2-X")],
+          });
           continue;
         }
         violations.push({
