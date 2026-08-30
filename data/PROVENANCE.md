@@ -11,10 +11,26 @@ no account, no API key and no network.
 | Title 49 `latest_amended_on` | `2026-08-19` |
 | Title 49 `latest_issue_date` | `2026-08-19` |
 | Title 49 `up_to_date_as_of` | `2026-08-27` |
-| Endpoint | `https://www.ecfr.gov/api/versioner/v1/full/2026-08-27/title-49.xml?part=&section=` |
+| Endpoint | `https://www.ecfr.gov/api/versioner/v1/full/2026-08-27/title-49.xml?part=172&section=172.101` |
 | Authentication | none required |
 
-Sections pulled: `172.101`, `172.102`, `172.202`, `172.204`, `173.21`, `173.52`, `177.848`, `177.835`.
+That endpoint is REAL and it is the one the Forbidden-materials claim rests on:
+paste it into a browser and search column 3 for the word Forbidden. It used to
+be printed here as a template with `?part=&section=` empty, which the provenance
+JSON then carried into the judge-facing `/api/forbidden-audit` response as step
+one of "how to check this yourself". A reproduction step nobody can run is worse
+than none, because it reads as evidence.
+
+Every other pinned section uses the same endpoint with its own part and section:
+
+- `172.101` `https://www.ecfr.gov/api/versioner/v1/full/2026-08-27/title-49.xml?part=172&section=172.101`
+- `172.102` `https://www.ecfr.gov/api/versioner/v1/full/2026-08-27/title-49.xml?part=172&section=172.102`
+- `172.202` `https://www.ecfr.gov/api/versioner/v1/full/2026-08-27/title-49.xml?part=172&section=172.202`
+- `172.204` `https://www.ecfr.gov/api/versioner/v1/full/2026-08-27/title-49.xml?part=172&section=172.204`
+- `173.21` `https://www.ecfr.gov/api/versioner/v1/full/2026-08-27/title-49.xml?part=173&section=173.21`
+- `173.52` `https://www.ecfr.gov/api/versioner/v1/full/2026-08-27/title-49.xml?part=173&section=173.52`
+- `177.848` `https://www.ecfr.gov/api/versioner/v1/full/2026-08-27/title-49.xml?part=177&section=177.848`
+- `177.835` `https://www.ecfr.gov/api/versioner/v1/full/2026-08-27/title-49.xml?part=177&section=177.835`
 
 ## Legal status
 

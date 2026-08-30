@@ -383,10 +383,19 @@ no account, no API key and no network.
 | Title 49 \`latest_amended_on\` | \`${prov.latest_amended_on}\` |
 | Title 49 \`latest_issue_date\` | \`${prov.latest_issue_date}\` |
 | Title 49 \`up_to_date_as_of\` | \`${prov.up_to_date_as_of}\` |
-| Endpoint | \`${API}/full/${SNAPSHOT}/title-49.xml?part=&section=\` |
+| Endpoint | \`${API}/full/${SNAPSHOT}/title-49.xml?part=172&section=172.101\` |
 | Authentication | none required |
 
-Sections pulled: ${SECTIONS.map((s) => `\`${s.section}\``).join(", ")}.
+That endpoint is REAL and it is the one the Forbidden-materials claim rests on:
+paste it into a browser and search column 3 for the word Forbidden. It used to
+be printed here as a template with \`?part=&section=\` empty, which the provenance
+JSON then carried into the judge-facing \`/api/forbidden-audit\` response as step
+one of "how to check this yourself". A reproduction step nobody can run is worse
+than none, because it reads as evidence.
+
+Every other pinned section uses the same endpoint with its own part and section:
+
+${SECTIONS.map((s) => `- \`${s.section}\` \`${API}/full/${SNAPSHOT}/title-49.xml?part=${s.part}&section=${s.section}\``).join("\n")}
 
 ## Legal status
 

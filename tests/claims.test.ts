@@ -735,3 +735,41 @@ describe("the demo manifest in the code matches the one in FACTS.md", () => {
     }
   });
 });
+
+describe("published reproduction steps", () => {
+  /**
+   * The provenance endpoint is printed to a judge as step one of "how to check
+   * this yourself" in /api/forbidden-audit. It shipped as a TEMPLATE, with
+   * `?part=&section=` empty, which answers HTTP 400. A reproduction step nobody
+   * can run is worse than none, because it reads as evidence.
+   *
+   * Offline and deterministic: this asserts the URL is CONCRETE, not that the
+   * network is up. eCFR's full-document endpoint 503s under load, and a test
+   * that fails when someone else's service is busy is a test people learn to
+   * ignore.
+   */
+  it("the published eCFR endpoint names a part and a section", () => {
+    const prov = JSON.parse(readFileSync(join(process.cwd(), "data/provenance.json"), "utf8")) as {
+      endpoint: string;
+    };
+    expect(prov.endpoint).toMatch(/^https:\/\/www\.ecfr\.gov\/api\/versioner\/v1\/full\/\d{4}-\d{2}-\d{2}\/title-49\.xml\?/);
+    const q = new URL(prov.endpoint).searchParams;
+    expect(q.get("part"), "part= is empty, so this URL answers 400").toBeTruthy();
+    expect(q.get("section"), "section= is empty, so this URL answers 400").toBeTruthy();
+    // And it must point at the table the Forbidden claim actually rests on.
+    expect(q.get("section")).toBe("172.101");
+  });
+
+  it("every reproduction step in the forbidden audit is a runnable instruction", async () => {
+    const { forbiddenAuditResponse } = await import("../src/evidence/endpoints.ts");
+    const res = await forbiddenAuditResponse(new Request("https://example.test/api/forbidden-audit"));
+    const body = (await res.json()) as {
+      how_to_check_this_yourself: Record<string, string>;
+    };
+    const steps = Object.values(body.how_to_check_this_yourself);
+    expect(steps.length).toBeGreaterThan(2);
+    for (const s of steps) {
+      expect(s, "a step trails off with an empty query parameter").not.toMatch(/[?&][a-z_]+=(&|$)/);
+    }
+  });
+});
