@@ -24,7 +24,7 @@ import { AttackPanel } from "./ui/AttackPanel.tsx";
 import { MatrixPanel } from "./ui/MatrixPanel.tsx";
 import { AgentView } from "./ui/AgentView.tsx";
 import { useHazmatTools, useSessionNonce } from "./tools/useHazmatTools.ts";
-import { buildShippingPaper, chooseMaterial, proposeLoad, toLoad } from "./tools/executors.ts";
+import { buildShippingPaper, chooseMaterial, proposeLoad, toLoad, type WireRef } from "./tools/executors.ts";
 import { checkLoad, resolveItem, verifyApproval } from "./solver/index.ts";
 import type { MatrixKey, ResolvedItem, Violation } from "./solver/types.ts";
 import "./ui/console.css";
@@ -343,13 +343,21 @@ export function Console() {
        * So the key is normalised the same way, and a reference that does not
        * round-trip is a bug rather than an item to discard.
        */
+      // propose_load now echoes a STRUCTURED reference back when the caller
+      // supplied more than a number, so the proposal can be re-checked. This
+      // map has to read either shape, and it keys on the same field the
+      // manifest keys on.
       const canon = (x: string) => x.trim().replace(/\s+/g, "").toUpperCase();
+      const keyOf = (ref: WireRef) =>
+        canon(typeof ref === "string" ? ref : (ref.id ?? ref.name ?? ""));
+      const label = (ref: WireRef) =>
+        typeof ref === "string" ? ref : (ref.id ?? ref.name ?? "");
       const byRef = new Map(manifest.map((m) => [canon(m.item.id ?? m.name), m] as const));
       const missing: string[] = [];
       const bayItems = r.vehicles.map((v) =>
         v.items.map((ref) => {
-          const hit = byRef.get(canon(ref));
-          if (!hit) missing.push(ref);
+          const hit = byRef.get(keyOf(ref));
+          if (!hit) missing.push(label(ref));
           return hit;
         }).filter((x): x is ResolvedItem => !!x)
       );

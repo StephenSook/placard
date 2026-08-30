@@ -74,13 +74,12 @@ const MATERIAL_REF = {
             "Inhalation hazard zone. Only needed when the number and name together still name more " +
             "than one row, which happens where two rows differ solely by special provision 1 to 4.",
         },
-        quantity: { type: "string", maxLength: 60, description: "Free text, carried onto the shipping paper. Does not affect the verdict." },
       },
       description:
         "A structured identity, for when a bare reference is ambiguous. Give id or name, plus " +
-        "whichever of packingGroup and pihZone the refusal asked for. Physical state is NOT here " +
-        "and may not be sent: 177.848(d) covers Class 8 liquids only, so declaring a state is a " +
-        "claim about what is on the dock, and it is derived from the 172.101 entry instead.",
+        "whichever of packingGroup and pihZone the refusal asked for. Physical state and quantity " +
+        "are NOT here and may not be sent: each is a claim about the physical shipment that only " +
+        "the operator can make. State is derived from the 172.101 entry.",
     },
   ],
 } as const;

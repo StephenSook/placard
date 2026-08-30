@@ -95,7 +95,11 @@ describe("propose_load's echo must round-trip through the manifest", () => {
       const byRef = new Map(manifest.map((m) => [canon(m.item.id ?? m.name), m] as const));
       const p = proposeLoad({ items: refs, maxVehicles: 2 });
       if (p.status !== "PROPOSED") throw new Error(`expected a proposal, got ${p.status}`);
-      const placed = p.vehicles.flatMap((v) => v.items).filter((r) => byRef.has(canon(r)));
+      // propose_load echoes a STRUCTURED reference when the caller gave more
+      // than a number, so a name-referenced item comes back as an object.
+      const refKey = (r: (typeof p.vehicles)[number]["items"][number]) =>
+        canon(typeof r === "string" ? r : (r.id ?? r.name ?? ""));
+      const placed = p.vehicles.flatMap((v) => v.items).filter((r) => byRef.has(refKey(r)));
       expect(placed.length, `refs ${JSON.stringify(refs)} lost items on the round trip`)
         .toBe(refs.length);
     }

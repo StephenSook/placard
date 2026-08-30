@@ -749,7 +749,7 @@ describe("24. physical state is an attestation, not an identity field", () => {
     );
     expect(v.status).toBe("REFUSED");
     expect((v as { reason?: string }).reason).toMatch(/malformed request/);
-    expect((v as { reason?: string }).reason).toMatch(/Physical state is not one of them/);
+    expect((v as { reason?: string }).reason).toMatch(/Physical state and quantity are NOT among them/);
   });
 
   it("the headline pair cannot be walked out of its row by declaring it solid", async () => {
@@ -779,17 +779,20 @@ describe("24. physical state is an attestation, not an identity field", () => {
     }).properties.vehicles.items.properties.items.items;
     const obj = item.anyOf.find((x) => x.type === "object")!;
     expect(Object.keys(obj.properties!)).not.toContain("state");
-    expect(obj.description).toMatch(/Physical state is NOT here/);
+    expect(obj.description).toMatch(/Physical state and quantity/);
   });
 
-  it("the binding key covers every field the wire can still carry", async () => {
-    // Quantity changes no verdict and does go on the signed document, so a
-    // different quantity is a different truck and must not inherit a barrier.
+  it("refuses quantity on the wire, for the same reason as state", async () => {
+    // Quantity is a commercial and physical fact about the shipment, and the
+    // schema advertised that it reaches the shipping paper while the document
+    // model never carried it. An agent could send "999 railcars", get PASS and
+    // COMMITTED, and receive a paper mentioning no quantity at all. A field
+    // that is accepted, ignored and advertised is worse than one refused.
     const v = await checkSegregation(
-      { vehicles: [{ items: [{ id: "UN1830", quantity: "2 drums" }, "UN1748"] }] },
-      N, [{ barriersPresent: true }], page,
+      { vehicles: [{ items: [{ id: "UN1830", quantity: "999 railcars" } as never, "UN1748"] }] }, N,
     );
-    expect((v as { attestationsNotApplied?: number[] }).attestationsNotApplied).toEqual([1]);
+    expect(v.status).toBe("REFUSED");
+    expect((v as { reason?: string }).reason).toMatch(/quantity/i);
   });
 });
 
@@ -861,5 +864,111 @@ describe("26. propose_load accepts the item shape its own schema publishes", () 
     const src = readFileSync(join(process.cwd(), "src/tools/executors.ts"), "utf8");
     expect(src).not.toContain("isStringArray");
     expect((src.match(/coerceRef\(/g) ?? []).length).toBeGreaterThanOrEqual(2);
+  });
+});
+
+// ── round nine ───────────────────────────────────────────────────────────────
+
+describe("27. note A names two divisions, and the table merges three", () => {
+  it("does not clear a Division 1.2 explosive with ammonium nitrate", async () => {
+    // 177.848(e)(5) permits UN1942 with "Division 1.1 (explosive) or Division
+    // 1.5 materials". The 177.848(d) table has no 1.1 row and no 1.2 row: it
+    // has ONE row labelled "1.1 and 1.2". Keying the carve-out on that merged
+    // row handed the permission to every Division 1.2 material. UN1942 with
+    // UN0171, a Division 1.2G explosive, returned PASS and COMMITTED and
+    // exported a shipping paper for an X cell.
+    expect(await clears([{ items: ["UN1942", "UN0171"] }])).toBe(false);
+  });
+
+  it("still clears the divisions the clause actually names", async () => {
+    // The other half, so the fix is not a blunt refusal. UN0027 is black
+    // powder, Division 1.1D, which note A permits.
+    const v = await checkLoad(toLoad([{ items: ["UN1942", "UN0027"] }]), N);
+    expect(v.status).toBe("PASS");
+  });
+
+  it("reads the resolved division rather than the merged row key", () => {
+    const src = readFileSync(join(process.cwd(), "src/solver/segregation.ts"), "utf8");
+    expect(src).toContain("isDivision11or15");
+    expect(src, "the carve-out still keys on the merged row").not.toMatch(/rb === "1\.1 and 1\.2"/);
+  });
+});
+
+describe("28. a proposal has to round-trip, or its own instructions are impossible", () => {
+  it("echoes back enough identity to re-check the arrangement it proposed", async () => {
+    // propose_load flattened every item to `id ?? name`, so a caller who
+    // resolved UN1744 by supplying name, packing group and zone got back the
+    // bare string "UN1744", which names three different materials. The tool's
+    // own note says to check the proposal for an approval token, and the
+    // proposal it returned could not be checked.
+    const ref = { id: "UN1744", name: "Bromine solutions", packingGroup: "I", pihZone: "B" };
+    const p = proposeLoad({ items: [ref, "UN1090"], maxVehicles: 2 });
+    expect(p.status).toBe("PROPOSED");
+    if (p.status !== "PROPOSED") return;
+    const back = await checkSegregation(
+      { vehicles: p.vehicles.map((v) => ({ items: v.items })) }, N,
+    );
+    expect(back.status).toBe("PASS");
+  });
+
+  it("keeps a reference short when the short form provably resolves the same", () => {
+    // Not merely "shortest that resolves": UN2810 alone resolves cleanly, to
+    // packing group I, so echoing it back for a PG II item would name a
+    // different material. The short form is offered only when it lands on the
+    // same name, packing group and zone.
+    const plain = proposeLoad({ items: ["UN1090", "UN1830"], maxVehicles: 2 });
+    if (plain.status !== "PROPOSED") throw new Error(plain.status);
+    expect(plain.vehicles.flatMap((v) => v.items).every((x) => typeof x === "string")).toBe(true);
+
+    const pg = proposeLoad({ items: [{ id: "UN2810", packingGroup: "II" }, "UN1090"], maxVehicles: 2 });
+    if (pg.status !== "PROPOSED") throw new Error(pg.status);
+    const echoed = pg.vehicles.flatMap((v) => v.items).find((x) => typeof x !== "string");
+    expect(echoed, "UN2810 PG II was flattened to a bare number").toBeDefined();
+    expect(echoed).toMatchObject({ id: "UN2810", packingGroup: "II" });
+  });
+});
+
+describe("29. quantity is a claim about the shipment, not a way of naming a material", () => {
+  it("is refused on the wire, like state", async () => {
+    // The schema advertised that quantity reaches the shipping paper while the
+    // document model never carried it, so an agent could send "999 railcars",
+    // reach COMMITTED, and receive a paper mentioning no quantity at all. A
+    // field that is accepted, ignored and advertised is worse than one refused.
+    const v = await checkSegregation(
+      { vehicles: [{ items: [{ id: "UN1090", quantity: "999 railcars" } as never] }] }, N,
+    );
+    expect(v.status).toBe("REFUSED");
+    expect((v as { reason?: string }).reason).toMatch(/quantity/i);
+  });
+
+  it("is gone from the published schema, so nothing promises what is not delivered", async () => {
+    const { CHECK_SEGREGATION_SCHEMA } = await import("../src/tools/schemas.ts");
+    const item = (CHECK_SEGREGATION_SCHEMA as never as {
+      properties: { vehicles: { items: { properties: { items: { items: { anyOf: { type: string; properties?: Record<string, unknown> }[] } } } } } };
+    }).properties.vehicles.items.properties.items.items;
+    const obj = item.anyOf.find((x) => x.type === "object")!;
+    expect(Object.keys(obj.properties!)).not.toContain("quantity");
+    expect(Object.keys(obj.properties!)).not.toContain("state");
+  });
+});
+
+describe("30. the coverage gate must not count dead citation helpers", () => {
+  it("the two clauses those helpers cite are carried by a live path", async () => {
+    const { shipperCertification } = await import("../src/tools/executors.ts");
+    const cert = shipperCertification();
+    const sections = cert.rules.map((r) => r.section);
+    expect(sections).toContain("49 CFR 172.202(a)");
+    expect(sections).toContain("49 CFR 172.203(m)");
+    // And the scope note is BUILT from them, so the sections it names cannot
+    // drift from the sections the code cites.
+    for (const s of sections) expect(cert.scope).toContain(s);
+  });
+
+  it("the reachability filter understands exported arrow functions", () => {
+    // It only split on `export function`, so `export const x = () => cite(...)`
+    // sat inside a retained neighbour's chunk and satisfied the gate while
+    // being entirely unreachable.
+    const src = readFileSync(join(process.cwd(), "tests/claims.test.ts"), "utf8");
+    expect(src).toContain("export (?:function |const");
   });
 });

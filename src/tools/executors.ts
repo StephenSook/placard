@@ -229,7 +229,7 @@ export function proposeLoad(input: { items: WireRef[]; maxVehicles: number }) {
   }
   return {
     status: "PROPOSED" as const,
-    vehicles: r.load.vehicles.map((v, i) => ({ vehicle: i + 1, items: v.items.map((x) => x.id ?? x.name ?? "") })),
+    vehicles: r.load.vehicles.map((v, i) => ({ vehicle: i + 1, items: v.items.map(fromLineItem) })),
     vehiclesUsed: r.vehiclesUsed,
     conflictsAvoided: r.conflicts.length,
     attestationsInForce: { barriersPresent: false, singleShipper: false },
@@ -268,7 +268,7 @@ const looksLikeId = (s: string) => /^(UN|NA|ID)\s?\d{4}$/i.test(s.trim());
  */
 export type WireRef =
   | string
-  | { id?: string; name?: string; packingGroup?: string; pihZone?: string; quantity?: string };
+  | { id?: string; name?: string; packingGroup?: string; pihZone?: string };
 
 export type WireVehicle = { items: WireRef[]; barriersPresent?: boolean; singleShipper?: boolean; nonReactionAsserted?: boolean };
 
@@ -276,7 +276,7 @@ export type WireVehicle = { items: WireRef[]; barriersPresent?: boolean; singleS
 export const refLabel = (r: WireRef): string =>
   typeof r === "string" ? r : (r.id ?? r.name ?? "");
 
-const REF_KEYS = ["id", "name", "packingGroup", "pihZone", "quantity"] as const;
+const REF_KEYS = ["id", "name", "packingGroup", "pihZone"] as const;
 
 /**
  * PHYSICAL STATE IS AN ATTESTATION, NOT AN IDENTITY FIELD, and I put it on the
@@ -296,7 +296,19 @@ const REF_KEYS = ["id", "name", "packingGroup", "pihZone", "quantity"] as const;
  * falls back to liquid for Class 8 and 6.1 precisely because that is the
  * stricter reading.
  */
-const STATE_KEY = "state";
+/**
+ * Fields a CALLER may never set, because each is a claim about the physical
+ * shipment rather than a way of naming a material.
+ *
+ * `state` earned its place here by walking the headline pair out of the Class 8
+ * row. `quantity` joined it for two reasons at once. It is a commercial and
+ * physical fact only the operator can assert, and the schema promised it would
+ * be carried onto the shipping paper while the document model never carried it:
+ * an agent could send "999 railcars", get PASS and COMMITTED, and receive a
+ * paper that mentioned no quantity at all. A field that is accepted, ignored,
+ * and advertised is worse than one that is refused.
+ */
+const CLAIM_KEYS = ["state", "quantity"] as const;
 
 /** Narrow one wire reference, or null if it is not a usable identity. */
 function coerceRef(x: unknown): WireRef | null {
@@ -305,7 +317,7 @@ function coerceRef(x: unknown): WireRef | null {
   const raw = x as Record<string, unknown>;
   // An attestation smuggled inside an item is the same forgery one level down.
   for (const k of ATTESTATION_KEYS) if (raw[k] !== undefined) return null;
-  if (raw[STATE_KEY] !== undefined) return null;
+  for (const k of CLAIM_KEYS) if (raw[k] !== undefined) return null;
   const out: Record<string, string> = {};
   for (const k of REF_KEYS) {
     const v = raw[k];
@@ -453,8 +465,8 @@ const ATTESTATION_REFUSAL =
   "vehicles must be an array of objects, each with an items array. An item is either a string " +
   "(an identification number or a proper shipping name) or an object carrying id, name, " +
   "packingGroup, pihZone or quantity, for when a bare reference names more than one material. " +
-  "Physical state is not one of them: 177.848(d) covers Class 8 LIQUIDS only, so declaring a " +
-  "state is a claim about what is on the dock and it is derived from the 172.101 entry instead. " +
+  "Physical state and quantity are NOT among them: each is a claim about the physical shipment " +
+  "that only the operator at the console can make. State is derived from the 172.101 entry. " +
   "barriersPresent, singleShipper and nonReactionAsserted are NOT arguments to this tool: " +
   "they are attestations about the physical vehicle that only the operator at the console can " +
   "make, and they are read from the page. Send items only.";
@@ -494,7 +506,6 @@ const canonicalRef = (ref: WireRef): string | null => {
     r.packingGroup ?? "",
     r.pihZone ?? "",
     r.state ?? "",
-    (item.quantity ?? "").trim().toLowerCase(),
   ].join("|");
 };
 
@@ -573,6 +584,45 @@ function withAttestations(
   return { vehicles, droppedFor };
 }
 
+/**
+ * A line item back on the wire, in the shape a caller can send straight back.
+ *
+ * THE PROPOSAL HAS TO ROUND-TRIP. This flattened every item to `id ?? name`, so
+ * a caller who resolved UN1744 by supplying its name, packing group and hazard
+ * zone got back the bare string "UN1744", and sending that to check_segregation
+ * failed because the number alone names three different materials. The tool's
+ * own note tells the caller to check the proposal to obtain an approval token,
+ * and the proposal it returned could not be checked.
+ *
+ * A reference that needs only an identification number stays a plain string,
+ * which keeps the common case readable.
+ */
+export function fromLineItem(x: LineItem): WireRef {
+  // Return the SHORTEST reference that provably resolves to this exact row.
+  //
+  // Not the shortest that resolves at all: UN2810 alone resolves cleanly, to
+  // packing group I, so echoing "UN2810" for a PG II item would hand the caller
+  // a reference to a different material. So the short form is offered only when
+  // resolving it lands on the same name, packing group and hazard zone. That is
+  // checked rather than assumed, which is why the object form appears exactly
+  // where the caller needed it and nowhere else.
+  const full = resolveItem(x);
+  if ("error" in full) return (x.id ?? x.name ?? "") as WireRef;
+  const same = (r: ReturnType<typeof resolveItem>) =>
+    !("error" in r) && r.name === full.name
+    && r.packingGroup === full.packingGroup && r.pihZone === full.pihZone;
+
+  if (x.id && same(resolveItem({ id: x.id }))) return x.id;
+  if (x.name && same(resolveItem({ name: x.name }))) return x.name;
+
+  return {
+    ...(x.id ? { id: x.id } : {}),
+    ...(x.name ? { name: x.name } : {}),
+    ...(x.packingGroup ? { packingGroup: x.packingGroup } : {}),
+    ...(x.pihZone ? { pihZone: x.pihZone } : {}),
+  };
+}
+
 /** One wire reference as the solver's line item. */
 export function toLineItem(ref: WireRef): LineItem {
   if (typeof ref === "string") {
@@ -583,7 +633,6 @@ export function toLineItem(ref: WireRef): LineItem {
     ...(ref.name ? { name: ref.name } : {}),
     ...(ref.packingGroup ? { packingGroup: ref.packingGroup.toUpperCase() } : {}),
     ...(ref.pihZone ? { pihZone: ref.pihZone.toUpperCase() as LineItem["pihZone"] } : {}),
-    ...(ref.quantity ? { quantity: ref.quantity } : {}),
   };
 }
 
@@ -707,12 +756,20 @@ export const shipperCertification = () => ({
   heading: "Shipper certification, 49 CFR 172.204",
   quote: cite("172204-a1-certification"),
   obligation: cite("172204-a-general"),
+  /**
+   * The clauses this document actually implements, taken from the corpus rather
+   * than typed, so the sections named here cannot drift from the ones the code
+   * cites. These were dead exported helpers until a review pointed out that the
+   * coverage gate counted them anyway: the reachability filter only understood
+   * `export function`, so two `export const` arrows satisfied a check that is
+   * supposed to prove a clause is enforced by a live code path.
+   */
+  rules: [descriptionSequence(), inhalationRule()],
   /** What the document implements, and what it does not. Ours, and marked so. */
   scope:
-    "Scope: this paper carries the 49 CFR 172.202(a) basic description sequence, the " +
-    "172.202(a)(3) subsidiary hazard entry and the 172.203(m) inhalation-hazard entry. Other " +
-    "172.203 additional descriptions and 172.102 special-provision entries are NOT generated " +
-    "here and must be added by the shipper.",
+    `Scope: this paper carries ${descriptionSequence().section}, the 172.202(a)(3) subsidiary ` +
+    `hazard entry and ${inhalationRule().section}. Other 172.203 additional descriptions and ` +
+    "172.102 special-provision entries are NOT generated here and must be added by the shipper.",
   /** Not part of the regulation. Ours, and marked as ours. */
   disclaimer:
     "This page does not sign anything, and nothing here is legal advice. " +

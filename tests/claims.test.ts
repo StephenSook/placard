@@ -136,12 +136,19 @@ describe("every clause is either ENFORCED or declared reference-only", () => {
     let out = "";
     for (const f of FILES.filter((f) => /^src\/(solver|tools|evidence)\/.*\.ts$/.test(f))) {
       const text = read(f);
-      // Split on exported function declarations and drop the uncalled ones.
-      const parts = text.split(/(?=^export function )/m);
+      // Split on exported declarations and drop the uncalled ones.
+      //
+      // THIS ONLY UNDERSTOOD `export function`, and that gap was real: two
+      // citation helpers were `export const x = () => cite(...)`, never called,
+      // and they sat inside a retained neighbour's chunk where the filter could
+      // not see them. The 41-clause accounting stayed green on dead code, which
+      // is precisely the failure this gate exists to prevent. Arrow exports are
+      // split on too now.
+      const parts = text.split(/(?=^export (?:function |const \w+ = (?:\(|async )))/m);
       for (const part of parts) {
-        const m = /^export function (\w+)/.exec(part);
+        const m = /^export (?:function (\w+)|const (\w+) = )/.exec(part);
         if (!m) { out += part + "\n"; continue; }
-        const name = m[1]!;
+        const name = (m[1] ?? m[2])!;
         // A caller is any use of the bare name that is not its own declaration.
         const uses = (whole.match(new RegExp(`\\b${name}\\b`, "g")) ?? []).length;
         if (uses > 1) out += part + "\n";

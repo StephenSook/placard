@@ -10,7 +10,7 @@
  *   3. 177.848(c)  narrative prohibitions STRICTER than the matrix
  *   4. 177.848(e)(3) the corrosive-over-oxidizer block that no barrier rescues
  */
-import { segregationCell, rowNote, rowLabel, cite } from "./corpus.ts";
+import { segregationCell, rowLabel, cite } from "./corpus.ts";
 import { resolveCompatibility, checkGroups } from "./explosives.ts";
 import type {
   CompatibilityGroup, MatrixKey, ResolvedItem, VehicleProposal, Violation,
@@ -64,6 +64,16 @@ const groupsOf = (r: ResolvedItem): CompatibilityGroup[] =>
  * where the name settles nothing it falls back to LIQUID for exactly this
  * reason, so an ambiguous Class 8 entry is still caught here.
  */
+/**
+ * Division 1.1 or Division 1.5, read from the material's own resolved classes
+ * rather than from the merged "1.1 and 1.2" row of the segregation table.
+ * Every label the entry carries is checked, because a subsidiary explosive
+ * division is still that division.
+ */
+const isDivision11or15 = (r: ResolvedItem) =>
+  [r.hazardClass, ...r.hazards.map((h) => h.raw)]
+    .some((c) => /^1\.[15](?!\d)/.test((c ?? "").trim()));
+
 const isClass8Liquid = (r: ResolvedItem) =>
   keysOf(r).includes("8") && r.state === "liquid";
 
@@ -311,9 +321,22 @@ export function checkVehicle(items: ResolvedItem[], v: VehicleProposal, vehicleI
       if (worst.code === "X") {
         // 177.848(e)(5) note A: ammonium nitrate may load with 1.1 or 1.5
         // notwithstanding the X, unless 177.835(c) prohibits it.
+        // NOTE A NAMES TWO DIVISIONS BY NUMBER, AND THE TABLE MERGES THREE.
+        //
+        // The clause permits ammonium nitrate with "Division 1.1 (explosive) or
+        // Division 1.5 materials". The 177.848(d) table has no 1.1 row and no
+        // 1.2 row: it has ONE row labelled "1.1 and 1.2". Keying the carve-out
+        // on that merged row therefore handed the permission to every Division
+        // 1.2 material, which the clause never mentions. Reproduced: UN1942
+        // with UN0171, a Division 1.2G explosive, returned PASS and COMMITTED
+        // and exported a shipping paper for an X cell.
+        //
+        // So ask the RESOLVED class, which carries the real division, rather
+        // than the row key, which cannot express the distinction the clause
+        // draws. A merged index is not a safe proxy for the thing it indexes.
         const anCarveOut =
-          (AMMONIUM_NITRATE.has(a.item.id ?? "") && (rowNote(rb) === "A" || rb === "1.1 and 1.2" || rb === "1.5")) ||
-          (AMMONIUM_NITRATE.has(b.item.id ?? "") && (rowNote(ra) === "A" || ra === "1.1 and 1.2" || ra === "1.5"));
+          (AMMONIUM_NITRATE.has(a.item.id ?? "") && isDivision11or15(b)) ||
+          (AMMONIUM_NITRATE.has(b.item.id ?? "") && isDivision11or15(a));
         if (anCarveOut) {
           notes.push(`${a.name} and ${b.name} would be X in the table, but note A permits ammonium nitrate to load with Division 1.1 or 1.5 unless 177.835(c) prohibits it. Confirm 177.835(c) does not apply. ${cite("e5-note-A").section}: "${cite("e5-note-A").text}"`);
           continue;
