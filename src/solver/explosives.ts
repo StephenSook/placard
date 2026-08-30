@@ -76,8 +76,31 @@ export function resolveCompatibility(input: Iterable<CompatibilityGroup>): Fixed
 }
 
 /** Pairwise check over the 13x13 table, after the fixed point has been taken. */
-export function checkGroups(groups: Set<CompatibilityGroup>): { ok: true } | { ok: false; a: CompatibilityGroup; b: CompatibilityGroup; code: string; citation: Citation } {
+/**
+ * The identities the footnote rules need, which a Set of group letters cannot
+ * carry. 177.848(g) footnotes depend on WHAT the material is, not just its
+ * compatibility group.
+ */
+export type ExplosiveIdentity = {
+  name: string;
+  /** Hazard class as printed in column 3, for example "1.4S" or "1.1G". */
+  hazardClass: string;
+};
+
+const isFirework = (e: ExplosiveIdentity) => /firework/i.test(e.name);
+const divisionOf = (e: ExplosiveIdentity) => (/^1\.(\d)/.exec(e.hazardClass) ?? [])[1] ?? "";
+/** 172.101 names explosive entries as "Articles, ..." or "Substances, ...". */
+const isExplosiveSubstance = (e: ExplosiveIdentity) =>
+  /^substances?[,\s]/i.test(e.name.trim());
+
+export function checkGroups(
+  groups: Set<CompatibilityGroup>,
+  /** Optional identities. Without them the footnote rules cannot run and say so. */
+  identities: ExplosiveIdentity[] = [],
+): { ok: true; notes: string[] } | { ok: false; a: CompatibilityGroup; b: CompatibilityGroup; code: string; citation: Citation; reason?: string } {
   const list = [...groups];
+  const notes: string[] = [];
+
   for (let i = 0; i < list.length; i++) {
     for (let j = i + 1; j < list.length; j++) {
       const a = list[i]!, b = list[j]!;
@@ -85,7 +108,45 @@ export function checkGroups(groups: Set<CompatibilityGroup>): { ok: true } | { o
       if (code === "X" || code.startsWith("X(")) {
         return { ok: false, a, b, code, citation: cite("g2-X") };
       }
+
+      // FOOTNOTES ARE CONDITIONS, NOT PERMISSIONS, and treating them as
+      // permissions is how 1.4S fireworks shipped with 1.1G fireworks. A cell
+      // of "4/5" or "6" does not mean "allowed"; it means "allowed IF", and the
+      // condition depends on identity that a group letter does not carry.
+      if (code.includes("5")) {
+        // 177.848(g)(v): Division 1.4S FIREWORKS may not load with 1.1 or 1.2.
+        const fireworks14S = identities.filter((e) => isFirework(e) && e.hazardClass.toUpperCase() === "1.4S");
+        const oneOneOrTwo = identities.filter((e) => ["1", "2"].includes(divisionOf(e)));
+        if (fireworks14S.length > 0 && oneOneOrTwo.length > 0) {
+          return {
+            ok: false, a, b, code, citation: cite("g5-fireworks"),
+            reason: `${fireworks14S[0]!.name} is Division 1.4S fireworks and ${oneOneOrTwo[0]!.name} is Division ${oneOneOrTwo[0]!.hazardClass}. Footnote 5 prohibits that pairing on the same transport vehicle.`,
+          };
+        }
+      }
+
+      if (code.includes("6")) {
+        // 177.848(g)(vi): group G articles may travel with C, D and E ONLY IF
+        // no explosive SUBSTANCES are in the same vehicle.
+        const substances = identities.filter(isExplosiveSubstance);
+        if (substances.length > 0) {
+          return {
+            ok: false, a, b, code, citation: cite("g6-group-G"),
+            reason: `Footnote 6 permits compatibility group G articles with groups C, D and E only where explosive SUBSTANCES are not carried in the same vehicle, and ${substances[0]!.name} is one.`,
+          };
+        }
+        if (identities.length === 0) {
+          notes.push(`A footnote 6 cell applies and its condition, that no explosive substances share the vehicle, could not be evaluated because no material identities were supplied. Confirm it by hand.`);
+        }
+      }
+
+      if (code.includes("4")) {
+        // 177.848(g)(3)(iv) refers out to 177.835(g), which is NOT in this
+        // corpus. Flag rather than clear: an unevaluated condition is not a
+        // satisfied one.
+        notes.push(`${cite("g3iv-detonators").section}: "${cite("g3iv-detonators").text}" That section is outside this corpus, so this pairing is NOT cleared by this tool. A person must check 177.835(g).`);
+      }
     }
   }
-  return { ok: true };
+  return { ok: true, notes };
 }

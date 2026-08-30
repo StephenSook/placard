@@ -24,6 +24,24 @@ const AMMONIUM_NITRATE = new Set(["UN1942", "NA1942"]);
 /** Classes the (e)(3) hard block names: "Class 4 or Class 5 materials". */
 const CLASS_4_OR_5 = new Set<MatrixKey>(["4.1", "4.2", "4.3", "5.1", "5.2"]);
 
+/**
+ * 177.848(c): cyanides may not travel with acids where the mixture would
+ * generate hydrogen cyanide.
+ *
+ * The regulation's condition is a chemistry judgement no table decides, so this
+ * refuses on the pairing and states the condition rather than pretending to
+ * evaluate it. That over-refuses in one direction: Class 8 includes bases as
+ * well as acids, and a cyanide with caustic soda is not the hazard the clause
+ * is about. Over-refusal is the safe error here and it is named in the message
+ * so an operator can see exactly what was assumed.
+ *
+ * This clause was extracted, verified verbatim and SHIPPED for the life of the
+ * project with no code enforcing it. Sodium cyanide with sulfuric acid returned
+ * PASS and exported a shipping paper.
+ */
+const isCyanide = (r: ResolvedItem) => /\bcyanide/i.test(r.name);
+const isAcidNamed = (r: ResolvedItem) => /\bacid/i.test(r.name);
+
 /** The classes 177.848(c) bars from travelling with 6.1 PG I Zone A. */
 const BARRED_WITH_61_PGI_A = new Set<MatrixKey>(["3", "4.1", "4.2", "4.3", "5.1", "5.2", "8"]);
 
@@ -142,6 +160,22 @@ export function checkVehicle(items: ResolvedItem[], v: VehicleProposal, vehicleI
         });
         continue;
       }
+      // 177.848(c), the cyanide rule. Placed with the other narrative
+      // prohibitions because it is one, and because a solid cyanide falls
+      // outside the 177.848(d) matrix entirely, which made this the ONLY
+      // applicable refusal path for the pair that was passing.
+      const cyanideAcid =
+        (isCyanide(a) && (keysOf(b).includes("8") || isAcidNamed(b))) ||
+        (isCyanide(b) && (keysOf(a).includes("8") || isAcidNamed(a)));
+      if (cyanideAcid) {
+        violations.push({
+          code: "PROHIBITED_TOGETHER", items: [i, j], vehicle: vehicleIndex,
+          message: `${a.name} and ${b.name} pair a cyanide with an acid or a Class 8 material. 177.848(c) prohibits carrying cyanides with acids where the mixture would generate hydrogen cyanide. Whether THIS mixture would is a chemistry judgement no table decides, so this refuses on the pairing. If the Class 8 material is a base rather than an acid, the clause does not apply and the refusal is conservative.`,
+          citations: [cite("c-cyanide-acid")],
+        });
+        continue;
+      }
+
       const sixOneA = (x: ResolvedItem) => keysOf(x).includes("6.1 zone A");
       const barred =
         (sixOneA(a) && kb.some((k) => BARRED_WITH_61_PGI_A.has(k) && (k !== "8" || isClass8Liquid(b)))) ||
@@ -196,15 +230,25 @@ export function checkVehicle(items: ResolvedItem[], v: VehicleProposal, vehicleI
         for (const rw of fp.rewrites) {
           notes.push(`Loading rewrote compatibility groups ${rw.from.join(", ")} to group ${rw.to} under 177.848(g)(3)(${rw.rule === "2" ? "ii" : "iii"}). The re-check runs against the rewritten group, not the original.`);
         }
-        const g = checkGroups(fp.groups);
+        // Identities, not just group letters. The 177.848(g) footnotes are
+        // CONDITIONS whose truth depends on what the material actually is, and
+        // a Set of letters cannot answer "is it a firework" or "is it a
+        // substance rather than an article".
+        const g = checkGroups(fp.groups, [
+          { name: a.name, hazardClass: a.hazardClass },
+          { name: b.name, hazardClass: b.hazardClass },
+        ]);
         if (!g.ok) {
           violations.push({
             code: "EXPLOSIVE_INCOMPATIBLE", items: [i, j], vehicle: vehicleIndex, cell: "*",
-            message: `${a.name} and ${b.name} resolve to compatibility groups ${g.a} and ${g.b}, which the 177.848(f) table marks ${g.code}.`,
+            message: g.reason
+              ? `${a.name} and ${b.name}: ${g.reason}`
+              : `${a.name} and ${b.name} resolve to compatibility groups ${g.a} and ${g.b}, which the 177.848(f) table marks ${g.code}.`,
             citations: [cite("e4-asterisk"), g.citation],
           });
           continue;
         }
+        notes.push(...g.notes);
         // The compatibility table cleared them. If the referral fired because a
         // SUBSIDIARY combination is an asterisk while some other combination is
         // an X or an O, that other cell still governs, so fall through rather
@@ -219,7 +263,7 @@ export function checkVehicle(items: ResolvedItem[], v: VehicleProposal, vehicleI
           (AMMONIUM_NITRATE.has(a.item.id ?? "") && (rowNote(rb) === "A" || rb === "1.1 and 1.2" || rb === "1.5")) ||
           (AMMONIUM_NITRATE.has(b.item.id ?? "") && (rowNote(ra) === "A" || ra === "1.1 and 1.2" || ra === "1.5"));
         if (anCarveOut) {
-          notes.push(`${a.name} and ${b.name} would be X in the table, but note A permits ammonium nitrate to load with Division 1.1 or 1.5 unless 177.835(c) prohibits it. Confirm 177.835(c) does not apply.`);
+          notes.push(`${a.name} and ${b.name} would be X in the table, but note A permits ammonium nitrate to load with Division 1.1 or 1.5 unless 177.835(c) prohibits it. Confirm 177.835(c) does not apply. ${cite("e5-note-A").section}: "${cite("e5-note-A").text}"`);
           continue;
         }
         violations.push({
@@ -232,7 +276,7 @@ export function checkVehicle(items: ResolvedItem[], v: VehicleProposal, vehicleI
 
       if (worst.code === "O") {
         if (sameClassCarveOutApplies(a, b, v)) {
-          notes.push(`${a.name} and ${b.name} are both class ${a.hazardClass}. 177.848(e)(6) allows same-class materials to travel together despite a secondary hazard only where they cannot react dangerously with each other, and this load asserts that explicitly. The assertion is a fact about the chemistry that no table decides, and the signer owns it under 172.204.`);
+          notes.push(`${cite("e6-same-class-carveout").section}. ${a.name} and ${b.name} are both class ${a.hazardClass}. 177.848(e)(6) allows same-class materials to travel together despite a secondary hazard only where they cannot react dangerously with each other, and this load asserts that explicitly. The assertion is a fact about the chemistry that no table decides, and the signer owns it under 172.204.`);
           continue;
         }
         if (v.barriersPresent !== true) {
