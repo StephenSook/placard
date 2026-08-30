@@ -1,98 +1,120 @@
 {
- "fps": 30,
- "narrationSeconds": 159.052,
- "filmSeconds": 165.052,
- "filmFrames": 4952,
- "gap": 0.45,
- "takeStart": 67.75,
- "beats": [
-  {
-   "id": "01_refusal",
-   "start": 0.0,
-   "end": 18.019,
-   "dur": 18.019,
-   "startFrame": 0,
-   "durFrames": 541
-  },
-  {
-   "id": "02_signer",
-   "start": 18.469,
-   "end": 33.562,
-   "dur": 15.093,
-   "startFrame": 554,
-   "durFrames": 453
-  },
-  {
-   "id": "03_howmany",
-   "start": 34.012,
-   "end": 48.78,
-   "dur": 14.768,
-   "startFrame": 1020,
-   "durFrames": 443
-  },
-  {
-   "id": "04_gap",
-   "start": 49.23,
-   "end": 67.295,
-   "dur": 18.065,
-   "startFrame": 1477,
-   "durFrames": 542
-  },
-  {
-   "id": "05_propose",
-   "start": 67.745,
-   "end": 79.169,
-   "dur": 11.424,
-   "startFrame": 2032,
-   "durFrames": 343
-  },
-  {
-   "id": "06_refuse",
-   "start": 79.619,
-   "end": 94.665,
-   "dur": 15.047,
-   "startFrame": 2389,
-   "durFrames": 451
-  },
-  {
-   "id": "07_barrier",
-   "start": 95.115,
-   "end": 107.468,
-   "dur": 12.353,
-   "startFrame": 2853,
-   "durFrames": 371
-  },
-  {
-   "id": "08_export",
-   "start": 107.918,
-   "end": 123.615,
-   "dur": 15.697,
-   "startFrame": 3238,
-   "durFrames": 471
-  },
-  {
-   "id": "09_forbidden",
-   "start": 124.065,
-   "end": 138.926,
-   "dur": 14.861,
-   "startFrame": 3722,
-   "durFrames": 446
-  },
-  {
-   "id": "10_webmcp",
-   "start": 139.376,
-   "end": 154.794,
-   "dur": 15.418,
-   "startFrame": 4181,
-   "durFrames": 463
-  },
-  {
-   "id": "11_close",
-   "start": 155.244,
-   "end": 159.052,
-   "dur": 3.808,
-   "startFrame": 4657,
-   "durFrames": 114
-  }
- ]
+  "fps": 30,
+  "narrationSeconds": 159.053,
+  "filmSeconds": 165.053,
+  "filmFrames": 4952,
+  "gap": 0.45,
+  "takeStart": 67.75,
+  "beats": [
+    {
+      "index": 1,
+      "id": "01_refusal",
+      "name": "01_refusal",
+      "start": 0.0,
+      "end": 18.019,
+      "dur": 18.019,
+      "startFrame": 0,
+      "durFrames": 541
+    },
+    {
+      "index": 2,
+      "id": "02_signer",
+      "name": "02_signer",
+      "start": 18.469,
+      "end": 33.562,
+      "dur": 15.093,
+      "startFrame": 554,
+      "durFrames": 453
+    },
+    {
+      "index": 3,
+      "id": "03_howmany",
+      "name": "03_howmany",
+      "start": 34.012,
+      "end": 48.78,
+      "dur": 14.768,
+      "startFrame": 1020,
+      "durFrames": 443
+    },
+    {
+      "index": 4,
+      "id": "04_gap",
+      "name": "04_gap",
+      "start": 49.23,
+      "end": 67.295,
+      "dur": 18.065,
+      "startFrame": 1477,
+      "durFrames": 542
+    },
+    {
+      "index": 5,
+      "id": "05_propose",
+      "name": "05_propose",
+      "start": 67.745,
+      "end": 79.169,
+      "dur": 11.424,
+      "startFrame": 2032,
+      "durFrames": 343
+    },
+    {
+      "index": 6,
+      "id": "06_refuse",
+      "name": "06_refuse",
+      "start": 79.619,
+      "end": 94.666,
+      "dur": 15.047,
+      "startFrame": 2389,
+      "durFrames": 451
+    },
+    {
+      "index": 7,
+      "id": "07_barrier",
+      "name": "07_barrier",
+      "start": 95.116,
+      "end": 107.469,
+      "dur": 12.353,
+      "startFrame": 2853,
+      "durFrames": 371
+    },
+    {
+      "index": 8,
+      "id": "08_export",
+      "name": "08_export",
+      "start": 107.919,
+      "end": 123.616,
+      "dur": 15.697,
+      "startFrame": 3238,
+      "durFrames": 471
+    },
+    {
+      "index": 9,
+      "id": "09_forbidden",
+      "name": "09_forbidden",
+      "start": 124.066,
+      "end": 138.927,
+      "dur": 14.861,
+      "startFrame": 3722,
+      "durFrames": 446
+    },
+    {
+      "index": 10,
+      "id": "10_webmcp",
+      "name": "10_webmcp",
+      "start": 139.377,
+      "end": 154.795,
+      "dur": 15.418,
+      "startFrame": 4181,
+      "durFrames": 463
+    },
+    {
+      "index": 11,
+      "id": "11_close",
+      "name": "11_close",
+      "start": 155.245,
+      "end": 159.053,
+      "dur": 3.808,
+      "startFrame": 4657,
+      "durFrames": 114
+    }
+  ]
 }

@@ -339,7 +339,7 @@ npm test
 having checked nothing is indistinguishable from one that works:
 
 ```
-PASS  checked 10 hashes, 24 verbatim clauses (4700 characters), 493 table cells, 3293 table entries
+PASS  checked 11 hashes, 37 verbatim clauses (7150 characters), 493 table cells, 3293 table entries
 ```
 
 Every clause the app quotes is proven to be a verbatim substring of the pinned
@@ -470,7 +470,7 @@ said nothing about the missing items.
 **Then I audited which clauses the code actually applies, and that was the worst
 of it.** The citation gate proves every quoted clause is a verbatim substring of
 the pinned eCFR. It ran green from the first commit and it never once checked
-whether the RULE exists in code. Ten of twenty-four clauses were quoted,
+whether the RULE exists in code. Ten of the twenty-four clauses in the corpus at the time were quoted,
 verified, counted in the receipt the README prints, and enforced by nothing. Two
 were live prohibitions reachable from the demo corpus: sodium cyanide with
 sulfuric acid returned PASS and exported, and so did 1.4S fireworks with 1.1G
@@ -523,8 +523,8 @@ pinned snapshot with a structural gate that fails the build if the matrix is not
 
 **A gitignored corpus made its own verification vacuous.** The raw eCFR XML was
 excluded from the repository as re-fetchable. It is re-fetchable. It is also
-absent on a clean checkout, so the gate proving all 24 clauses are verbatim
-verified zero of them, and passed locally only because the files happened to sit
+absent on a clean checkout, so the gate proving every clause verbatim
+verified none of them, and passed locally only because the files happened to sit
 in my working tree. The first CI run ever caught it, and only because the gate
 fails on an absent source instead of skipping, and prints what it actually
 examined. `0 verbatim clauses (0 characters)` cannot be mistaken for a pass. The

@@ -186,11 +186,13 @@ export const CapabilityScene: React.FC<{ durationInFrames: number }> = ({ durati
       <Eyebrow dark>capability as state</Eyebrow>
       <Title dark size={70}>Never both. Never neither.</Title>
       <div style={{ display: "flex", gap: 26, marginTop: 40, width: 1520, alignItems: "stretch" }}>
-        <Panel label="load refused" proposeOn commitOn={false} delay={20} opacity={1 - swap * 0.55} />
+        {/* The "before" panel dims to make the swap read, but not so far that a
+            viewer cannot check what it said. It is half the argument. */}
+        <Panel label="load refused" proposeOn commitOn={false} delay={20} opacity={1 - swap * 0.32} />
         <div style={{ display: "grid", placeItems: "center", width: 150 }}>
           <Placard3D cls="8" top="#ffffff" bottom={T.corrosive} delay={30} size={120} />
         </div>
-        <Panel label="load passes" proposeOn={false} commitOn delay={74} opacity={0.45 + swap * 0.55} />
+        <Panel label="load passes" proposeOn={false} commitOn delay={74} opacity={0.5 + swap * 0.5} />
       </div>
       <div
         style={{
