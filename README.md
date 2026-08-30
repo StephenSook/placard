@@ -110,7 +110,8 @@ written down rather than left for you to discover:
   opens a fresh page per case, so a bare URL registers two tools and most cases
   fail with "tool is not available".
 
-It was 2 of 6 until I actually ran it.
+It scored 2 of 6 the first time I actually ran it, on the single-file version of
+these evals. Running a command you publish is not optional.
 
 
 ---

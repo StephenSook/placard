@@ -355,21 +355,31 @@ The agent surface has its own evaluations, runnable with no LLM and no key:
 npx webmcp-evals smoke \
   -u "https://segregation-console.vercel.app/?load=UN1090&check=1" \
   -e evals/segregation.evals.json -v
+
+npx webmcp-evals smoke \
+  -u "https://segregation-console.vercel.app/?load=UN1830,UN1748&check=1" \
+  -e evals/segregation-refused.evals.json -v
 ```
 
-Two things about that command are not obvious and cost me an hour, so they are
+5 of 5, then 2 of 2, both run against the live origin.
+
+**There are two commands because there have to be.** The harness takes one URL
+per run, and no single page state registers both gated tools any more. That is
+not a workaround for the split, it is the anticorrelation proved by the harness
+rather than described in prose: the same page, two states, and the tool set
+differs in exactly the two positions the regulation controls.
+
+Two things about the command are not obvious and cost me an hour, so they are
 written down rather than left for you to discover:
 
 - **It needs Google Chrome Canary.** The harness hardcodes that channel and
   exposes no flag to change it. `brew install --cask google-chrome@canary`.
-- **The URL carries state on purpose.** Three of the five tools only exist while
-  the page has a manifest, and `commit_manifest` only exists while the load
-  passes, which is the entire point of the project. Smoke mode opens a fresh
-  page per case, so a bare URL registers two tools and four cases fail with
-  "tool is not available". `?load=UN1090&check=1` puts the page in a passing
-  state, so all five are registered and all six cases run.
+- **The URL carries state on purpose.** Smoke mode opens a fresh page per case,
+  so a bare URL registers two tools and most cases fail with "tool is not
+  available". The URL puts the page in the state the cases are about.
 
-That is 6 of 6. It was 2 of 6 until I actually ran it.
+It scored 2 of 6 the first time I actually ran it, on the single-file version of
+these evals. Running a command you publish is not optional.
 
 
 14 test files, 288 tests. Lighthouse on the live origin, desktop, 58 audits passed and
