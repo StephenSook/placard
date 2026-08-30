@@ -37,6 +37,7 @@ import {
   MUTATING, PROPOSE_LOAD_SCHEMA, READ_ONLY,
 } from "./schemas.ts";
 import { checkSegregation, commitManifest, proposeLoad } from "./executors.ts";
+import type { Attestations } from "./executors.ts";
 import { registerAlwaysOnTools, unregisterAlwaysOnTools, webmcpSupported } from "./registerEarly.ts";
 
 export type Verdict = { status: "PASS" | "REFUSED" } | null;
@@ -48,6 +49,18 @@ export type HazmatToolsState = {
   verdict: Verdict;
   /** Per-session, never leaves the page. Binds an approval token to this session. */
   nonce: string;
+  /**
+   * What the operator has ticked, by vehicle. THE AGENT CANNOT SET THIS.
+   *
+   * barriersPresent, singleShipper and nonReactionAsserted decide whether an O
+   * cell passes and whether the 177.848(e)(3) exception is available. They used
+   * to be tool arguments, and an agent that sent barriersPresent: true turned a
+   * refused load into a committed shipping paper in one call. They now reach the
+   * solver only from here, read through a ref inside execute so a tool invoked
+   * mid-render sees what is currently ticked rather than what was ticked at
+   * registration.
+   */
+  attestations: Attestations[];
 };
 
 export type ToolRegistryView = {
@@ -87,17 +100,18 @@ export function useHazmatTools(
   const passes = state.verdict?.status === "PASS";
 
   const execPropose = useCallback(
-    (a: { items: string[]; maxVehicles: number; barriersPresent?: boolean; singleShipper?: boolean }) => proposeLoad(a),
+    (a: { items: string[]; maxVehicles: number }) =>
+      proposeLoad(a, stateRef.current.attestations[0] ?? {}),
     []
   );
   const execCheck = useCallback(
-    (a: { vehicles: Array<{ items: string[]; barriersPresent?: boolean; singleShipper?: boolean }> }) =>
-      checkSegregation(a, stateRef.current.nonce),
+    (a: { vehicles: Array<{ items: string[] }> }) =>
+      checkSegregation(a, stateRef.current.nonce, stateRef.current.attestations),
     []
   );
   const execCommit = useCallback(
-    async (a: { approvalToken: string; vehicles: Array<{ items: string[]; barriersPresent?: boolean; singleShipper?: boolean }> }) => {
-      const out = await commitManifest(a, stateRef.current.nonce);
+    async (a: { approvalToken: string; vehicles: Array<{ items: string[] }> }) => {
+      const out = await commitManifest(a, stateRef.current.nonce, stateRef.current.attestations);
       if (out.status === "COMMITTED") onCommittedRef.current?.(out.shippingPaper);
       return out;
     },

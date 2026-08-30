@@ -124,7 +124,16 @@ export function AttackPanel({ vehicles, nonce }: { vehicles: WireVehicle[]; nonc
     });
     await wait();
 
-    const result = await commitManifest({ approvalToken: forged, vehicles }, nonce);
+    // The wire and the operator's attestations go separately, exactly as the
+    // real tool surface sends them. Sending the attestations ON the wire would
+    // be refused as malformed, and the demo would then be refusing for the
+    // wrong reason: the point is that the HASH did not match, not that the
+    // arguments were badly shaped.
+    const result = await commitManifest(
+      { approvalToken: forged, vehicles: vehicles.map(({ items }) => ({ items })) },
+      nonce,
+      vehicles.map(({ items: _items, ...a }) => a),
+    );
     push({
       label: result.status === "COMMITTED" ? "A SHIPPING PAPER WAS PRODUCED" : "Refused. No shipping paper exists.",
       outcome: result.status === "COMMITTED" ? "attacker-wins" : "attacker-loses",

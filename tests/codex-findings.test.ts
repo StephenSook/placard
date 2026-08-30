@@ -9,6 +9,7 @@
 import { describe, it, expect } from "vitest";
 import { checkLoad } from "../src/solver/index.ts";
 import { commitManifest, toLoad } from "../src/tools/executors.ts";
+import { attestOf, wireOf } from "./attest.ts";
 import { resolveItem } from "../src/solver/hazards.ts";
 import { entriesByName } from "../src/solver/corpus.ts";
 import { readFileSync } from "node:fs";
@@ -21,8 +22,9 @@ async function clears(vehicles: Parameters<typeof toLoad>[0]) {
   const v = await checkLoad(toLoad(vehicles), N);
   if (v.status !== "PASS") return false;
   const c = await commitManifest(
-    { approvalToken: (v as { approvalToken: string }).approvalToken, vehicles },
+    { approvalToken: (v as { approvalToken: string }).approvalToken, vehicles: wireOf(vehicles) },
     N,
+    attestOf(vehicles),
   );
   return c.status === "COMMITTED";
 }

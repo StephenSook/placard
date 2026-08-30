@@ -205,12 +205,19 @@ export function Console() {
     setBusy(true);
     // Same executor the agent's propose_load tool calls.
     const refs = manifest.map((m) => m.item.id ?? m.name);
-    const r = proposeLoad({
-      items: refs,
-      maxVehicles: Math.max(bays.length, 1),
-      barriersPresent: bays[0]?.barriersPresent ?? false,
-      singleShipper: bays[0]?.singleShipper ?? false,
-    });
+    const r = proposeLoad(
+      {
+        items: refs,
+        maxVehicles: Math.max(bays.length, 1),
+      },
+      // The operator's checkboxes, passed as trust context. proposeLoad no
+      // longer accepts these as arguments: an agent that could set them was
+      // attesting, on the operator's behalf, to barriers in a truck it cannot see.
+      {
+        barriersPresent: bays[0]?.barriersPresent ?? false,
+        singleShipper: bays[0]?.singleShipper ?? false,
+      },
+    );
     if (r.status === "PROPOSED") {
       const byRef = new Map(manifest.map((m) => [m.item.id ?? m.name, m] as const));
       setBays(
@@ -352,8 +359,16 @@ export function Console() {
         manifestSize: manifest.length,
         verdict: verdict.status === "IDLE" ? null : { status: verdict.status },
         nonce,
+        // The operator's checkboxes. These are the ONLY route by which an
+        // attestation reaches the solver: the tool schemas no longer carry the
+        // fields, and a caller that sends one is refused by name.
+        attestations: bays.map((b) => ({
+          barriersPresent: b.barriersPresent,
+          singleShipper: b.singleShipper,
+          nonReactionAsserted: b.nonReactionAsserted,
+        })),
       }),
-      [manifest.length, verdict.status, nonce]
+      [manifest.length, verdict.status, nonce, bays]
     ),
     setPaper
   );

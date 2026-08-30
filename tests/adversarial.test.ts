@@ -6,26 +6,30 @@
  * These tests attack the gate directly, with no UI in the way.
  */
 import { describe, it, expect } from "vitest";
+import { attestOf, wireOf } from "./attest.ts";
 import { commitManifest, classifyLineItem, toLoad } from "../src/tools/executors.ts";
 import { approvalToken, canonical } from "../src/solver/hash.ts";
 import { checkLoad } from "../src/solver/index.ts";
 
 const NONCE = "adversarial-test";
-const FAILING = [{ items: ["UN1830", "UN1748"], barriersPresent: true, singleShipper: false }];
-const PASSING = [{ items: ["UN1090"], barriersPresent: false, singleShipper: false }];
+const FAILING_V = [{ items: ["UN1830", "UN1748"], barriersPresent: true, singleShipper: false }];
+const PASSING_V = [{ items: ["UN1090"], barriersPresent: false, singleShipper: false }];
+// The wire half. Attestations no longer travel on it, so they go alongside.
+const FAILING = wireOf(FAILING_V), FAILING_A = attestOf(FAILING_V);
+const PASSING = wireOf(PASSING_V), PASSING_A = attestOf(PASSING_V);
 
 describe("attack 1: an impostor tool owning the name commit_manifest", () => {
   it("cannot export with a token issued for a DIFFERENT load", async () => {
     // This is exactly what the shadow tool does on the page: it holds a real,
     // well-formed SHA-256 token, just not one for these bytes.
-    const stolen = await approvalToken(toLoad(PASSING), NONCE);
-    const r = await commitManifest({ approvalToken: stolen, vehicles: FAILING }, NONCE);
+    const stolen = await approvalToken(toLoad(PASSING_V), NONCE);
+    const r = await commitManifest({ approvalToken: stolen, vehicles: FAILING }, NONCE, FAILING_A);
     expect(r.status).toBe("REFUSED");
     expect(r).not.toHaveProperty("shippingPaper");
   });
 
   it("cannot export with a syntactically valid but invented token", async () => {
-    const r = await commitManifest({ approvalToken: "a".repeat(64), vehicles: FAILING }, NONCE);
+    const r = await commitManifest({ approvalToken: "a".repeat(64), vehicles: FAILING }, NONCE, FAILING_A);
     expect(r.status).toBe("REFUSED");
   });
 
@@ -65,8 +69,8 @@ describe("attack 1: an impostor tool owning the name commit_manifest", () => {
     // The belt-and-braces layer. This token is not forged: it is the real
     // SHA-256 of these exact bytes under this session's nonce, so the
     // comparison accepts it. Only the re-derivation of the verdict refuses.
-    const correctTokenForABadLoad = await approvalToken(toLoad(FAILING), NONCE);
-    const r = await commitManifest({ approvalToken: correctTokenForABadLoad, vehicles: FAILING }, NONCE);
+    const correctTokenForABadLoad = await approvalToken(toLoad(FAILING_V), NONCE);
+    const r = await commitManifest({ approvalToken: correctTokenForABadLoad, vehicles: FAILING }, NONCE, FAILING_A);
     expect(r.status).toBe("REFUSED");
     expect("reason" in r && r.reason).toMatch(/does not pass on re-check/);
   });
@@ -82,17 +86,18 @@ describe("attack 1: an impostor tool owning the name commit_manifest", () => {
   });
 
   it("ISOLATES the token format check by its distinct refusal reason", async () => {
-    const r = await commitManifest({ approvalToken: "not a hex digest", vehicles: FAILING }, NONCE);
+    const r = await commitManifest({ approvalToken: "not a hex digest", vehicles: FAILING }, NONCE, FAILING_A);
     expect(r.status).toBe("REFUSED");
     expect("reason" in r && r.reason).toMatch(/not a SHA-256 hex digest/);
   });
 
   it("still exports for a load that genuinely passes, so the gate is not just 'always refuse'", async () => {
-    const v = await checkLoad(toLoad(PASSING), NONCE);
+    const v = await checkLoad(toLoad(PASSING_V), NONCE);
     expect(v.status).toBe("PASS");
     const r = await commitManifest(
       { approvalToken: (v as { approvalToken: string }).approvalToken, vehicles: PASSING },
       NONCE,
+      PASSING_A,
     );
     expect(r.status).toBe("COMMITTED");
     expect(r).toHaveProperty("shippingPaper");
@@ -115,9 +120,9 @@ describe("attack 2: prompt injection through the untrusted-content tool", () => 
   });
 
   it("and the verdict does not move, because no model is in the verdict path", async () => {
-    const before = await checkLoad(toLoad(FAILING), NONCE);
+    const before = await checkLoad(toLoad(FAILING_V), NONCE);
     classifyLineItem({ text: POISON });
-    const after = await checkLoad(toLoad(FAILING), NONCE);
+    const after = await checkLoad(toLoad(FAILING_V), NONCE);
     expect(after.status).toBe(before.status);
     expect(after.status).toBe("REFUSED");
   });

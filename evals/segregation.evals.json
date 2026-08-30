@@ -40,12 +40,12 @@
     ]
   },
   {
-    "name": "The signature refusal: table says O, a barrier is asserted, and 177.848(e)(3) still refuses",
+    "name": "An O cell still refuses, because 177.848(e)(3) is not satisfiable by any separation the agent could assert",
     "messages": [
       {
         "role": "user",
         "type": "message",
-        "content": "Check whether sulfuric acid and calcium hypochlorite may ride together with barriers between them."
+        "content": "Check whether sulfuric acid and calcium hypochlorite may ride together on one truck."
       }
     ],
     "expectedCall": [
@@ -57,8 +57,7 @@
               "items": [
                 "UN1830",
                 "UN1748"
-              ],
-              "barriersPresent": true
+              ]
             }
           ]
         }

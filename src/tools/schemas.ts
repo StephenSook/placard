@@ -96,29 +96,37 @@ const VEHICLE_SCHEMA = Object.freeze({
       items: MATERIAL_REF,
       description: "The materials loaded in this vehicle, by identification number or proper shipping name.",
     },
-    barriersPresent: {
-      type: "boolean",
-      description:
-        "True ONLY if physical impediments, dividers, or packages of non-hazardous material " +
-        "separate incompatible items so that commingling could not occur if a package leaked. " +
-        "Air space alone does not satisfy this. Some pairings are prohibited regardless.",
-    },
-    singleShipper: {
-      type: "boolean",
-      description:
-        "True only if this vehicle is a truckload shipment loaded by ONE shipper. Goods from " +
-        "different shippers loaded together are not a truckload shipment.",
-    },
-    nonReactionAsserted: {
-      type: "boolean",
-      description:
-        "True ONLY if the shipper knows the mixture will not cause a fire or a dangerous " +
-        "evolution of heat or gas. 177.848(e)(3) requires this IN ADDITION to a single-shipper " +
-        "truckload before its exception applies. No table decides this; it is a fact about the " +
-        "chemistry, and an agent must not assert it on the operator's behalf.",
-    },
+    // barriersPresent, singleShipper and nonReactionAsserted are NOT here, and
+    // their absence is the point. See ATTESTATIONS below.
   },
 });
+
+/**
+ * THE THREE FIELDS THAT ARE DELIBERATELY NOT IN ANY SCHEMA.
+ *
+ * `barriersPresent`, `singleShipper` and `nonReactionAsserted` decide whether an
+ * `O` cell passes, whether the truckload carve-out applies, and whether the
+ * 177.848(e)(3) exception is available. Each is a fact about a physical vehicle
+ * and a commercial arrangement, and none is derivable from the manifest.
+ *
+ * They used to be ordinary tool arguments. Their descriptions said, in these
+ * words, that "an agent must not assert it on the operator's behalf", while the
+ * schema handed the agent the field to do exactly that, and an agent that sent
+ * `barriersPresent: true` turned a refused load into a committed shipping paper
+ * in one call. Writing the hole down is not closing it.
+ *
+ * They are now read from the operator's checkboxes inside `execute`, and
+ * `additionalProperties: false` plus an explicit refusal in `coerceVehicles`
+ * means a caller that sends one is told why rather than having it dropped.
+ * Every tool result reports `attestationsInForce`, so an agent can see what was
+ * assumed and ask the operator to change it, which is the correct division of
+ * labour: the agent searches the arrangement space, the person attests to the
+ * world.
+ */
+export const ATTESTATIONS_ARE_NOT_TOOL_ARGUMENTS =
+  "Attestations about the vehicle (barriers, single shipper, non-reaction) are read from the " +
+  "operator's checkboxes on the page. They are not arguments to any tool. Every result reports " +
+  "attestationsInForce so you can see what was assumed; to change it, ask the operator.";
 
 export const PROPOSE_LOAD_SCHEMA = Object.freeze({
   type: "object",
@@ -138,16 +146,7 @@ export const PROPOSE_LOAD_SCHEMA = Object.freeze({
       maximum: 20,
       description: "How many vehicles are available.",
     },
-    barriersPresent: { type: "boolean", description: "Whether physical barriers will separate incompatible items." },
-    singleShipper: { type: "boolean", description: "Whether one shipper is loading the whole shipment." },
-    nonReactionAsserted: {
-      type: "boolean",
-      description:
-        "True ONLY if the shipper knows the mixture will not cause a fire or a dangerous evolution " +
-        "of heat or gas. 177.848(e)(3) requires this IN ADDITION to a single-shipper truckload " +
-        "before its exception applies. No table decides this; it is a fact about the chemistry and " +
-        "an agent must not assert it on the operator's behalf.",
-    },
+    // No attestation fields. See ATTESTATIONS_ARE_NOT_TOOL_ARGUMENTS.
   },
 });
 
@@ -208,13 +207,15 @@ export const DESCRIPTIONS = Object.freeze({
   propose_load:
     "Given the materials to ship and the vehicles available, compute an arrangement that satisfies " +
     "49 CFR 177.848. If no arrangement exists, returns the specific set of materials that conflict " +
-    "with one another, so the refusal names items rather than saying no solution.",
+    "with one another, so the refusal names items rather than saying no solution. " +
+    ATTESTATIONS_ARE_NOT_TOOL_ARGUMENTS,
 
   check_segregation:
     "Adjudicate a proposed arrangement against 49 CFR 177.848. Returns PASS with an approval token, " +
     "or REFUSED with the verbatim text of every governing regulation. Checks four independent " +
     "grounds: materials forbidden outright, the segregation table, the narrative prohibitions that " +
-    "are stricter than the table, and the corrosive-over-oxidizer rule that no barrier satisfies.",
+    "are stricter than the table, and the corrosive-over-oxidizer rule that no barrier satisfies. " +
+    ATTESTATIONS_ARE_NOT_TOOL_ARGUMENTS,
 
   commit_manifest:
     "Export the shipping paper for a load that has passed segregation review. Requires an approval " +

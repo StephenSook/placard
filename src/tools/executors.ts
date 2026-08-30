@@ -149,9 +149,14 @@ export function classifyLineItem(input: { text: string }) {
 
 // ── propose_load ─────────────────────────────────────────────────────────────
 
-export function proposeLoad(input: {
-  items: string[]; maxVehicles: number; barriersPresent?: boolean; singleShipper?: boolean;
-}) {
+export function proposeLoad(
+  input: { items: string[]; maxVehicles: number },
+  /** From the operator's checkboxes. Never from the caller. */
+  attest: Attestations = {}
+) {
+  for (const k of ATTESTATION_KEYS) {
+    if ((input as Record<string, unknown>)?.[k] !== undefined) return malformed(ATTESTATION_REFUSAL);
+  }
   if (!isStringArray(input?.items) || input.items.length === 0) {
     return malformed("items must be a non-empty array of strings, each an identification number or a proper shipping name.");
   }
@@ -163,8 +168,8 @@ export function proposeLoad(input: {
   );
   const r = proposePartition(items, {
     maxVehicles: input.maxVehicles,
-    ...(input.barriersPresent !== undefined ? { barriersPresent: input.barriersPresent } : {}),
-    ...(input.singleShipper !== undefined ? { singleShipper: input.singleShipper } : {}),
+    ...(attest.barriersPresent !== undefined ? { barriersPresent: attest.barriersPresent } : {}),
+    ...(attest.singleShipper !== undefined ? { singleShipper: attest.singleShipper } : {}),
   });
 
   if (r.status === "UNRESOLVED") {
@@ -187,7 +192,13 @@ export function proposeLoad(input: {
     vehicles: r.load.vehicles.map((v, i) => ({ vehicle: i + 1, items: v.items.map((x) => x.id ?? x.name ?? "") })),
     vehiclesUsed: r.vehiclesUsed,
     conflictsAvoided: r.conflicts.length,
-    note: "This is a proposal. Run check_segregation on it to obtain an approval token; nothing can be exported without one.",
+    attestationsInForce: {
+      barriersPresent: attest.barriersPresent === true,
+      singleShipper: attest.singleShipper === true,
+    },
+    note: "This is a proposal, computed under the attestations the operator has ticked on the page, " +
+      "which are reported above and which you cannot set. Run check_segregation on it to obtain an " +
+      "approval token; nothing can be exported without one.",
   };
 }
 
@@ -251,26 +262,63 @@ export function coerceVehicles(input: unknown): WireVehicle[] | null {
     const raw = v as Record<string, unknown>;
     if (!Array.isArray(raw.items)) return null;
     if (!raw.items.every((x) => typeof x === "string")) return null;
-    // A malformed ASSERTION refuses rather than being dropped.
+    // AN ATTESTATION ON THE WIRE IS A FORGERY, NOT A VALUE TO COERCE.
     //
-    // Dropping it looked safe, because dropping an assertion can only make the
-    // verdict stricter. It is not safe, because the CALLER cannot tell. A
-    // request carrying singleShipper: "true" returned a regulatory PASS with an
-    // approval token and isMalformed false, so an agent had no way to learn
-    // that the field it sent was ignored. Silence about a rejected input is the
-    // same defect as silence about an unresolvable material.
-    for (const k of ["barriersPresent", "singleShipper", "nonReactionAsserted"] as const) {
-      if (raw[k] !== undefined && typeof raw[k] !== "boolean") return null;
+    // These three fields used to be ordinary tool arguments, and an agent that
+    // sent `barriersPresent: true` turned a REFUSED O cell into PASS and a
+    // committed shipping paper. Reproduced: acetone with UN1479, one boolean,
+    // export granted. The agent had asserted, on the operator's behalf, that
+    // physical barriers were installed in a truck it cannot see.
+    //
+    // The same forgery was fixed on the URL two rounds earlier and left live
+    // here, on the surface that is actually judged. Only the person at the
+    // console can attest to what is in the vehicle, so these arrive as a
+    // separate trust-context argument and the wire may not carry them at all.
+    // Refusing is deliberate: silently dropping the field leaves the caller
+    // unable to learn that its input was ignored.
+    for (const k of ATTESTATION_KEYS) {
+      if (raw[k] !== undefined) return null;
     }
-    out.push({
-      items: raw.items as string[],
-      ...(typeof raw.barriersPresent === "boolean" ? { barriersPresent: raw.barriersPresent } : {}),
-      ...(typeof raw.singleShipper === "boolean" ? { singleShipper: raw.singleShipper } : {}),
-      ...(typeof raw.nonReactionAsserted === "boolean" ? { nonReactionAsserted: raw.nonReactionAsserted } : {}),
-    });
+    out.push({ items: raw.items as string[] });
   }
   return out;
 }
+
+/**
+ * The three facts about the physical world that only the operator can assert.
+ *
+ * 177.848(d) makes an `O` cell passable when the materials are separated, and
+ * separation is something a person does to a truck. 177.848(e)(6) and the
+ * truckload carve-out likewise turn on who is shipping and what they have
+ * confirmed. None of it is derivable from the manifest, so none of it may be
+ * supplied by whoever is calling the tool.
+ */
+export type Attestations = {
+  barriersPresent?: boolean;
+  singleShipper?: boolean;
+  nonReactionAsserted?: boolean;
+};
+
+export const ATTESTATION_KEYS = ["barriersPresent", "singleShipper", "nonReactionAsserted"] as const;
+
+/** What the operator has actually ticked, for the caller's benefit. */
+export const attestationReport = (attest: Attestations[]) =>
+  attest.map((a, i) => ({
+    vehicle: i + 1,
+    barriersPresent: a.barriersPresent === true,
+    singleShipper: a.singleShipper === true,
+    nonReactionAsserted: a.nonReactionAsserted === true,
+  }));
+
+const ATTESTATION_REFUSAL =
+  "vehicles must be an array of objects, each with an items array of strings. " +
+  "barriersPresent, singleShipper and nonReactionAsserted are NOT arguments to this tool: " +
+  "they are attestations about the physical vehicle that only the operator at the console can " +
+  "make, and they are read from the page. Send items only.";
+
+/** Merge the operator's attestations onto the wire vehicles, by position. */
+const withAttestations = (wire: WireVehicle[], attest: Attestations[]): WireVehicle[] =>
+  wire.map((v, i) => ({ ...v, ...(attest[i] ?? {}) }));
 
 export function toLoad(vehicles: WireVehicle[]): LoadProposal {
   return {
@@ -286,13 +334,16 @@ export function toLoad(vehicles: WireVehicle[]): LoadProposal {
 }
 
 export async function checkSegregation(
-  input: { vehicles: Array<{ items: string[]; barriersPresent?: boolean; singleShipper?: boolean }> },
-  nonce: string
+  input: { vehicles: Array<{ items: string[] }> },
+  nonce: string,
+  /** From the operator's checkboxes, by vehicle. Never from the caller. */
+  attest: Attestations[] = []
 ) {
-  const vehicles = coerceVehicles(input?.vehicles);
-  if (vehicles === null) {
-    return malformed("vehicles must be an array of objects, each with an items array of strings.");
+  const wire = coerceVehicles(input?.vehicles);
+  if (wire === null) {
+    return malformed(ATTESTATION_REFUSAL);
   }
+  const vehicles = withAttestations(wire, attest);
   const load = toLoad(vehicles);
   const v = await checkLoad(load, nonce);
   if (v.status === "PASS") {
@@ -301,7 +352,9 @@ export async function checkSegregation(
       approvalToken: v.approvalToken,
       pairsChecked: v.checked,
       notes: v.notes,
-      note: "The token is bound to a hash of this exact arrangement. Change anything and it stops validating.",
+      attestationsInForce: attestationReport(vehicles.map((x) => x)),
+      note: "The token is bound to a hash of this exact arrangement. Change anything and it stops validating. " +
+        "attestationsInForce is what the operator has ticked on the page; you cannot set it.",
     };
   }
   return {
@@ -315,31 +368,36 @@ export async function checkSegregation(
       regulation: x.citations.map((c) => ({ section: c.section, text: c.text })),
     })),
     notes: v.notes,
+    attestationsInForce: attestationReport(vehicles.map((x) => x)),
+    note: "attestationsInForce is what the operator has ticked on the page. If a separation would " +
+      "clear this load, the person loading the vehicle has to assert it; you cannot.",
   };
 }
 
 // ── commit_manifest ──────────────────────────────────────────────────────────
 
 export async function commitManifest(
-  input: { approvalToken: string; vehicles: WireVehicle[] },
-  nonce: string
+  input: { approvalToken: string; vehicles: Array<{ items: string[] }> },
+  nonce: string,
+  /** From the operator's checkboxes, by vehicle. Never from the caller. */
+  attest: Attestations[] = []
 ) {
   // THE SECURITY BOUNDARY. Not the registry: the WebMCP tool map is keyed by
   // name, so any same-origin script can register over a name and absence from
   // the registry is a UX affordance plus defence in depth, never the
   // guarantee. The guarantee is that this function re-derives the verdict from
   // the exact bytes it is about to export.
-  const vehicles = coerceVehicles(input?.vehicles);
-  if (vehicles === null || typeof input?.approvalToken !== "string") {
+  const wire = coerceVehicles(input?.vehicles);
+  if (wire === null || typeof input?.approvalToken !== "string") {
     return {
       status: "REFUSED" as const,
-      reason:
-        "malformed request: vehicles must be an array of objects each carrying a string array " +
-        "of items, and approvalToken must be a string. Nothing was exported.",
+      reason: `malformed request: approvalToken must be a string, and ${ATTESTATION_REFUSAL} Nothing was exported.`,
       note: "No shipping paper was produced. Re-run check_segregation on the arrangement you intend to ship.",
     };
   }
-  const load = toLoad(vehicles);
+  // The attestations come from the page, so a commit is hashed against what the
+  // operator actually ticked. An agent cannot alter the bytes being hashed.
+  const load = toLoad(withAttestations(wire, attest));
   const check = await verifyApproval(load, input.approvalToken, nonce);
   if (!check.ok) {
     return {

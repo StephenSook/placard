@@ -161,7 +161,8 @@ describe("propose_load", () => {
 
 describe("check_segregation", () => {
   it("returns verbatim regulation on a refusal, not a paraphrase", async () => {
-    const v = ok(await checkSegregation({ vehicles: [{ items: ["UN1830", "UN1748"], barriersPresent: true }] }, NONCE));
+    const v = ok(await checkSegregation(
+      { vehicles: [{ items: ["UN1830", "UN1748"] }] }, NONCE, [{ barriersPresent: true }]));
     expect(v.status).toBe("REFUSED");
     if (v.status !== "REFUSED") return;
     const reg = v.violations[0]!.regulation[0]!;

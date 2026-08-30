@@ -71,7 +71,7 @@ describe("an argument refusal is DISTINGUISHABLE from a regulatory refusal", () 
 
   it("does NOT mark a genuine regulatory refusal as malformed", async () => {
     const real = await checkSegregation(
-      { vehicles: [{ items: ["UN1830", "UN1748"], barriersPresent: true }] }, NONCE,
+      { vehicles: [{ items: ["UN1830", "UN1748"] }] }, NONCE, [{ barriersPresent: true }],
     );
     expect(real.status).toBe("REFUSED");
     expect(isMalformed(real)).toBe(false);
@@ -86,8 +86,9 @@ describe("an argument refusal is DISTINGUISHABLE from a regulatory refusal", () 
 describe("coerceVehicles", () => {
   it("accepts the real shape and rejects everything else", () => {
     expect(coerceVehicles([{ items: ["UN1090"] }])).toEqual([{ items: ["UN1090"] }]);
-    expect(coerceVehicles([{ items: ["UN1090"], barriersPresent: true }]))
-      .toEqual([{ items: ["UN1090"], barriersPresent: true }]);
+    // An attestation on the wire is refused, not carried through: it is a claim
+    // about the physical vehicle that the caller has no standing to make.
+    expect(coerceVehicles([{ items: ["UN1090"], barriersPresent: true }])).toBeNull();
     for (const bad of ["x", 1, null, undefined, {}, [null], [{ items: 1 }], [{ items: [1] }]]) {
       expect(coerceVehicles(bad), JSON.stringify(bad)).toBeNull();
     }
@@ -103,15 +104,26 @@ describe("coerceVehicles", () => {
     // silence about an unresolvable material.
     expect(coerceVehicles([{ items: ["UN1090"], singleShipper: "true" }])).toBeNull();
     expect(coerceVehicles([{ items: ["UN1090"], nonReactionAsserted: 1 }])).toBeNull();
+    // and a well-typed attestation is refused just as hard, because the type is
+    // not the problem: the wire has no standing to make the claim at all.
+    expect(coerceVehicles([{ items: ["UN1090"], nonReactionAsserted: true }])).toBeNull();
     // and a genuinely absent field is still fine
     expect(coerceVehicles([{ items: ["UN1090"] }])).toEqual([{ items: ["UN1090"] }]);
   });
 
-  it("a request with a bad assertion is marked malformed, not passed", async () => {
-    const r = await checkSegregation(
-      { vehicles: [{ items: ["UN1090"], singleShipper: "true" as never }] }, NONCE,
-    );
-    expect(isMalformed(r)).toBe(true);
-    expect(r.status).toBe("REFUSED");
+  it("an assertion sent on the wire is refused, never honoured and never dropped", async () => {
+    // These three fields are attestations only the operator can make. A caller
+    // that sends one is refused by name rather than having it silently ignored,
+    // because a caller cannot otherwise learn that its input did nothing.
+    for (const bad of [
+      { items: ["UN1090"], singleShipper: "true" as never },
+      { items: ["UN1090"], barriersPresent: true as never },
+      { items: ["UN1090"], nonReactionAsserted: false as never },
+    ]) {
+      const r = await checkSegregation({ vehicles: [bad] }, NONCE);
+      expect(isMalformed(r)).toBe(true);
+      if (!isMalformed(r)) return;
+      expect(r.reason).toContain("only the operator at the console can");
+    }
   });
 });
