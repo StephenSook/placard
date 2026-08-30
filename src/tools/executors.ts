@@ -185,7 +185,7 @@ export function classifyLineItem(input: { text: string }) {
  * ultimately needs, and the operator then ticks the boxes for the arrangement
  * that actually exists and re-checks.
  */
-export function proposeLoad(input: { items: string[]; maxVehicles: number }) {
+export function proposeLoad(input: { items: WireRef[]; maxVehicles: number }) {
   for (const k of ATTESTATION_KEYS) {
     if ((input as Record<string, unknown>)?.[k] !== undefined) return malformed(ATTESTATION_REFUSAL);
   }
