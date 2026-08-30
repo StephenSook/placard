@@ -1,0 +1,26 @@
+# What the hosted build does NOT need, and what happens without this file.
+#
+# The film pipeline put 887 MB under /video (a Remotion project with its own
+# node_modules, the captures, the narration and the rendered masters) and the
+# next `vercel deploy` died twice with "Upload aborted" and then "AbortError:
+# The user aborted a request". Neither message mentions size, and the deploy
+# script correctly refused to claim success, which is the only reason this was
+# not a silent stale-bundle deploy.
+#
+# The research haul and the private working material are excluded for the same
+# reason they are gitignored: they never leave this machine.
+/video/
+/research/
+/private/
+/data-legacy/
+/reference/
+/.gallery/
+/.agents/
+/captures/
+
+# Local tooling and caches.
+/scratch/
+/playwright-report/
+/test-results/
+/blob-report/
+.playwright-mcp/
