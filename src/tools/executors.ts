@@ -601,6 +601,22 @@ export const shipperCertification = () => ({
     "The certification is made by the person who signs, not by this software.",
 });
 
+/**
+ * The hazard class as 172.202(a)(3) requires it printed: the primary class or
+ * division, then every subsidiary in parentheses immediately after it.
+ *
+ * The clause excepts a subsidiary whose LABEL is not required, and these codes
+ * are the column 6 label codes, so anything present here is required. UN3513
+ * resolves to class 2.2 with labels ["2.2","5.1"] and the paper said "2.2",
+ * so a tool whose entire argument is that subsidiary hazards decide verdicts
+ * produced a document that omitted the subsidiary hazard.
+ */
+export function describeHazard(primary: string | undefined, labelCodes: string[] = []): string {
+  const p = primary ?? "";
+  const subs = [...new Set(labelCodes.filter((c) => c && c !== p))];
+  return subs.length ? `${p} (${subs.join(", ")})` : p;
+}
+
 /** The rule that fixes the column order of every line on the paper. */
 export const descriptionSequence = () => cite("172202-a-sequence");
 
@@ -622,12 +638,19 @@ export function buildShippingPaper(load: LoadProposal) {
       // group. The clause travels with the document rather than sitting in a
       // comment, because a comment is not a citation and this repo has already
       // been caught reading one as if it were.
+      const labelCodes = r.hazards.map((h) => h.raw);
       return {
         identificationNumber: r.item.id,
         properShippingName: r.name,
         hazardClass: r.hazardClass,
+        // 172.202(a)(3): the subsidiary hazard class or division numbers are
+        // entered in parentheses immediately following the primary. This lives
+        // in the DOCUMENT rather than in the renderer, because it is a rule
+        // about what the paper says, not about how it looks, and the renderer
+        // that owned it printed the primary alone while holding the labels.
+        hazardDescription: describeHazard(r.hazardClass, labelCodes),
         packingGroup: r.packingGroup,
-        labelCodes: r.hazards.map((h) => h.raw),
+        labelCodes,
       };
     }),
   }));

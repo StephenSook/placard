@@ -502,3 +502,105 @@ describe("16. narrowing by packing group must not pick between different materia
     }
   });
 });
+
+// ── round five ───────────────────────────────────────────────────────────────
+
+describe("17. every edit that changes a bay's contents clears that bay's attestations", () => {
+  it("the invalidation lives at the one place bays are written", () => {
+    // Three rounds fixed this one path at a time: the tool stopped accepting
+    // attestations as arguments, the check stopped applying them to contents
+    // they were not made about, the proposal stopped copying them onto invented
+    // vehicles, and the MANUAL edits were still carrying them. Put UN1830 in
+    // bay one, tick all three, put UN1748 in bay two, drag it across, and the
+    // pair arrives carrying assertions made when the bay held something else.
+    //
+    // A handler cannot forget a rule it does not have to remember, so the guard
+    // is that no content-mutating handler calls setBays directly.
+    const src = readFileSync(join(process.cwd(), "src/Console.tsx"), "utf8");
+    expect(src).toContain("const mutateBays = useCallback(");
+    for (const handler of ["const removeVehicle = useCallback", "const move = useCallback"]) {
+      const at = src.indexOf(handler);
+      expect(at, `${handler} not found`).toBeGreaterThan(-1);
+      // The handler's own body: up to the start of the next top-level const.
+      const rest = src.slice(at + handler.length);
+      const body = rest.slice(0, rest.indexOf("\n  const "));
+      expect(body.length, `${handler} body did not delimit`).toBeGreaterThan(50);
+      expect(body, `${handler} writes bays without the invalidation`).not.toMatch(/\bsetBays\(/);
+      expect(body).toMatch(/\bmutateBays\(/);
+    }
+  });
+
+  it("the attestation-carrying pair is refused when nothing has been asserted", async () => {
+    // The load the move sequence produced. Without the operator's assertions it
+    // must not pass, which is what makes carrying them across a real defect.
+    const bare = await checkLoad(toLoad([{ items: ["UN1830", "UN1748"] }]), N);
+    expect(bare.status).toBe("REFUSED");
+  });
+});
+
+describe("18. the signed paper records every classification and condition it rested on", () => {
+  it("prints subsidiary hazards in the 172.202(a)(3) sequence", async () => {
+    const { buildShippingPaper, describeHazard } = await import("../src/tools/executors.ts");
+    expect(describeHazard("2.2", ["2.2", "5.1"])).toBe("2.2 (5.1)");
+    expect(describeHazard("3", ["3"])).toBe("3");
+    expect(describeHazard("8", ["8", "6.1", "6.1"])).toBe("8 (6.1)");
+
+    // And on a real document, not only on the helper. UN1717 acetyl chloride is
+    // Class 3 with a Class 8 subsidiary, and both belong on the paper.
+    const paper = buildShippingPaper(toLoad([{ items: ["UN1717"] }]) as never);
+    const line = paper[0]!.lines[0]!;
+    expect("error" in line ? line.error : "", "UN1717 did not reach the paper").toBe("");
+    expect((line as { hazardDescription?: string }).hazardDescription).toBe("3 (8)");
+  });
+
+  it("records the non-reaction assertion the approval may have rested on", async () => {
+    const { buildShippingPaper } = await import("../src/tools/executors.ts");
+    const paper = buildShippingPaper(
+      toLoad([{ items: ["UN1830", "UN1748"], nonReactionAsserted: true }]) as never,
+    );
+    expect(paper[0]!.nonReactionAsserted).toBe(true);
+    // The renderer dropped it while the document carried it, which is the shape
+    // of defect a source guard catches and a data test does not.
+    const ui = readFileSync(join(process.cwd(), "src/ui/ShippingPaper.tsx"), "utf8");
+    expect(ui).toContain("v.nonReactionAsserted");
+    expect(ui).toContain("hazardDescription");
+    // And the renderer's types are derived, not hand-narrowed, which is how the
+    // field came to be dropped in silence in the first place.
+    expect(ui).toContain("ReturnType<typeof buildShippingPaper>");
+  });
+});
+
+describe("19. the hazard zone is part of a material's identity", () => {
+  it("refuses UN1744 Bromine solutions PG I, whose two rows are Zone A and Zone B", () => {
+    const r = resolveItem({ id: "UN1744", name: "Bromine solutions", packingGroup: "I" });
+    expect("error" in r).toBe(true);
+    const e = (r as { error: string }).error;
+    expect(e).toMatch(/2 different materials/);
+    expect(e).toContain("Zone A");
+    expect(e).toContain("Zone B");
+  });
+
+  it("resolves either one once the operator names the zone", () => {
+    for (const zone of ["A", "B"] as const) {
+      const r = resolveItem({ id: "UN1744", name: "Bromine solutions", packingGroup: "I", pihZone: zone });
+      if ("error" in r) throw new Error(r.error);
+      expect(r.pihZone).toBe(zone);
+    }
+  });
+
+  it("the zone changes the verdict, which is why collapsing the rows was wrong", async () => {
+    const zoneA = await checkLoad({
+      vehicles: [{ items: [{ id: "UN1744", name: "Bromine solutions", packingGroup: "I", pihZone: "A" }, { id: "UN1090" }] }],
+    }, N);
+    const zoneB = await checkLoad({
+      vehicles: [{ items: [{ id: "UN1744", name: "Bromine solutions", packingGroup: "I", pihZone: "B" }, { id: "UN1090" }] }],
+    }, N);
+    expect(zoneA.status).not.toBe(zoneB.status);
+  });
+
+  it("refuses a zone that number does not carry", () => {
+    const r = resolveItem({ id: "UN1744", name: "Bromine solutions", packingGroup: "I", pihZone: "D" });
+    expect("error" in r).toBe(true);
+    expect((r as { error: string }).error).toMatch(/no Hazard Zone D/);
+  });
+});

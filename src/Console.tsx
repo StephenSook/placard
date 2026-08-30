@@ -51,6 +51,47 @@ export function Console() {
   const nonce = useSessionNonce();
   const [manifest, setManifest] = useState<ResolvedItem[]>([]);
   const [bays, setBays] = useState<Bay[]>([{ items: [], barriersPresent: false, singleShipper: false, nonReactionAsserted: false }]);
+
+  /**
+   * EVERY EDIT THAT CHANGES WHAT IS IN A BAY CLEARS THAT BAY'S ATTESTATIONS.
+   *
+   * Barriers, single-shipper status and non-reaction are claims about a
+   * PARTICULAR truck holding PARTICULAR materials. Two rounds of review fixed
+   * this one path at a time: the tool stopped accepting them as arguments, then
+   * the check stopped applying them to contents they were not made about, then
+   * the proposal stopped copying them onto invented vehicles. The manual edits
+   * were still carrying them. Reproduced: put UN1830 in bay one, tick all
+   * three, put UN1748 in bay two, drag UN1748 across, and the pair arrives
+   * carrying assertions made when the bay held something else. checkLoad
+   * returns PASS, and because the page load is regenerated from the bays there
+   * is no mismatch for the binding check to catch, so it can reach COMMITTED.
+   *
+   * So the invalidation lives HERE, at the one place bays are written, rather
+   * than in each of the six handlers that write them. A handler cannot forget
+   * a rule it does not have to remember. Contents are compared as a multiset of
+   * the manifest's own item objects, which move between bays by reference, so a
+   * pure reorder is not treated as a change.
+   */
+  const mutateBays = useCallback((fn: (prev: Bay[]) => Bay[]) => {
+    const sameContents = (a: Bay["items"], b: Bay["items"]) => {
+      if (a.length !== b.length) return false;
+      const seen = new Map<Bay["items"][number], number>();
+      for (const x of a) seen.set(x, (seen.get(x) ?? 0) + 1);
+      for (const x of b) {
+        const n = seen.get(x);
+        if (!n) return false;
+        seen.set(x, n - 1);
+      }
+      return true;
+    };
+    setBays((prev) =>
+      fn(prev).map((bay, i) => {
+        const before = prev[i];
+        if (before && sameContents(before.items, bay.items)) return bay;
+        return { ...bay, barriersPresent: false, singleShipper: false, nonReactionAsserted: false };
+      })
+    );
+  }, []);
   const [verdict, setVerdict] = useState<Verdict>({ status: "IDLE" });
   // Bumped on every verdict change so the agent view re-reads the live
   // registry. Not derived from `verdict` itself, because the registry settles
@@ -127,7 +168,7 @@ export function Console() {
       (choice.exact ? "." : `. You typed "${query}".`)
     );
     setManifest((m) => [...m, r]);
-    setBays((b) => {
+    mutateBays((b) => {
       const next = b.map((x) => ({ ...x, items: [...x.items] }));
       next[0]!.items.push(r);
       return next;
@@ -139,12 +180,12 @@ export function Console() {
     setManifest((m) => {
       const target = m[i];
       if (target) {
-        setBays((b) => b.map((bay) => ({ ...bay, items: bay.items.filter((x) => x !== target) })));
+        mutateBays((b) => b.map((bay) => ({ ...bay, items: bay.items.filter((x) => x !== target) })));
       }
       return m.filter((_, x) => x !== i);
     });
     invalidate();
-  }, [invalidate]);
+  }, [invalidate, mutateBays]);
 
   /**
    * Resolve a list of material references into a manifest. Shared by the demo
@@ -200,7 +241,7 @@ export function Console() {
   }, [invalidate]);
 
   const removeVehicle = useCallback((i: number) => {
-    setBays((b) => {
+    mutateBays((b) => {
       if (b.length <= 1) return b;
       const moved = b[i]?.items ?? [];
       const next = b.filter((_, x) => x !== i).map((x) => ({ ...x, items: [...x.items] }));
@@ -208,7 +249,7 @@ export function Console() {
       return next;
     });
     invalidate();
-  }, [invalidate]);
+  }, [invalidate, mutateBays]);
 
   const toggle = useCallback((i: number, key: "barriersPresent" | "singleShipper" | "nonReactionAsserted", value: boolean) => {
     setBays((b) => b.map((bay, x) => (x === i ? { ...bay, [key]: value } : bay)));
@@ -216,15 +257,19 @@ export function Console() {
   }, [invalidate]);
 
   const move = useCallback((from: { bay: number; item: number }, toBay: number) => {
-    setBays((b) => {
+    mutateBays((b) => {
       if (from.bay === toBay) return b;
       const next = b.map((x) => ({ ...x, items: [...x.items] }));
       const [it] = next[from.bay]!.items.splice(from.item, 1);
       if (it) next[toBay]!.items.push(it);
       return next;
     });
+    setAnnounce(
+      "Moved. Any barrier, single-shipper or non-reaction assertion on the vehicles that changed " +
+        "was cleared, because it was made about different contents."
+    );
     invalidate();
-  }, [invalidate]);
+  }, [invalidate, mutateBays]);
 
   const toWire = useCallback(
     () =>

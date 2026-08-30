@@ -41,6 +41,17 @@ export type LineItem = {
    * verdict, so a number alone is not always enough to identify a material.
    */
   packingGroup?: string | null;
+  /**
+   * Operator-supplied inhalation hazard zone, used ONLY to disambiguate an
+   * identification number whose rows are otherwise identical. UN1744 lists two
+   * "Bromine solutions" rows at Class 8 PG I with the same labels, separated
+   * only by special provision 1 against 2, which is Hazard Zone A against Zone
+   * B. 6.1 PG I Zone A has its own row in the 177.848(d) table and Zone B does
+   * not, so the zone decides the verdict. Without this field that reference is
+   * underdetermined and refuses; with it the operator says which one is on the
+   * dock.
+   */
+  pihZone?: PihZone | null;
 };
 
 /** A material after resolution against the corpus. */

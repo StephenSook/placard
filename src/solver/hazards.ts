@@ -203,12 +203,43 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
       rows = byName;
     }
 
+    if (item.pihZone) {
+      const byZone = rows.filter((r) => zoneFor(r) === item.pihZone);
+      if (byZone.length === 0) {
+        const offered = [...new Set(rows.map((r) => zoneFor(r) ?? "none"))].join(", ");
+        return {
+          error:
+            `${id} has no Hazard Zone ${item.pihZone} entry in the 49 CFR 172.101 table` +
+            (item.packingGroup ? ` at packing group ${item.packingGroup}` : "") +
+            `. That number is listed with hazard zone ${offered}.`,
+        };
+      }
+      rows = byZone;
+    }
+
     // What makes two rows the SAME material for every purpose downstream: the
-    // name printed on the paper, the class the matrix is indexed by, and the
-    // labels that raise subsidiary hazards. Packing group is deliberately not
+    // name printed on the paper, the class the matrix is indexed by, the labels
+    // that raise subsidiary hazards, the inhalation hazard zone, and any
+    // column-7 code that can alter the class. Packing group is deliberately not
     // in the key, because that is the one axis severity ordering can settle.
+    //
+    // THE ZONE IS IN THE KEY BECAUSE IT DECIDES THE VERDICT. UN1744 has two
+    // rows both named "Bromine solutions", both Class 8 PG I, both labelled
+    // ["8","6.1"], differing only in special provision 1 against 2, which is
+    // Hazard Zone A against Zone B. 6.1 PG I Zone A has its own row in the
+    // 177.848(d) table and Zone B does not, so a key that ignored the zone
+    // collapsed them, severity ordering picked whichever came first in the
+    // table, and Bromine solutions with acetone came back PROHIBITED_TOGETHER
+    // on a coin toss. That turned an ambiguity the tool used to at least be
+    // uncertain about into a confident and possibly wrong refusal.
     const identityOf = (r: HmtEntry) =>
-      `${r.name.toLowerCase()}|${r.class}|${[...(r.labels ?? [])].sort().join(",")}`;
+      [
+        r.name.toLowerCase(),
+        r.class,
+        [...(r.labels ?? [])].sort().join(","),
+        zoneFor(r) ?? "",
+        r.specialProvisions.filter((sp) => CLASS_ALTERING_SP.has(sp.trim())).sort().join(","),
+      ].join("|");
     const distinct = [...new Set(rows.map(identityOf))];
     if (distinct.length > 1) {
       const shown = [...new Map(rows.map((r) => [identityOf(r), r])).values()];
@@ -217,8 +248,9 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
           `${id} covers ${distinct.length} different materials in the 172.101 table` +
           (item.packingGroup ? ` at packing group ${item.packingGroup}` : "") +
           `, and the verdict and the shipping paper both depend on which one it is. ` +
-          `Give the proper shipping name: ` +
-          `${shown.map((r) => `${r.class}${r.pg ? ` PG ${r.pg}` : ""} ${r.name}`).slice(0, 4).join("; ")}` +
+          `Give the proper shipping name, or the inhalation hazard zone where that is the ` +
+          `only difference: ` +
+          `${shown.map((r) => `${r.class}${r.pg ? ` PG ${r.pg}` : ""}${zoneFor(r) ? ` Zone ${zoneFor(r)}` : ""} ${r.name}`).slice(0, 4).join("; ")}` +
           (shown.length > 4 ? "; and others" : "") + ".",
       };
     }

@@ -22,17 +22,15 @@
  * 172.204 wants a signature and a screen cannot take one.
  */
 import "./paper.css";
-import { shipperCertification } from "../tools/executors.ts";
+import { buildShippingPaper, shipperCertification } from "../tools/executors.ts";
 
-type Line = {
-  identificationNumber?: string | null;
-  properShippingName?: string;
-  hazardClass?: string;
-  packingGroup?: string | null;
-  labelCodes?: string[];
-  error?: string;
-};
-type Vehicle = { vehicle: number; barriersPresent: boolean; singleShipper: boolean; lines: Line[] };
+/**
+ * DERIVED FROM THE EXECUTOR'S OUTPUT, not narrowed by hand. Hand-narrowing is
+ * how the renderer came to silently drop nonReactionAsserted: the field existed
+ * on the document buildShippingPaper produces, the local type simply did not
+ * mention it, and nothing anywhere said a field was being discarded.
+ */
+type Vehicle = ReturnType<typeof buildShippingPaper>[number];
 
 export function ShippingPaper({ paper, onClose }: { paper: unknown; onClose: () => void }) {
   const cert = shipperCertification();
@@ -59,6 +57,19 @@ export function ShippingPaper({ paper, onClose }: { paper: unknown; onClose: () 
             Vehicle {v.vehicle}
             {v.barriersPresent && <span className="paper__flag">barriers asserted</span>}
             {v.singleShipper && <span className="paper__flag">single shipper</span>}
+            {/*
+              THE PAPER RECORDS EVERY CONDITION THE APPROVAL RESTED ON, and this
+              one was missing. buildShippingPaper has carried
+              nonReactionAsserted since the day the 177.848(e)(6) carve-out was
+              implemented, with a comment reading "A shipping paper that was
+              permitted by that assertion and does not record it is missing the
+              reason it exists". The renderer then dropped it, so a load that
+              passed only because the shipper asserted the mixture would not
+              react produced a document that did not say so.
+            */}
+            {v.nonReactionAsserted && (
+              <span className="paper__flag">no dangerous reaction asserted</span>
+            )}
           </h3>
 
           <table className="paper__table">
@@ -81,7 +92,7 @@ export function ShippingPaper({ paper, onClose }: { paper: unknown; onClose: () 
                   <tr key={i}>
                     <td className="mono">{l.identificationNumber ?? "none"}</td>
                     <td>{l.properShippingName}</td>
-                    <td className="mono">{l.hazardClass}</td>
+                    <td className="mono">{l.hazardDescription ?? l.hazardClass}</td>
                     <td className="mono">{l.packingGroup ?? "n/a"}</td>
                   </tr>
                 )
