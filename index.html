@@ -9,9 +9,9 @@
       content="Paste a chemical manifest and watch an agent load a truck legally. The page shows exactly which federal rule each pair breaks, and the shipping paper cannot be exported until the load passes."
     />
     <!--
-      Chrome origin trial token for WebMCP, registered 2026-08-29 for the
-      origin https://segregation-console.netlify.app and valid to 2026-11-16,
-      which is 56 days past the end of the judging window.
+      Chrome origin trial token for WebMCP, registered 2026-08-29 for the origin
+      https://segregation-console.vercel.app and valid to 2026-11-16, which is
+      55 days past the end of the judging window.
 
       This is deliberately public: an origin-trial token is bound to an origin
       and is meant to be served in the page. It is not a secret, and it is
@@ -23,10 +23,16 @@
       audits report nothing at all rather than reporting a failure. That
       silence is the trap: the implementation can be perfect and the audit
       still shows an empty result.
+
+      A token is bound to ONE origin, so moving hosts silently removes the
+      entire tool surface rather than breaking it visibly. Measured in Chrome
+      151 during the move off Netlify: document.modelContext was undefined and
+      getTools() returned nothing on the new origin, while the old origin still
+      served all five tools. Re-register before, not after, moving a host.
     -->
     <meta
       http-equiv="origin-trial"
-      content="AglgtEvgW5XieD27Bhuc+vCdUB4fU8SPrhHNaVRsJPqvWkq5vQaOD9wp7t2Mrf1X9awa+qVAzIPEflT5LvBAUAYAAABfeyJvcmlnaW4iOiJodHRwczovL3NlZ3JlZ2F0aW9uLWNvbnNvbGUubmV0bGlmeS5hcHA6NDQzIiwiZmVhdHVyZSI6IldlYk1DUCIsImV4cGlyeSI6MTc5NDg3MzYwMH0="
+      content="Ai0swJb1c01hxDvjPs71sYkHTUT0oEgDt5+9d6GKCPOIkboRlaVpvMXhOPJnJ9Td23FU3AWs3KVry+/w0AB3IAUAAABeeyJvcmlnaW4iOiJodHRwczovL3NlZ3JlZ2F0aW9uLWNvbnNvbGUudmVyY2VsLmFwcDo0NDMiLCJmZWF0dXJlIjoiV2ViTUNQIiwiZXhwaXJ5IjoxNzk0ODczNjAwfQ=="
     />
 
     <!--
