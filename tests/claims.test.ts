@@ -547,8 +547,13 @@ describe("published figures must match the fact sheet", () => {
     // twenty four"). Neither matches a prose regex looking for digits after a
     // phrase. So: any line that mentions the cleared count must not carry a
     // divergence figure other than the current one, in digits or in words.
+    // ONLY figures that have genuinely BEEN the divergence headline. Seeding
+    // this with arbitrary candidates made it fire on a storyboard row whose "16"
+    // was a beat duration in seconds, which is how a guard earns a reputation
+    // for crying wolf and then gets deleted. 24 and 32 are the two historical
+    // values this project published before the sweep was corrected.
     const WORDS: Record<number, string> = {
-      24: "twenty four", 32: "thirty two", 56: "fifty six", 16: "sixteen", 8: "eight",
+      24: "twenty four", 32: "thirty two", 56: "fifty six",
     };
     let lineChecks = 0;
     for (const f of surfaces) {

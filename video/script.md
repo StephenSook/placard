@@ -1,106 +1,112 @@
-# Demo video script
+# Placard, demo film script
 
-Target **under 3:00** (challenge rules). Aiming 2:35 to 2:45 of speech.
-Audio is REQUIRED: a silent screencast with music does not satisfy the rules.
-AI text to speech is explicitly permitted.
+Target 165 to 175 seconds. Devpost caps the video at 3 minutes and requires audio.
 
-**Every number below is traceable to FACTS.md.** Nothing may be spoken that is
-not in that file. Checked before rendering, because a published video cannot be
-edited and its spoken numbers are claims like any other.
+**Every number spoken below is drawn from FACTS.md, which is generated from the
+committed 49 CFR corpus by `npm run facts`.** Nothing here may be sourced from
+memory. The claims guard in `tests/claims.test.ts` parses this file and fails the
+build if a figure drifts from the fact sheet, including the ones spelled out in
+words, because a rendered video cannot be corrected.
 
-| Figure spoken | FACTS.md row |
-|---|---|
-| 3,293 entries | Entries after resolving packing-group continuations |
-| 256 Forbidden, none with a number | Entries designated Forbidden / Of those, how many carry a UN number |
-| 18 by 18, 324 cells | The segregation matrix |
-| 1,296 / 792 / 56 | The measured divergence |
-| UN1830 class 8, UN1748 class 5.1 | The demo manifest, resolved from the corpus |
+Voice: ElevenLabs `3TStB8f3X3To0Uj5R7RK`. No em-dashes anywhere, including captions.
 
----
+## Structure
 
-## 0:00 – 0:18  Cold open, no narration for the first 6 seconds
+Hook on execution, never on a title card. The film opens mid-refusal. The
+real-time execution window is beats 5 to 8, one continuous uncut take.
 
-**On screen:** a messy manifest pasted in. The agent normalises it, puts
-everything on one truck, and calls `check_segregation`. The Verdict Card stamps
-**REFUSED** with 177.848(e)(3) quoted verbatim. The barriers box is ticked.
+| # | Beat | ~s | Picture |
+|---|---|---|---|
+| 1 | The refusal, cold open | 12 | Live capture: verdict card stamps REFUSED with the clause |
+| 2 | Who signs | 14 | Built scene: 172.204 certification, the pen |
+| 3 | How many | 13 | Built scene: 20,460 counting up, Census attribution |
+| 4 | The gap, measured | 16 | Built scene: 792 bar, 56 highlighted, live API card |
+| 5 | Agent proposes | 14 | LIVE TAKE begins, uncut |
+| 6 | The page refuses, verbatim | 16 | LIVE TAKE, clause quoted on screen |
+| 7 | Barrier does not rescue it | 15 | LIVE TAKE, operator ticks the box, still refused |
+| 8 | Split, pass, export | 20 | LIVE TAKE ends: commit_manifest appears, paper exports |
+| 9 | The 256 with no placard | 17 | Live capture: ammonium chlorate, no ID number |
+| 10 | Capability as state | 18 | Built scene: registry strip, the two anticorrelated tools |
+| 11 | Close, one action | 12 | End card: the live URL, repo, 3D placard settles |
 
-> (from 0:06) This load looks legal. The segregation table says these two may
-> travel together if you separate them. The barrier is ticked. And the page
-> still refuses, because a different clause of the same regulation blocks
-> corrosive liquids over oxidizers no matter how you separate them.
+## Narration
 
-## 0:18 – 0:40  Who this is for
+**1. Cold open, on the refusal.**
+> This load is legal according to the federal segregation table. Watch it get
+> refused anyway. Sulfuric acid, calcium hypochlorite, one truck. The table says
+> separate them and they may travel. The page says no, and quotes the line.
 
-**On screen:** the shipping paper's certification block, then the hazard rail.
+**2. Who signs.**
+> Somebody signs for that. Under 49 CFR 172.204 the person who signs the shipper
+> certification becomes personally responsible for the load being right. Not the
+> software. The person holding the pen.
 
-> A shipping-compliance officer signs that certification. Under 49 CFR 172.204
-> signing makes them personally responsible for the load being right. They are
-> the one holding the pen, and 49 CFR 177.848 is an eighteen by eighteen matrix
-> of three hundred and twenty four cells, plus an explosives table that rewrites
-> itself as you load, plus narrative rules that are stricter than the matrix.
+**3. How many.**
+> There are 20,460 of them. That is how many US establishments shipped hazardous
+> materials in DOT regulated packaging in 2022, counted by the Census Bureau in a
+> survey PHMSA paid for specifically to find out.
 
-## 0:40 – 1:05  The measurement
+**4. The gap, measured.**
+> Ask an agent to load that truck and it reads the segregation table, because the
+> table is the thing that looks like the answer. Across every ordered pair of the
+> 18 hazard categories, the table alone clears 792 configurations. Of those, the
+> full regulation forbids fifty six. That endpoint recomputes it on every request.
 
-**On screen:** `/api/measure` raw JSON in a browser tab.
+**5. Agent proposes. LIVE TAKE STARTS HERE, NO CUTS UNTIL BEAT 8 ENDS.**
+> So the agent does the part agents are good at. It reads the manifest, resolves
+> the names, and proposes an arrangement. Nothing here is staged. This is the
+> deployed page, running now.
 
-> So how big is the gap? Across every ordered pair of the eighteen hazard
-> categories, in every barrier configuration, one thousand two hundred and
-> ninety six cases. The table alone clears seven hundred and ninety two of them.
-> Of those, the full regulation forbids fifty six. That endpoint recomputes it
-> on every request. No key, no account.
+**6. The page refuses, and quotes the clause.**
+> And the page does the part agents are unreliable at. It refuses, it names the
+> two materials, and it quotes 177.848(e)(3) word for word from a pinned eCFR
+> snapshot. Not a paraphrase. The sentence.
 
-## 1:05 – 1:50  The loop, and the tool that does not exist
+**7. The barrier does not rescue it.**
+> Tick the barrier box, the one an operator ticks when there really are dividers
+> in the truck, and it still refuses. That clause blocks Class 8 liquids above or
+> adjacent to Class 5 materials notwithstanding the methods of separation
+> employed. No separation reaches it.
 
-**On screen:** the tool registry strip. `commit_manifest` is ABSENT. The agent
-re-proposes across two vehicles, the verdict flips to PASS, and
-`commit_manifest` appears in the strip. The shipping paper exports.
+**8. Split, pass, export.**
+> Two vehicles. Now it passes, and only now does the export tool exist. The
+> shipping paper comes out in the basic description sequence 172.202 requires,
+> with the certification printed on it rather than buried.
 
-> Here is the part that is about WebMCP. While the load fails, the commit tool
-> is not registered. The agent cannot see it, so it cannot call it. Watch the
-> registry when the verdict flips.
->
-> And that visible change is the interface, not the security. Any same-origin
-> script could register a tool with the same name. So the commit handler
-> independently re-derives the verdict from a hash of the exact bytes it is
-> about to export, and refuses on any mismatch. A test calls that handler
-> directly on a failing load, which is what an impostor tool would do, and it is
-> still refused.
+**9. The 256 with no placard.**
+> Ammonium chlorate has no identification number. Not missing data: a Forbidden
+> material may not be offered for transportation at all, so the table gives it
+> none. 256 entries are like this. Ask a UN keyed index for any of them and you
+> get nothing back, and nothing reads as not regulated.
 
-## 1:50 – 2:15  The material with no number
+**10. Capability as state.**
+> This is why the surface is WebMCP. Tools register against a live document, so
+> the agent's toolset is a function of page state. Propose exists only while the
+> load fails. Export exists only while it passes. They are never both there. The
+> agent cannot choose the unsafe action, because from where it stands the action
+> does not exist.
 
-**On screen:** typing "ammonium chlorate", the lookup returning FORBIDDEN with
-173.21(a) quoted, then `/api/forbidden-audit`.
+**11. Close, one action.**
+> Open it yourself. No account, no key, no browser flag.
 
-> One more. Ammonium chlorate has no UN number at all. Not missing, not unknown.
-> The regulation gives it none, because a Forbidden material may not be offered
-> for transportation in the first place. Two hundred and fifty six entries are
-> like that. Every one of them comes back empty from a lookup keyed on
-> identification numbers, and empty reads as "not regulated".
+## On-screen close card
 
-## 2:15 – 2:40  Reproduce it
+- segregation-console.vercel.app
+- github.com/StephenSook/placard
+- Apache 2.0, corpus pinned to the eCFR snapshot of 2026-08-27
 
-**On screen:** terminal running `npm run verify:data`, printing the receipt,
-then the Lighthouse scores.
+One action, stated once: open the live URL. No second or third call to action.
 
-> Everything here is checkable. This re-hashes the corpus and proves all
-> twenty four quoted clauses are verbatim substrings of a pinned eCFR snapshot,
-> and it prints what it actually examined, so a gate that checked nothing cannot
-> pass as one that works. Clone it, run two commands, no key.
+## Facts this script asserts
 
-## 2:40 – 2:50  Close
-
-**On screen:** `/judge`.
-
-> The regulation was always the specification. This just makes it the one thing
-> the agent cannot argue with.
-
----
-
-## Pre-render checklist, blocking
-
-- [ ] Every spoken figure appears in FACTS.md
-- [ ] Duration under 180 s, measured with ffprobe on the rendered file
-- [ ] Integrated loudness between -16 and -14 LUFS, measured with ffmpeg ebur128
-- [ ] 1920x1080, 30 fps
-- [ ] No fictional persona named, no synthetic data on screen
-- [ ] Footage is the real deployed product, not a mock
+| Spoken | Value | Source |
+|---|---:|---|
+| hazard categories | 18 | FACTS.md |
+| table alone clears | 792 | FACTS.md |
+| full regulation forbids | 56 (spoken "fifty six") | FACTS.md |
+| Forbidden entries with no identification number | 256 | FACTS.md, /api/forbidden-audit |
+| US establishments shipping hazmat, 2022 | 20,460 | Census 2022 CFS, Expanded Hazmat Supplement |
+| clause quoted | 177.848(e)(3) | data/clauses.json, gate-checked verbatim |
+| basic description sequence | 172.202 | data/clauses.json |
+| signer responsibility | 172.204 | data/clauses.json |
+| corpus snapshot | 2026-08-27 | data/PROVENANCE.md |

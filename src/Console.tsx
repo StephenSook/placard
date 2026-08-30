@@ -248,7 +248,19 @@ export function Console() {
     const r = proposeLoad(
       {
         items: refs,
-        maxVehicles: Math.max(bays.length, 1),
+        // NOT capped at the CURRENT bay count. It was, and that made the button
+        // unable to do the one thing it is named for: with a single bay on the
+        // page, maxVehicles was 1, so the solver was asked to find a legal
+        // arrangement without being allowed to add a truck and correctly
+        // reported IMPOSSIBLE. A person had to guess that "Add vehicle" was a
+        // prerequisite for "Propose a legal split".
+        //
+        // The real ceiling is one vehicle per item, because a load can always
+        // be separated by giving every material its own truck. The solver
+        // searches most-constrained-first and stops at the fewest vehicles that
+        // work, so a larger ceiling costs nothing and only ever finds a split
+        // that a smaller one would have missed.
+        maxVehicles: Math.max(bays.length, refs.length, 2),
       },
       // The operator's checkboxes, passed as trust context. proposeLoad no
       // longer accepts these as arguments: an agent that could set them was
