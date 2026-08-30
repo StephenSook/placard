@@ -125,11 +125,13 @@ world rather than as preferences, because that is what they are. Barriers means
 impediments, dividers or non-hazardous packages, and PHMSA interpretation
 03-0300 is explicit that air space alone does not satisfy it. Those checkboxes
 are the ONLY route by which an assertion reaches the solver. No tool argument
-and no URL parameter can make one.
+and no URL parameter can make one, and any edit that changes what a vehicle
+holds clears the assertions made about it.
 
-A shipping paper in the 172.202(a) basic description sequence, with the 172.204
-certification printed on screen rather than buried, because signing it is a
-regulated act.
+A shipping paper in the 172.202(a) basic description sequence, with subsidiary
+hazards in parentheses as 172.202(a)(3) requires, and the 172.204(a)(1)
+certification printed verbatim on screen rather than buried, because signing it
+is a regulated act.
 
 What the officer does not get is a system that decided for them, and does not
 get a shipping paper for a load that does not pass.
@@ -228,10 +230,15 @@ document.modelContext.registerTool({
 TOOL                 ANNOTATIONS                        REGISTERED WHEN
 lookup_material      readOnlyHint                       always, at mount
 classify_line_item   readOnlyHint untrustedContentHint  always, at mount
-propose_load         readOnlyHint                       manifest is non-empty
+propose_load         readOnlyHint                       manifest non-empty AND load not passing
 check_segregation    readOnlyHint                       manifest is non-empty
 commit_manifest      mutating                           ONLY while the load passes
 ```
+
+`propose_load` and `commit_manifest` are exact complements. With a manifest on
+the page, precisely one of them is registered at any moment: the page hands the
+agent the capability the regulation currently permits and takes the other away
+in the same instant, in opposite directions. Never both, never neither.
 
 Unregistration is AbortSignal driven, which is the current spec: `unregisterTool`
 was removed in April 2026 and `provideContext` in March.
@@ -383,7 +390,7 @@ It scored 2 of 6 the first time I actually ran it, on the single-file version of
 these evals. Running a command you publish is not optional.
 
 
-14 test files, 311 tests. Lighthouse on the live origin, desktop: **agentic
+14 test files, 336 tests. Lighthouse on the live origin, desktop: **agentic
 browsing 100, accessibility 100, best practices 100, SEO 100, performance 100.**
 Agentic browsing at 100 is itself the proof the origin trial is live, because
 those audits report nothing at all rather than failing when the token is
@@ -473,11 +480,13 @@ merely that some `finally` existed and survived deleting the very cleanup it was
 written to guard, because another function in the same file also had one. It now
 asserts the specific block, and is caught three separate ways.
 
-### I kept going until a round came back empty, and that took four more
+### The exit condition is a clean round, and it has not arrived yet
 
 Stopping after one round would have shipped everything below. The rule I now
 follow is that the exit condition is a clean round, not a declared finish,
-because each fix is itself a fresh diff nobody has reviewed.
+because each fix is itself a fresh diff nobody has reviewed. Ten rounds in,
+no round has yet come back empty, and every single one has found something
+real. I would rather write that down than round it to a finish.
 
 **Round two found four more, and one of them I had introduced two hours
 earlier.** The URL state I added so that `webmcp-evals` could reach a populated
@@ -563,10 +572,46 @@ that forbids it, borrowed the operator's barrier, and committed a shipping paper
 One word, through a field I had added an hour earlier. State is refused by name
 now, like the other three physical claims.
 
+**Round ten found three, and the first was round six's own lesson, which I had
+failed to generalise.** 177.848(e)(5) note A permits ammonium nitrate to load
+with a Division 1.1 or 1.5 material "unless otherwise prohibited by
+177.835(c)". My code granted that permission and pushed a note reading "Confirm
+177.835(c) does not apply". 177.835(c) is not in the pinned corpus, and the
+vehicle-combination facts it turns on are not in the 172.101 table either, so
+there was nothing for anyone to confirm it against. UN1942 with UN0027, black
+powder, Division 1.1D, returned PASS and exported a shipping paper for a cell
+the table marks X. Round six had already established that an unevaluable
+condition is not a satisfied one and fixed it for 177.848(g)(vi). I fixed the
+example I was handed and not the pattern behind it. Both clauses decline in the
+same words now, and a test asserts they still match. The regression test written
+in that earlier round had asserted this hole too, requiring PASS for exactly
+this load, which is the second time a test of mine has defended the gap the
+next round found.
+
+**A named denylist only refuses the claims somebody already thought of.** Item
+references rejected `state` and `quantity` by name, and vehicles rejected only
+the three attestations, so every other property at every other layer was
+accepted and silently dropped. A vehicle carrying `quantity: "999 railcars"`
+returned PASS with an approval token, and the token hashes the COERCED load, so
+the caller held approval for bytes it had not sent and the paper recorded a
+different shipment than the one described. The review named one layer and it
+reproduced at three. It is an exact allowlist per layer now, which removes the
+class rather than extending a list of forbidden names one round at a time, and
+the refusal names the offending path so a caller can act on it.
+
+**And the clause gate itself was the third.** It inferred "this citation is
+reachable" by splitting source text on exported declarations, and text cannot
+see scope: default exports, class methods, object-literal methods and private
+helpers all slipped through, and a bare re-export read as a caller. Any of them
+could have held a clause's only executable citation while the 41-clause receipt
+stayed green. It parses the syntax tree now, and seven mutation cases drive
+every declaration form, including a positive control so a filter that returned
+nothing could not pass.
+
 I am putting all of this in the writeup rather than quietly fixing it because
 the alternative is a submission that claims a safety property and hides the
-evidence that the claim was tested. Thirty-four defects across nine rounds,
-twenty-six of which carry a numbered regression in
+evidence that the claim was tested. Thirty-seven defects across ten rounds,
+thirty-three of which carry a numbered regression in
 `tests/codex-findings.test.ts` and the rest in its sibling suites, every one
 reproduced before being touched, every one with a regression test that pairs
 the load which used to clear against a load that must still clear, so no fix can
@@ -681,6 +726,16 @@ exactly that. Those were Dependabot's own branches proposing React 19 against a
 React 18 tree. Main had been green the entire time and the lockfile I was about
 to fix was already correct.
 
+**A host is a dependency, and its billing state is an outage.** Two days before
+the deadline the platform I had deployed to stopped building mid-run, credit
+exhausted, which froze the judged URL on a commit that predated four security
+fixes. Moving hosts is not a redeploy: a Chrome origin-trial token is bound to
+one origin, so on the new origin `document.modelContext` was simply undefined
+and the entire tool surface was gone, with nothing on the page to say so. I
+measured that against both origins before believing it, registered a token for
+the new one, and re-verified the whole chain on the deployed site rather than on
+the merge.
+
 ## What I learned
 
 **Mutation testing is the only thing that told me the truth about my tests.** My
@@ -707,6 +762,22 @@ in the README, because the response is what gets quoted.
 several numbers that measured whether the system was correct and kept the one
 that measures the hazard being removed.
 
+**Documenting a hole is not closing it, and I did it three times.** A schema
+description telling an agent not to assert something, while handing it the field.
+A comment reading "NEVER quietly load a subset" directly above the code that
+loaded the subset. A citation gate proving my quotes were verbatim while ten of
+the rules behind them were enforced by nothing. Each one reads like diligence in
+review, which is exactly what makes it dangerous: the note satisfies the reader
+who would otherwise have checked. Every claim in this repository now has a test
+that fails when the claim stops being true, and the ones that could not have a
+test were deleted rather than left standing.
+
+**A fix is a fresh diff nobody has reviewed.** Three consecutive later rounds
+found a defect that a previous round's fix had opened, including one where the
+regression test written in the same commit asserted the resulting hole. That is
+why the exit condition is a clean round rather than a declared finish, and it is
+the single most useful process rule I took out of this build.
+
 ## What's next
 
 A real shipping-compliance officer, under a real agreement. I wrote to a
@@ -718,7 +789,12 @@ at 6am.
 
 Beyond that: 173.21(e) packaging-level segregation, which is a third refusal
 axis below the vehicle, and the air and vessel modes that this deliberately
-excludes today.
+excludes today. 173.21(e) is quoted in the corpus and named as out of scope in
+the coverage file rather than left to look enforced, because it operates at the
+package level and needs packaging data the 172.101 table does not carry. The
+177.848(g)(vi) special-handling exclusion goes the other way: nothing in the
+pinned corpus designates a material as requiring special handling, so that
+permission is refused in code rather than assumed.
 
 ## Scope, stated plainly
 
