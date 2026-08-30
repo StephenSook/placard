@@ -242,8 +242,11 @@ describe("the shipping paper is a document, so it prints", () => {
 
   it("has print rules that hide the application and keep the paper", () => {
     expect(css).toMatch(/@media print/);
-    expect(css).toMatch(/body \*\s*\{\s*visibility:\s*hidden/);
-    expect(css).toMatch(/\.paper,\s*\.paper \*\s*\{\s*visibility:\s*visible/);
+    // `display: none`, not `visibility: hidden`. A hidden box still occupies
+    // layout, so the first version printed a one-page document across three
+    // sheets, two of them blank.
+    expect(css).toMatch(/body \*:not\(:has\(\.paper\)\)[^{]*\{\s*display:\s*none/);
+    expect(css).not.toMatch(/body \*\s*\{\s*visibility:\s*hidden/);
   });
 
   it("sets a real page box rather than leaving the browser default", () => {

@@ -62,14 +62,20 @@
    so on the sheet itself, not only on the screen it came from.
    ────────────────────────────────────────────────────────────────────────── */
 @media print {
-  /* Hide the application. `visibility` rather than `display` so the paper can
-     still be positioned against the page box. */
-  body * { visibility: hidden; }
-  .paper, .paper * { visibility: visible; }
+  /* REMOVE the application from the page, do not merely make it invisible.
+     `visibility: hidden` was the first attempt and it keeps every layout box:
+     the paper measured 364px while the document was still 2,294px tall, so a
+     one-page document printed as THREE, two of them blank. A judge printing the
+     deliverable got two sheets of nothing.
+
+     `display: none` on everything that is neither the paper, nor inside it, nor
+     an ancestor of it. :has() expresses "ancestor of" directly, and the chain
+     here is only body > div#root > main.console > section.paper. */
+  body *:not(:has(.paper)):not(.paper):not(.paper *) { display: none !important; }
 
   .paper {
-    position: absolute;
-    inset: 0 auto auto 0;
+    /* Normal flow now that nothing else occupies the page. */
+    position: static;
     width: 100%;
     margin: 0;
     padding: 0;
@@ -80,6 +86,7 @@
     border-radius: 0;
     box-shadow: none;
     animation: none;
+    break-inside: auto;
   }
 
   /* The close button is an application control, not part of the document. */

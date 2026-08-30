@@ -53,13 +53,30 @@ test.describe("the export gate, from the operator's side", () => {
     const vis = await page.evaluate(() => {
       const v = (s: string) => {
         const e = document.querySelector(s);
-        return e ? getComputedStyle(e).visibility : "absent";
+        // `display`, not `visibility`: the application is REMOVED from the page
+        // in print, because a hidden-but-laid-out box still costs a sheet.
+        return e ? getComputedStyle(e).display : "absent";
       };
       return { paper: v(".paper"), matrix: v("[class*=matrix]"), attack: v("[class*=attack]") };
     });
-    expect(vis.paper).toBe("visible");
-    expect(vis.matrix).toBe("hidden");
-    expect(vis.attack).toBe("hidden");
+    expect(vis.paper).not.toBe("none");
+    expect(vis.matrix).toBe("none");
+    expect(vis.attack).toBe("none");
+  });
+
+  test("prints as ONE page, with no blank sheets from hidden layout", async ({ page }, testInfo) => {
+    // Computed visibility could never catch this. `visibility: hidden` keeps
+    // every layout box, so the first version of the print stylesheet produced a
+    // 364px document across THREE Letter pages, two of them blank. The only
+    // assertion that finds it is the artifact itself.
+    await page.goto("/?load=UN1090,UN1830&check=1");
+    await page.getByRole("button", { name: /Export the shipping paper/i }).click();
+    await expect(page.locator(".paper")).toBeVisible();
+    await page.emulateMedia({ media: "print" });
+    const pdf = await page.pdf({ format: "Letter" });
+    const pages = (pdf.toString("latin1").match(/\/Type\s*\/Page[^s]/g) ?? []).length;
+    await testInfo.attach("shipping-paper.pdf", { body: pdf, contentType: "application/pdf" });
+    expect(pages, "the shipping paper printed across more than one sheet").toBe(1);
   });
 });
 
