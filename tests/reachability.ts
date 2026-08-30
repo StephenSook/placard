@@ -40,6 +40,9 @@ function declaredName(n: ts.Node): string | null {
   if (ts.isClassDeclaration(n) && n.name) return n.name.text;
   if (ts.isMethodDeclaration(n) && ts.isIdentifier(n.name)) return n.name.text;
   if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && fnLike(n.initializer)) return n.name.text;
+  // A default export can be imported under ANY local name, and this analysis
+  // does not resolve modules, so it cannot see the binding. Naming it here
+  // would make every default export dead; see defaultExportRoots.
   if (ts.isPropertyAssignment(n) && ts.isIdentifier(n.name) && fnLike(n.initializer)) return n.name.text;
   if (ts.isPropertyDeclaration(n) && ts.isIdentifier(n.name) && fnLike(n.initializer)) return n.name.text;
   return null;
@@ -65,13 +68,27 @@ function declaredName(n: ts.Node): string | null {
  * recorded outside every named declaration is a ROOT, because module-level code
  * runs when the module is imported. Reachable is the closure of the roots.
  *
+ * Round twelve then found one error of each kind. A DEFAULT export imported
+ * under a different local name (`import Foo from "./x"` where x declares
+ * `export default function bar`) left bar with no references, a false DEAD.
+ * And a plain member access on unrelated data, `q.dead`, credited a module
+ * helper that happened to share the name, a false LIVE.
+ *
+ * So a member access no longer credits the property name, and reaching an
+ * object or a class reaches ITS OWN members by an explicit edge, which is the
+ * calling convention that access stood in for. A default export is treated as a
+ * root, because its importer may bind any local name and this analysis cannot
+ * resolve modules to find out.
+ *
  * WHAT THIS STILL DOES NOT DO, stated rather than implied: it matches on
  * identifier TEXT, not resolved symbols, so two modules that both declare a
- * private helper of the same name share a node, which can only ever make the
- * analysis more permissive. A symbol-resolved graph from the TypeScript
- * TypeChecker would remove that. The gate is a backstop for a clause quoted and
- * never applied, and it fails the build when a clause is unaccounted, so a
- * false DEAD would be loud and a false LIVE is the residual risk.
+ * private helper of the same name share a node. Nor does it know WHICH object a
+ * member access lands on, so reaching an object reaches every method it
+ * declares. Both make the analysis more permissive, never less. A
+ * symbol-resolved graph from the TypeScript TypeChecker would remove them. That
+ * direction is the deliberate one: the gate fails the build when a clause is
+ * unaccounted, so a false DEAD is loud and wrong, and a false LIVE is the
+ * residual risk this accepts.
  */
 type Graph = {
   /** Names referenced from module level, which runs on import. */
@@ -79,6 +96,27 @@ type Graph = {
   /** Declared name to the names its body references. */
   edges: Map<string, Set<string>>;
 };
+
+/**
+ * Is this identifier the NAME a declaration is introducing, rather than a use?
+ *
+ * This used to ask `declaredName(parent) === text`, which is only non-null for
+ * things that hold a function. So `export const bag = { ... }` did not match,
+ * its own name counted as a reference, and because it sits at module level it
+ * became a ROOT. Anything the object declared was then reachable. A declaration
+ * is never a use of itself, whatever it holds.
+ */
+function isDeclarationName(n: ts.Identifier, p: ts.Node | undefined): boolean {
+  if (!p) return false;
+  const named =
+    ts.isVariableDeclaration(p) || ts.isFunctionDeclaration(p) || ts.isClassDeclaration(p) ||
+    ts.isMethodDeclaration(p) || ts.isPropertyAssignment(p) || ts.isPropertyDeclaration(p) ||
+    ts.isParameter(p) || ts.isBindingElement(p) || ts.isEnumDeclaration(p) ||
+    ts.isInterfaceDeclaration(p) || ts.isTypeAliasDeclaration(p) ||
+    ts.isFunctionExpression(p) || ts.isClassExpression(p) || ts.isEnumMember(p) ||
+    ts.isTypeParameterDeclaration(p) || ts.isModuleDeclaration(p);
+  return named && (p as { name?: ts.Node }).name === n;
+}
 
 /** `import { original as alias }` means a use of alias is a use of original. */
 function aliasMap(sf: ts.SourceFile): Map<string, string> {
@@ -105,14 +143,42 @@ function buildGraph(universe: Source[]): Graph {
     const walk = (n: ts.Node, stack: readonly string[]): void => {
       const name = declaredName(n);
       const next = name ? [...stack, name] : stack;
+      // Reaching an object or a class reaches the members it declares. This
+      // replaces the member ACCESS that used to credit them, which credited any
+      // same-named helper anywhere in the repository.
+      const holdsFn = (m: ts.Node): boolean =>
+        ts.isMethodDeclaration(m) ||
+        ((ts.isPropertyAssignment(m) || ts.isPropertyDeclaration(m)) &&
+          !!m.initializer && (ts.isArrowFunction(m.initializer) || ts.isFunctionExpression(m.initializer)));
+      if (ts.isClassDeclaration(n) && n.name) {
+        for (const m of n.members) {
+          if (m.name && ts.isIdentifier(m.name) && holdsFn(m)) edge(n.name.text, m.name.text);
+        }
+      }
+      if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer &&
+          ts.isObjectLiteralExpression(n.initializer)) {
+        for (const m of n.initializer.properties) {
+          if (m.name && ts.isIdentifier(m.name) && holdsFn(m)) edge(n.name.text, m.name.text);
+        }
+      }
+      // An anonymous or renamed default export is reachable by definition.
+      if ((ts.isExportAssignment(n) || (ts.canHaveModifiers(n) &&
+          ts.getModifiers(n)?.some((m) => m.kind === ts.SyntaxKind.DefaultKeyword))) ) {
+        const dn = declaredName(n);
+        if (dn) roots.add(dn);
+      }
       if (ts.isIdentifier(n)) {
         const p = n.parent as ts.Node | undefined;
-        const isOwnName = !!p && declaredName(p) === n.text && (p as { name?: ts.Node }).name === n;
+        const isOwnName = isDeclarationName(n, p);
         const isSpecifier =
           !!p &&
           (ts.isImportSpecifier(p) || ts.isExportSpecifier(p) ||
             ts.isImportClause(p) || ts.isNamespaceImport(p) || ts.isNamespaceExport(p));
-        if (!isOwnName && !isSpecifier) {
+        // `q.dead` is not a call to a module helper named dead.
+        const isMemberName =
+          !!p && (ts.isPropertyAccessExpression(p) || ts.isQualifiedName(p)) &&
+          (p as { name?: ts.Node }).name === n;
+        if (!isOwnName && !isSpecifier && !isMemberName) {
           for (const t of new Set([n.text, alias.get(n.text) ?? n.text])) {
             const inside = stack[stack.length - 1];
             if (inside === undefined) roots.add(t);

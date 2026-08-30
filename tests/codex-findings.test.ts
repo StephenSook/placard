@@ -15,7 +15,7 @@ import {
 import { attestOf, wireOf } from "./attest.ts";
 import { resolveItem } from "../src/solver/hazards.ts";
 import { entriesByName } from "../src/solver/corpus.ts";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { reachableCitedIds, type Source } from "./reachability.ts";
 import { join } from "node:path";
 
@@ -1154,8 +1154,26 @@ describe("33. the clause gate inferred reachability from text, and text cannot s
     `).has("e2-X")).toBe(false);
   });
 
-  it("does not count a named default export nobody imports", () => {
-    expect(one(`export default function dead() { return cite("e2-X"); }`).has("e2-X")).toBe(false);
+  it("treats a default export as reachable, deliberately", () => {
+    // RETIRED ONTO THE SUCCESSOR STATE. This asserted that a named default
+    // export nobody imports is dead, and round twelve showed the cost of that
+    // rule: `import Foo from "./x"` binds a LOCAL name, this analysis does not
+    // resolve modules, so the exported declaration had no references and a LIVE
+    // citation read as dead. A false dead fails the build for the wrong reason,
+    // and the tempting repair is to weaken the gate until it goes green.
+    //
+    // So a default export is a root. That is a permissive choice made on
+    // purpose, in the direction this gate accepts, and it is inert here: the
+    // shipped source contains no default export at all, which the next
+    // assertion pins so the choice cannot start mattering unnoticed.
+    expect(one(`export default function dead() { return cite("e2-X"); }`).has("e2-X")).toBe(true);
+    // Walk src rather than the git index, so a file that is about to ship but
+    // is not tracked yet is still scanned. A guard scoped to tracked files is
+    // blind to exactly the thing being added.
+    const shipped = readdirSync(join(process.cwd(), "src"), { recursive: true, encoding: "utf8" })
+      .filter((f) => /\.tsx?$/.test(f))
+      .filter((f) => /(^|\n)export default\b/.test(readFileSync(join(process.cwd(), "src", f), "utf8")));
+    expect(shipped, "a default export in src would silently become a reachability root").toEqual([]);
   });
 
   it("does not count a class method on a class nobody uses", () => {
@@ -1278,5 +1296,88 @@ describe("35. counting references is not a call graph", () => {
       function b() { return cite("e2-X"); }
       a();
     `).has("e2-X")).toBe(true);
+  });
+});
+
+// ── round twelve ─────────────────────────────────────────────────────────────
+
+describe("36. the call graph was wrong in both directions again", () => {
+  const cited = (files: Source[], i = 0) => reachableCitedIds([files[i]!], files);
+  const one = (text: string) => cited([{ path: "src/solver/x.ts", text }]);
+
+  it("follows a default import bound to a different local name", () => {
+    // FALSE DEAD, the dangerous direction: `import Foo from "./x"` binds a
+    // local name and this analysis does not resolve modules, so the exported
+    // declaration had no references at all and a live citation read as dead.
+    const files: Source[] = [
+      { path: "src/solver/x.ts", text: `export default function bar() { return cite("e2-X"); }` },
+      { path: "src/ui/y.ts", text: `import Foo from "./x.ts";\nfunction ui() { return Foo(); }\nui();` },
+    ];
+    expect(cited(files).has("e2-X")).toBe(true);
+  });
+
+  it("does not let a member access credit a same-named module helper", () => {
+    // FALSE LIVE: `q.dead` is a property read, not a call to a helper that
+    // happens to share the name.
+    const files: Source[] = [
+      {
+        path: "src/solver/x.ts",
+        text: `function dead() { return cite("e2-X"); }\nexport const q = { dead: 1 };`,
+      },
+      { path: "src/ui/y.ts", text: `import { q } from "./x.ts";\nfunction ui() { return q.dead; }\nui();` },
+    ];
+    expect(cited(files).has("e2-X")).toBe(false);
+  });
+
+  it("reaches an object's methods, which is what member access stood in for", () => {
+    // Having stopped counting `bag.cites` as a reference to `cites`, reaching
+    // `bag` has to reach the methods it declares or this becomes a false dead.
+    const files: Source[] = [
+      { path: "src/solver/x.ts", text: `export const bag = { cites: () => cite("e2-X") };` },
+      { path: "src/ui/y.ts", text: `import { bag } from "./x.ts";\nfunction ui() { return bag.cites(); }\nui();` },
+    ];
+    expect(cited(files).has("e2-X")).toBe(true);
+  });
+
+  it("does not treat a declaration as a use of itself", () => {
+    // THE ROOT CAUSE. `isOwnName` asked whether the parent declared a FUNCTION,
+    // so `export const bag = { ... }` did not match, its own name counted as a
+    // reference, and sitting at module level made it a root. Everything the
+    // object declared then came alive.
+    expect(one(`export const bag = { cites: () => cite("e2-X") };`).has("e2-X")).toBe(false);
+  });
+});
+
+describe("37. the approval token binds the resolved load, not the wire spelling", () => {
+  const N37 = "round-twelve";
+  const token = async (items: unknown[]) => {
+    const r = await checkSegregation({ vehicles: [{ items }] } as never, N37, [{}]);
+    expect(r.status).toBe("PASS");
+    return (r as { approvalToken: string }).approvalToken;
+  };
+
+  it("gives spellings of the SAME material the same token, on purpose", async () => {
+    // A review read this as cross-payload token reuse. It is not a defect and
+    // it is pinned here so it is not "fixed" later: 49 CFR itself writes
+    // UN 1090 with a space, and round five had to make those compare equal
+    // because an agent using the regulation's own spelling was losing a barrier
+    // the operator had genuinely asserted. The token binds the load the handler
+    // is about to EXPORT, so identical loads share a token by construction.
+    const bare = await token(["UN1090"]);
+    for (const spelling of [" UN1090 ", "un1090", { id: "UN1090" }, { id: " UN1090 " }]) {
+      expect(await token([spelling]), `${JSON.stringify(spelling)} is the same load`).toBe(bare);
+    }
+  });
+
+  it("gives a DIFFERENT load a different token, and refuses across them", async () => {
+    // The half that would actually be a break. Two of a material is not one of
+    // it, and a token issued for the pair must not commit the single.
+    const two = await token(["UN1090", "UN1090"]);
+    const one = await token(["UN1090"]);
+    expect(two).not.toBe(one);
+    const c = await commitManifest(
+      { vehicles: [{ items: ["UN1090"] }], approvalToken: two }, N37, [{}],
+    );
+    expect(c.status).toBe("REFUSED");
   });
 });
