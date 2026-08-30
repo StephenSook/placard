@@ -262,4 +262,9 @@ export const CLAUSES: ClauseSpec[] = [
     from: "This is to certify that the above-named materials are properly classified",
     to: "according to the applicable regulations of the Department of Transportation.",
   },
+  {
+    id: "172203-m-pih", section: "49 CFR 172.203(m)", slug: "172-203-additional-description",
+    from: "Notwithstanding the hazard class to which a material is assigned, for materials that are poisonous by inhalation",
+    to: "shall be entered on the shipping paper immediately following the shipping description.",
+  },
 ];

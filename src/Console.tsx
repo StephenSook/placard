@@ -50,7 +50,19 @@ type Verdict =
 export function Console() {
   const nonce = useSessionNonce();
   const [manifest, setManifest] = useState<ResolvedItem[]>([]);
-  const [bays, setBays] = useState<Bay[]>([{ items: [], barriersPresent: false, singleShipper: false, nonReactionAsserted: false }]);
+  /** Monotonic bay keys. A bay's identity must survive its neighbours being
+   *  deleted, or attestation invalidation compares the wrong pair. */
+  const nextBayKey = useRef(1);
+  const newBay = useCallback((items: Bay["items"] = []): Bay => ({
+    key: `bay-${nextBayKey.current++}`,
+    items,
+    barriersPresent: false,
+    singleShipper: false,
+    nonReactionAsserted: false,
+  }), []);
+  const [bays, setBays] = useState<Bay[]>([
+    { key: "bay-0", items: [], barriersPresent: false, singleShipper: false, nonReactionAsserted: false },
+  ]);
 
   /**
    * EVERY EDIT THAT CHANGES WHAT IS IN A BAY CLEARS THAT BAY'S ATTESTATIONS.
@@ -84,13 +96,14 @@ export function Console() {
       }
       return true;
     };
-    setBays((prev) =>
-      fn(prev).map((bay, i) => {
-        const before = prev[i];
+    setBays((prev) => {
+      const was = new Map(prev.map((b) => [b.key, b]));
+      return fn(prev).map((bay) => {
+        const before = was.get(bay.key);
         if (before && sameContents(before.items, bay.items)) return bay;
         return { ...bay, barriersPresent: false, singleShipper: false, nonReactionAsserted: false };
-      })
-    );
+      });
+    });
   }, []);
   const [verdict, setVerdict] = useState<Verdict>({ status: "IDLE" });
   // Bumped on every verdict change so the agent view re-reads the live
@@ -230,13 +243,13 @@ export function Console() {
   const loadDemo = useCallback(() => {
     const { items, unresolved } = resolveRefs(DEMO);
     setManifest(items);
-    setBays([{ items, barriersPresent: false, singleShipper: false, nonReactionAsserted: false }]);
+    setBays([newBay(items)]);
     if (unresolved.length) setAnnounce(`${unresolved.length} demonstration item(s) did not resolve: ${unresolved.map((u) => u.ref).join(", ")}`);
     invalidate();
   }, [invalidate, resolveRefs]);
 
   const addVehicle = useCallback(() => {
-    setBays((b) => [...b, { items: [], barriersPresent: false, singleShipper: false, nonReactionAsserted: false }]);
+    setBays((b) => [...b, newBay()]);
     invalidate();
   }, [invalidate]);
 
@@ -360,14 +373,7 @@ export function Console() {
       // asserted" for two trucks nobody had inspected. The reaction assertion
       // was already handled here, with a comment giving exactly the reason that
       // applies to all three.
-      setBays(
-        r.vehicles.map((_v, vi) => ({
-          items: bayItems[vi]!,
-          barriersPresent: false,
-          singleShipper: false,
-          nonReactionAsserted: false,
-        }))
-      );
+      setBays(r.vehicles.map((_v, vi) => newBay(bayItems[vi]!)));
       setAnnounce(
         `A legal split was found across ${r.vehiclesUsed} vehicles. ` +
           `Barrier, single-shipper and non-reaction assertions were cleared, because they were ` +
@@ -461,12 +467,7 @@ export function Console() {
     setManifest(resolved);
     // Every assertion starts false. See the note above: a URL may describe a
     // load, never attest to one.
-    setBays([{
-      items: resolved,
-      barriersPresent: false,
-      singleShipper: false,
-      nonReactionAsserted: false,
-    }]);
+    setBays([newBay(resolved)]);
     setAgentViewRevision((n) => n + 1);
     if (q.get("check") === "1") setPendingCheck(true);
   }, [resolveRefs]);

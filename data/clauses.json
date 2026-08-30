@@ -1,6 +1,6 @@
 {
   "source": "verbatim slices of the pinned eCFR sections",
-  "count": 40,
+  "count": 41,
   "clauses": {
     "e1-blank": {
       "section": "49 CFR 177.848(e)(1)",
@@ -161,6 +161,10 @@
     "172204-a1-certification": {
       "section": "49 CFR 172.204(a)(1)",
       "text": "This is to certify that the above-named materials are properly classified, described, packaged, marked and labeled, and are in proper condition for transportation according to the applicable regulations of the Department of Transportation."
+    },
+    "172203-m-pih": {
+      "section": "49 CFR 172.203(m)",
+      "text": "Notwithstanding the hazard class to which a material is assigned, for materials that are poisonous by inhalation (see § 171.8 of this subchapter), the words \"Poison-Inhalation Hazard\" or \"Toxic-Inhalation Hazard\" and the words \"Zone A\", \"Zone B\", \"Zone C\", or \"Zone D\" for gases or \"Zone A\" or \"Zone B\" for liquids, as appropriate, shall be entered on the shipping paper immediately following the shipping description."
     }
   }
 }

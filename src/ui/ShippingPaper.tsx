@@ -92,7 +92,13 @@ export function ShippingPaper({ paper, onClose }: { paper: unknown; onClose: () 
                   <tr key={i}>
                     <td className="mono">{l.identificationNumber ?? "none"}</td>
                     <td>{l.properShippingName}</td>
-                    <td className="mono">{l.hazardDescription ?? l.hazardClass}</td>
+                    <td className="mono">
+                      {l.hazardDescription ?? l.hazardClass}
+                      {/* 172.203(m): immediately following the shipping description. */}
+                      {l.inhalationHazard && (
+                        <span className="paper__pih"> {l.inhalationHazard}</span>
+                      )}
+                    </td>
                     <td className="mono">{l.packingGroup ?? "n/a"}</td>
                   </tr>
                 )
@@ -107,6 +113,17 @@ export function ShippingPaper({ paper, onClose }: { paper: unknown; onClose: () 
         <blockquote className="paper__quote">{cert.quote.text}</blockquote>
         <p className="paper__certSource mono">{cert.obligation.section}</p>
         <p>{cert.disclaimer}</p>
+        {/*
+          WHAT THIS DOCUMENT DOES NOT CARRY, said on the document.
+          It implements the 172.202(a) basic description sequence, the
+          172.202(a)(3) subsidiary entry and the 172.203(m) inhalation-hazard
+          entry. 172.203 has other additional-description requirements this
+          tool does not generate, and 172.102 special provisions can require
+          further entries. Naming that here is the difference between a
+          demonstration and a document someone might file believing it
+          complete.
+        */}
+        <p className="paper__scope mono">{cert.scope}</p>
       </footer>
     </section>
   );

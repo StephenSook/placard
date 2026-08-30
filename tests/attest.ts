@@ -11,9 +11,9 @@
  *
  * Tests still want to write a vehicle as one object, so this splits it.
  */
-import type { Attestations } from "../src/tools/executors.ts";
+import type { Attestations, WireRef } from "../src/tools/executors.ts";
 
-export type TestVehicle = { items: string[] } & Attestations;
+export type TestVehicle = { items: WireRef[] } & Attestations;
 
 /** The wire half: items only. */
 export const wireOf = (vs: TestVehicle[]) => vs.map(({ items }) => ({ items }));

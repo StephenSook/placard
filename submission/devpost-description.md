@@ -340,7 +340,7 @@ npm test
 having checked nothing is indistinguishable from one that works:
 
 ```
-PASS  checked 13 hashes, 40 verbatim clauses (8962 characters), 493 table cells, 3293 table entries
+PASS  checked 14 hashes, 41 verbatim clauses (9380 characters), 493 table cells, 3293 table entries
 ```
 
 Every clause the app quotes is proven to be a verbatim substring of the pinned
@@ -569,7 +569,7 @@ this repository publishes, which is the whole point: a reproduction step that
 does not work is worse than none, because it reads as evidence.
 
 The corpus grew through all of this rather than being trimmed to fit. It is now
-seven pinned sections and 40 verbatim clauses, 8,962 characters of regulation
+eight pinned sections and 41 verbatim clauses, 9,380 characters of regulation
 text, each proven byte for byte against the committed source.
 
 The discipline is the durable part, and it is reproducible: the review command,

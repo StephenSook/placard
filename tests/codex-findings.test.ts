@@ -415,12 +415,19 @@ describe("14. a split clears every physical attestation, not just one of them", 
     // assertion was already cleared here, with a comment stating the reason
     // that applies to all three.
     const src = readFileSync(join(process.cwd(), "src/Console.tsx"), "utf8");
-    const setBays = /setBays\(\s*r\.vehicles\.map\([\s\S]*?\)\s*\);/.exec(src)?.[0] ?? "";
+    // The proposal builds its bays through newBay, the one factory, and newBay
+    // starts every physical assertion false. Asserting on the factory rather
+    // than on each call site is the point: the rule lives in one place.
+    const setBays = /setBays\(r\.vehicles\.map\([^)]*\)[^;]*\);/.exec(src)?.[0] ?? "";
     expect(setBays, "the proposal's setBays call was not found").not.toBe("");
-    expect(setBays).toContain("barriersPresent: false");
-    expect(setBays).toContain("singleShipper: false");
-    expect(setBays).toContain("nonReactionAsserted: false");
+    expect(setBays).toContain("newBay(");
     expect(setBays).not.toContain("bays[0]");
+
+    const factory = /const newBay = useCallback\([\s\S]*?\}\), \[\]\);/.exec(src)?.[0] ?? "";
+    expect(factory, "newBay was not found").not.toBe("");
+    for (const f of ["barriersPresent: false", "singleShipper: false", "nonReactionAsserted: false"]) {
+      expect(factory, `newBay does not start ${f}`).toContain(f);
+    }
   });
 });
 
@@ -602,5 +609,127 @@ describe("19. the hazard zone is part of a material's identity", () => {
     const r = resolveItem({ id: "UN1744", name: "Bromine solutions", packingGroup: "I", pihZone: "D" });
     expect("error" in r).toBe(true);
     expect((r as { error: string }).error).toMatch(/no Hazard Zone D/);
+  });
+});
+
+// ── round six ────────────────────────────────────────────────────────────────
+
+describe("20. the approval token binds every field the resolver uses", () => {
+  it("UN1744 Zone A and Zone B are different loads to the hash", async () => {
+    const { canonical, approvalToken } = await import("../src/solver/hash.ts");
+    const base = { id: "UN1744", name: "Bromine solutions", packingGroup: "I" };
+    const a = toLoad([{ items: [{ ...base, pihZone: "A" }] }]);
+    const b = toLoad([{ items: [{ ...base, pihZone: "B" }] }]);
+    expect(canonical(a)).not.toBe(canonical(b));
+    expect(await approvalToken(a, N)).not.toBe(await approvalToken(b, N));
+  });
+
+  it("a packing group alone changes the canonical bytes", async () => {
+    const { canonical } = await import("../src/solver/hash.ts");
+    const two = toLoad([{ items: [{ id: "UN2810", packingGroup: "II" }] }]);
+    const three = toLoad([{ items: [{ id: "UN2810", packingGroup: "III" }] }]);
+    expect(canonical(two)).not.toBe(canonical(three));
+  });
+
+  it("a token issued for the Zone B load does not verify the Zone A load", async () => {
+    const { approvalToken, verifyApproval } = await import("../src/solver/index.ts");
+    const base = { id: "UN1744", name: "Bromine solutions", packingGroup: "I" };
+    const b = toLoad([{ items: [{ ...base, pihZone: "B" }, { id: "UN1090" }] }]);
+    const token = await approvalToken(b, N);
+    const cross = await verifyApproval(
+      toLoad([{ items: [{ ...base, pihZone: "A" }, { id: "UN1090" }] }]), token, N,
+    );
+    expect(cross.ok).toBe(false);
+  });
+
+  it("the canonical format is versioned, because adding a field invalidates old tokens", async () => {
+    const { canonical } = await import("../src/solver/hash.ts");
+    expect(canonical(toLoad([{ items: ["UN1090"] }]))).toContain("49cfr177848/v2");
+  });
+});
+
+describe("21. the wire can express the identity the resolver asks for", () => {
+  it("accepts a structured reference and reaches a different verdict per zone", async () => {
+    const base = { id: "UN1744", name: "Bromine solutions", packingGroup: "I" };
+    const a = await checkSegregation({ vehicles: [{ items: [{ ...base, pihZone: "A" }, "UN1090"] }] }, N);
+    const b = await checkSegregation({ vehicles: [{ items: [{ ...base, pihZone: "B" }, "UN1090"] }] }, N);
+    expect(a.status).toBe("REFUSED");
+    expect(b.status).toBe("PASS");
+  });
+
+  it("the bare reference still refuses, so the remedy the refusal names is reachable", async () => {
+    // A refusal whose remedy the wire cannot carry is a dead end dressed as
+    // guidance. This pair asserts both halves: the refusal, and the route out.
+    const bare = await checkSegregation({ vehicles: [{ items: ["UN1744", "UN1090"] }] }, N);
+    expect(bare.status).toBe("REFUSED");
+  });
+
+  it("refuses an attestation smuggled inside an item object", async () => {
+    const v = await checkSegregation(
+      { vehicles: [{ items: [{ id: "UN1090", barriersPresent: true } as never, "UN1479"] }] }, N,
+    );
+    expect(v.status).toBe("REFUSED");
+    expect((v as { reason?: string }).reason).toMatch(/malformed request/);
+  });
+
+  it("the published schema offers the structured form", async () => {
+    const { CHECK_SEGREGATION_SCHEMA } = await import("../src/tools/schemas.ts");
+    const item = (CHECK_SEGREGATION_SCHEMA as never as {
+      properties: { vehicles: { items: { properties: { items: { items: { anyOf: unknown[] } } } } } };
+    }).properties.vehicles.items.properties.items.items;
+    expect(Array.isArray(item.anyOf)).toBe(true);
+    const obj = (item.anyOf as { type: string; properties?: Record<string, unknown> }[])
+      .find((x) => x.type === "object");
+    expect(obj, "the schema has no object form, so pihZone cannot be sent").toBeDefined();
+    expect(Object.keys(obj!.properties!)).toContain("pihZone");
+  });
+});
+
+describe("22. the paper carries the classifications the approval was computed from", () => {
+  it("prints the 172.203(m) inhalation-hazard entry with the zone", async () => {
+    const { buildShippingPaper } = await import("../src/tools/executors.ts");
+    const paper = buildShippingPaper(toLoad([{ items: ["UN1017", "UN1090"] }]) as never);
+    const chlorine = paper[0]!.lines.find(
+      (l) => "properShippingName" in l && l.properShippingName === "Chlorine",
+    ) as { inhalationHazard?: string | null; hazardDescription?: string } | undefined;
+    expect(chlorine, "UN1017 did not reach the paper").toBeDefined();
+    expect(chlorine!.inhalationHazard).toBe("Toxic-Inhalation Hazard, Zone B");
+    expect(chlorine!.hazardDescription).toBe("2.3 (5.1, 8)");
+
+    // And nothing is printed where the clause does not apply.
+    const acetone = paper[0]!.lines.find(
+      (l) => "properShippingName" in l && l.properShippingName === "Acetone",
+    ) as { inhalationHazard?: string | null } | undefined;
+    expect(acetone!.inhalationHazard).toBeNull();
+  });
+
+  it("the renderer prints it, and says what the document does NOT carry", () => {
+    const ui = readFileSync(join(process.cwd(), "src/ui/ShippingPaper.tsx"), "utf8");
+    expect(ui).toContain("l.inhalationHazard");
+    expect(ui).toContain("cert.scope");
+  });
+
+  it("the scope note names the clauses implemented and the ones that are not", async () => {
+    const { shipperCertification } = await import("../src/tools/executors.ts");
+    const scope = shipperCertification().scope;
+    for (const c of ["172.202(a)", "172.202(a)(3)", "172.203(m)", "172.102"]) {
+      expect(scope, `the scope note does not mention ${c}`).toContain(c);
+    }
+    expect(scope).toMatch(/NOT generated/);
+  });
+});
+
+describe("23. removing a vehicle does not revoke attestations from the ones that shift", () => {
+  it("bays are compared by a stable key, not by array index", () => {
+    const src = readFileSync(join(process.cwd(), "src/Console.tsx"), "utf8");
+    const at = src.indexOf("const mutateBays = useCallback(");
+    expect(at).toBeGreaterThan(-1);
+    const body = src.slice(at, src.indexOf("\n  const ", at + 10));
+    // Deleting an empty vehicle 2 shifts vehicle 3 to index 1, where an
+    // index-keyed comparison finds the empty bay that used to be there and
+    // clears a barrier the operator asserted about unchanged contents.
+    expect(body, "mutateBays still compares prev[i]").not.toMatch(/prev\[i\]/);
+    expect(body).toContain("bay.key");
+    expect(src).toContain("key: `bay-${nextBayKey.current++}`");
   });
 });

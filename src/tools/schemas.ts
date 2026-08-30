@@ -36,13 +36,52 @@
  * inexpressible to the agent, which is the same defect this project exists to
  * expose, reproduced one layer up.
  */
+/**
+ * A material, either as a shorthand string or as a structured identity.
+ *
+ * The object form is not decoration. The resolver refuses a reference that
+ * names more than one 172.101 row and tells the caller which field would settle
+ * it, and until this existed the wire could not carry the answer: UN1744
+ * "Bromine solutions" packing group I is two rows, Hazard Zone A and Zone B,
+ * with different segregation behaviour, so the refusal named a remedy the tool
+ * surface could not express. A refusal whose remedy is unreachable is a dead
+ * end dressed as guidance.
+ *
+ * Identity only. No attestation may appear here, at either level.
+ */
 const MATERIAL_REF = {
-  type: "string",
-  minLength: 1,
-  maxLength: 200,
-  description:
-    "An identification number such as UN1090, or a proper shipping name. Materials designated " +
-    "Forbidden have no identification number and must be given by name.",
+  anyOf: [
+    {
+      type: "string",
+      minLength: 1,
+      maxLength: 200,
+      description:
+        "An identification number such as UN1090, or a proper shipping name. Materials designated " +
+        "Forbidden have no identification number and must be given by name.",
+    },
+    {
+      type: "object",
+      additionalProperties: false,
+      minProperties: 1,
+      properties: {
+        id: { type: "string", maxLength: 20, description: "Identification number, for example UN1744." },
+        name: { type: "string", maxLength: 200, description: "Proper shipping name exactly as the 172.101 table prints it." },
+        packingGroup: { type: "string", enum: ["I", "II", "III"], description: "Only needed when the number alone names more than one material." },
+        pihZone: {
+          type: "string",
+          enum: ["A", "B", "C", "D"],
+          description:
+            "Inhalation hazard zone. Only needed when the number and name together still name more " +
+            "than one row, which happens where two rows differ solely by special provision 1 to 4.",
+        },
+        state: { type: "string", enum: ["liquid", "solid", "gas", "unknown"], description: "177.848(d) covers Class 8 LIQUIDS only, so this can change a verdict." },
+        quantity: { type: "string", maxLength: 60, description: "Free text, carried onto the shipping paper. Does not affect the verdict." },
+      },
+      description:
+        "A structured identity, for when a bare reference is ambiguous. Give id or name, plus " +
+        "whichever of packingGroup and pihZone the refusal asked for.",
+    },
+  ],
 } as const;
 
 export const READ_ONLY = Object.freeze({ readOnlyHint: true });

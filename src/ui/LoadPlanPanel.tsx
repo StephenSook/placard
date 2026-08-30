@@ -16,7 +16,21 @@ import { Placard } from "./Placard.tsx";
 import type { ResolvedItem } from "../solver/types.ts";
 import "./loadplan.css";
 
-export type Bay = { items: ResolvedItem[]; barriersPresent: boolean; singleShipper: boolean; nonReactionAsserted: boolean };
+/**
+ * `key` is a STABLE IDENTITY, not a position. Attestation invalidation compares
+ * a bay's contents before and after an edit, and comparing by array index
+ * revoked assertions from bays that had only SHIFTED: delete an empty vehicle 2
+ * and vehicle 3 slides to index 1, where it is compared against the empty bay
+ * that used to be there, so a barrier the operator had genuinely asserted about
+ * unchanged contents was cleared and the load went from PASS to REFUSED.
+ */
+export type Bay = {
+  key: string;
+  items: ResolvedItem[];
+  barriersPresent: boolean;
+  singleShipper: boolean;
+  nonReactionAsserted: boolean;
+};
 
 export type LoadPlanPanelProps = {
   bays: Bay[];

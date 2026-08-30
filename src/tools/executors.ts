@@ -240,7 +240,49 @@ const looksLikeId = (s: string) => /^(UN|NA|ID)\s?\d{4}$/i.test(s.trim());
  * material has no identification number and must still be checkable.
  */
 /** The shape a vehicle takes on the wire, between the agent and the solver. */
-export type WireVehicle = { items: string[]; barriersPresent?: boolean; singleShipper?: boolean; nonReactionAsserted?: boolean };
+/**
+ * A reference to one material on the wire.
+ *
+ * A bare string is the shorthand and stays the common case: an identification
+ * number or a proper shipping name. The OBJECT form exists because the resolver
+ * refuses a reference that names more than one material and tells the caller
+ * which field would settle it, and until this existed there was no way for an
+ * agent to answer. UN1744 "Bromine solutions" PG I is two rows, Zone A and Zone
+ * B, with different segregation behaviour, and the tool surface could express
+ * neither: the refusal named a remedy the wire could not carry.
+ *
+ * Structured references are IDENTITY ONLY. They carry no attestation, and a
+ * reference that tries is refused by name like any other forgery.
+ */
+export type WireRef =
+  | string
+  | { id?: string; name?: string; packingGroup?: string; pihZone?: string; state?: string; quantity?: string };
+
+export type WireVehicle = { items: WireRef[]; barriersPresent?: boolean; singleShipper?: boolean; nonReactionAsserted?: boolean };
+
+/** The reference as a person reads it, for messages and for identity compare. */
+export const refLabel = (r: WireRef): string =>
+  typeof r === "string" ? r : (r.id ?? r.name ?? "");
+
+const REF_KEYS = ["id", "name", "packingGroup", "pihZone", "state", "quantity"] as const;
+
+/** Narrow one wire reference, or null if it is not a usable identity. */
+function coerceRef(x: unknown): WireRef | null {
+  if (typeof x === "string") return x.trim() === "" ? null : x;
+  if (typeof x !== "object" || x === null || Array.isArray(x)) return null;
+  const raw = x as Record<string, unknown>;
+  // An attestation smuggled inside an item is the same forgery one level down.
+  for (const k of ATTESTATION_KEYS) if (raw[k] !== undefined) return null;
+  const out: Record<string, string> = {};
+  for (const k of REF_KEYS) {
+    const v = raw[k];
+    if (v === undefined || v === null) continue;
+    if (typeof v !== "string") return null;
+    if (v.trim() !== "") out[k] = v.trim();
+  }
+  if (!out.id && !out.name) return null;
+  return out as WireRef;
+}
 
 /**
  * Narrow whatever a caller actually sent into vehicles we can reason about.
@@ -323,7 +365,12 @@ export function coerceVehicles(input: unknown): WireVehicle[] | null {
     if (typeof v !== "object" || v === null) return null;
     const raw = v as Record<string, unknown>;
     if (!Array.isArray(raw.items)) return null;
-    if (!raw.items.every((x) => typeof x === "string")) return null;
+    const refs: WireRef[] = [];
+    for (const x of raw.items) {
+      const r = coerceRef(x);
+      if (r === null) return null;
+      refs.push(r);
+    }
     // AN ATTESTATION ON THE WIRE IS A FORGERY, NOT A VALUE TO COERCE.
     //
     // These three fields used to be ordinary tool arguments, and an agent that
@@ -341,7 +388,7 @@ export function coerceVehicles(input: unknown): WireVehicle[] | null {
     for (const k of ATTESTATION_KEYS) {
       if (raw[k] !== undefined) return null;
     }
-    out.push({ items: raw.items as string[] });
+    out.push({ items: refs });
   }
   return out;
 }
@@ -373,7 +420,10 @@ export const attestationReport = (attest: Attestations[]) =>
   }));
 
 const ATTESTATION_REFUSAL =
-  "vehicles must be an array of objects, each with an items array of strings. " +
+  "vehicles must be an array of objects, each with an items array. An item is either a string " +
+  "(an identification number or a proper shipping name) or an object carrying id, name, " +
+  "packingGroup, pihZone, state or quantity, for when a bare reference names more than one " +
+  "material. " +
   "barriersPresent, singleShipper and nonReactionAsserted are NOT arguments to this tool: " +
   "they are attestations about the physical vehicle that only the operator at the console can " +
   "make, and they are read from the page. Send items only.";
@@ -382,7 +432,7 @@ const ATTESTATION_REFUSAL =
  * The page's own load, so an attestation can be checked against the vehicle it
  * was actually made about. Items only, in page order.
  */
-export type PageLoad = { items: string[] }[];
+export type PageLoad = { items: WireRef[] }[];
 
 /**
  * The canonical identity of one reference: the 172.101 row it resolves to.
@@ -392,11 +442,16 @@ export type PageLoad = { items: string[] }[];
  * below, and string equality is the STRICTER of the two, so a reference this
  * cannot pin down can never gain an attestation it should not have.
  */
-const canonicalRef = (ref: string): string | null => {
-  const t = ref.trim();
-  const r = resolveItem(looksLikeId(t) ? { id: t.replace(/\s/g, "").toUpperCase() } : { name: t });
+const canonicalRef = (ref: WireRef): string | null => {
+  const r = resolveItem(toLineItem(ref));
   if ("error" in r) return null;
-  return `${r.item.id ?? ""}|${r.name.toLowerCase()}|${r.hazardClass}|${r.packingGroup ?? ""}`;
+  return [
+    r.item.id ?? "",
+    r.name.toLowerCase(),
+    r.hazardClass,
+    r.packingGroup ?? "",
+    r.pihZone ?? "",
+  ].join("|");
 };
 
 /**
@@ -416,7 +471,7 @@ const canonicalRef = (ref: string): string | null => {
  * falls back to normalised strings, which is stricter: a reference nothing can
  * resolve never inherits an attestation on a resemblance.
  */
-const sameItems = (a: string[], b: string[]): boolean => {
+const sameItems = (a: WireRef[], b: WireRef[]): boolean => {
   if (a.length !== b.length) return false;
 
   const ids = [a.map(canonicalRef), b.map(canonicalRef)];
@@ -425,9 +480,10 @@ const sameItems = (a: string[], b: string[]): boolean => {
     return x.every((v, i) => v === y[i]);
   }
 
-  const norm = (xs: string[]) =>
+  const norm = (xs: WireRef[]) =>
     xs
       .map((x) => {
+        if (typeof x !== "string") return JSON.stringify(toLineItem(x));
         const t = x.trim();
         return looksLikeId(t) ? t.replace(/\s/g, "").toUpperCase() : t.toLowerCase().replace(/\s+/g, " ");
       })
@@ -473,12 +529,25 @@ function withAttestations(
   return { vehicles, droppedFor };
 }
 
+/** One wire reference as the solver's line item. */
+export function toLineItem(ref: WireRef): LineItem {
+  if (typeof ref === "string") {
+    return looksLikeId(ref) ? { id: ref.replace(/\s/g, "").toUpperCase() } : { name: ref };
+  }
+  return {
+    ...(ref.id ? { id: ref.id.replace(/\s/g, "").toUpperCase() } : {}),
+    ...(ref.name ? { name: ref.name } : {}),
+    ...(ref.packingGroup ? { packingGroup: ref.packingGroup.toUpperCase() } : {}),
+    ...(ref.pihZone ? { pihZone: ref.pihZone.toUpperCase() as LineItem["pihZone"] } : {}),
+    ...(ref.state ? { state: ref.state as LineItem["state"] } : {}),
+    ...(ref.quantity ? { quantity: ref.quantity } : {}),
+  };
+}
+
 export function toLoad(vehicles: WireVehicle[]): LoadProposal {
   return {
     vehicles: vehicles.map((v): VehicleProposal => ({
-      items: v.items.map((ref) =>
-        looksLikeId(ref) ? { id: ref.replace(/\s/g, "").toUpperCase() } : { name: ref }
-      ),
+      items: v.items.map(toLineItem),
       ...(v.barriersPresent !== undefined ? { barriersPresent: v.barriersPresent } : {}),
       ...(v.singleShipper !== undefined ? { singleShipper: v.singleShipper } : {}),
       ...(v.nonReactionAsserted !== undefined ? { nonReactionAsserted: v.nonReactionAsserted } : {}),
@@ -487,7 +556,7 @@ export function toLoad(vehicles: WireVehicle[]): LoadProposal {
 }
 
 export async function checkSegregation(
-  input: { vehicles: Array<{ items: string[] }> },
+  input: { vehicles: Array<{ items: WireRef[] }> },
   nonce: string,
   /** From the operator's checkboxes, by vehicle. Never from the caller. */
   attest: Attestations[] = [],
@@ -541,7 +610,7 @@ export async function checkSegregation(
 // ── commit_manifest ──────────────────────────────────────────────────────────
 
 export async function commitManifest(
-  input: { approvalToken: string; vehicles: Array<{ items: string[] }> },
+  input: { approvalToken: string; vehicles: Array<{ items: WireRef[] }> },
   nonce: string,
   /** From the operator's checkboxes, by vehicle. Never from the caller. */
   attest: Attestations[] = [],
@@ -595,6 +664,12 @@ export const shipperCertification = () => ({
   heading: "Shipper certification, 49 CFR 172.204",
   quote: cite("172204-a1-certification"),
   obligation: cite("172204-a-general"),
+  /** What the document implements, and what it does not. Ours, and marked so. */
+  scope:
+    "Scope: this paper carries the 49 CFR 172.202(a) basic description sequence, the " +
+    "172.202(a)(3) subsidiary hazard entry and the 172.203(m) inhalation-hazard entry. Other " +
+    "172.203 additional descriptions and 172.102 special-provision entries are NOT generated " +
+    "here and must be added by the shipper.",
   /** Not part of the regulation. Ours, and marked as ours. */
   disclaimer:
     "This page does not sign anything, and nothing here is legal advice. " +
@@ -616,6 +691,37 @@ export function describeHazard(primary: string | undefined, labelCodes: string[]
   const subs = [...new Set(labelCodes.filter((c) => c && c !== p))];
   return subs.length ? `${p} (${subs.join(", ")})` : p;
 }
+
+/**
+ * The 172.203(m) inhalation-hazard entry, or null where the clause does not
+ * apply.
+ *
+ * The words are the regulation's own: "Poison-Inhalation Hazard" or
+ * "Toxic-Inhalation Hazard", then the zone. This tool prints Toxic for Division
+ * 6.1 and 2.3, which are the two the segregation table indexes by zone, and
+ * prints nothing at all where no zone was resolved, because the clause applies
+ * only to materials poisonous by inhalation.
+ *
+ * The zone was resolved and used to pick the 177.848(d) row from the very first
+ * version, and the paper never carried it. A signed document that omits a
+ * classification the approval was computed from is missing part of the reason
+ * it exists.
+ */
+export function inhalationEntry(hazardClass: string | undefined, zone: string | null): string | null {
+  if (!zone) return null;
+  // The clause names Zone A to D for GASES and Zone A or B for LIQUIDS. A zone
+  // outside that set for the physical form is not something this tool can fix,
+  // and it is also not something it should print silently, so it says so.
+  const gas = (hazardClass ?? "").startsWith("2.");
+  const permitted = gas ? "ABCD" : "AB";
+  const suffix = permitted.includes(zone)
+    ? ""
+    : ` (172.203(m) lists Zone ${gas ? "A to D for gases" : "A or B for liquids"})`;
+  return `Toxic-Inhalation Hazard, Zone ${zone}${suffix}`;
+}
+
+/** The clause that puts the inhalation entry on the paper. */
+export const inhalationRule = () => cite("172203-m-pih");
 
 /** The rule that fixes the column order of every line on the paper. */
 export const descriptionSequence = () => cite("172202-a-sequence");
@@ -643,6 +749,11 @@ export function buildShippingPaper(load: LoadProposal) {
         identificationNumber: r.item.id,
         properShippingName: r.name,
         hazardClass: r.hazardClass,
+        packingGroupSource: r.packingGroup,
+        // 172.203(m): the inhalation-hazard entry goes on the paper immediately
+        // after the shipping description. The zone was already resolved, and
+        // already decides the segregation verdict, and the document dropped it.
+        inhalationHazard: inhalationEntry(r.hazardClass, r.pihZone ?? null),
         // 172.202(a)(3): the subsidiary hazard class or division numbers are
         // entered in parentheses immediately following the primary. This lives
         // in the DOCUMENT rather than in the renderer, because it is a rule

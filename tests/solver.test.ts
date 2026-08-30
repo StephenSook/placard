@@ -182,7 +182,7 @@ describe("citation integrity at the code level", () => {
       expect(c.text.length).toBeGreaterThan(19);
       expect(c.section).toMatch(/^49 CFR /);
     }
-    expect(CLAUSE_IDS.length).toBe(40);
+    expect(CLAUSE_IDS.length).toBe(41);
   });
 
   it("an unknown clause id throws rather than returning an empty quote", () => {

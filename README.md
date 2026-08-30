@@ -40,7 +40,7 @@ invisible in Chromium's phone emulation and 1286px wide in WebKit.
 examined nothing is indistinguishable from one that works:
 
 ```
-PASS  checked 13 hashes, 40 verbatim clauses (8962 characters), 493 table cells, 3293 table entries
+PASS  checked 14 hashes, 41 verbatim clauses (9380 characters), 493 table cells, 3293 table entries
 ```
 
 ---
@@ -226,7 +226,7 @@ npm run facts     # regenerate FACTS.md, the only figures this project may claim
 | Entries with a subsidiary hazard | 717 |
 | 177.848(d) matrix | 18 by 18 = 324 cells |
 | Census | X 104, O 44, \* 25, blank 151 |
-| Verbatim clauses, each gate-checked as a substring of the source | 40 |
+| Verbatim clauses, each gate-checked as a substring of the source | 41 |
 
 Clauses are sliced from the pinned XML by literal anchors, and an anchor that matches zero or two
 times **fails the build** rather than shipping a confident quote of the wrong sentence.

@@ -22,6 +22,22 @@ function field(s: string): string {
   return `${enc.encode(s).length}:${s}`;
 }
 
+/**
+ * EVERY FIELD THE RESOLVER USES TO PICK A ROW BELONGS HERE.
+ *
+ * The hash is the security boundary, so it has to distinguish exactly what the
+ * REGULATION distinguishes. Packing group and inhalation hazard zone both
+ * select between 172.101 rows that carry different segregation behaviour, and
+ * both were absent: UN1744 "Bromine solutions" PG I Zone A and the same name at
+ * Zone B serialised to identical bytes, so a token issued for one verified
+ * against the other with ok:true. 6.1 PG I Zone A has its own row in the
+ * 177.848(d) table and Zone B does not, so those are two different loads that
+ * the boundary was treating as one.
+ *
+ * The format string below is versioned for exactly this reason. Adding a field
+ * changes every token, which is correct: a token issued under the old encoding
+ * described a load this encoding cannot express.
+ */
 function canonicalItem(i: LineItem): string {
   // Fixed key order, normalized case, no optional-field ambiguity.
   return [
@@ -29,6 +45,8 @@ function canonicalItem(i: LineItem): string {
     field((i.name ?? "").trim().toLowerCase()),
     field(i.state ?? "unknown"),
     field((i.quantity ?? "").trim()),
+    field((i.packingGroup ?? "").trim().toUpperCase()),
+    field((i.pihZone ?? "").trim().toUpperCase()),
   ].join("");
 }
 
@@ -58,7 +76,7 @@ function canonicalVehicle(v: VehicleProposal): string {
 export function canonical(load: LoadProposal): string {
   // Vehicles are NOT sorted: which bay an item sits in is part of the load.
   return [
-    field("49cfr177848/v1"),
+    field("49cfr177848/v2"),
     field(String(load.vehicles.length)),
     ...load.vehicles.map(canonicalVehicle),
   ].join("");
