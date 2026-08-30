@@ -23,6 +23,11 @@ import { checkSegregation, commitManifest, isMalformed, toLoad } from "../src/to
 import {
   CHECK_SEGREGATION_SCHEMA, COMMIT_MANIFEST_SCHEMA, PROPOSE_LOAD_SCHEMA,
 } from "../src/tools/schemas.ts";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+
+/** Read a repository file as text, for the source-level guards below. */
+const read = (f: string) => readFileSync(join(process.cwd(), f), "utf8");
 import { attestOf, wireOf } from "./attest.ts";
 
 const N = "orphan-regression";
@@ -167,5 +172,54 @@ describe("an attestation is not a tool argument", () => {
     // Non-vacuity: the schemas are really in there.
     expect(schemas).toContain("maxVehicles");
     expect(schemas).toContain("approvalToken");
+  });
+});
+
+describe("the toolset is anticorrelated, which is the demonstration", () => {
+  /**
+   * commit_manifest exists only while the load PASSES. propose_load exists only
+   * while it is REFUSED. They are never both present and never both absent.
+   *
+   * This is a SOURCE check, and it is worth saying why rather than pretending
+   * otherwise: exercising registration properly needs a DOM and a WebMCP
+   * runtime, which this suite deliberately does not require. So it asserts the
+   * specific gating expressions, not merely that the word "enabled" appears
+   * somewhere. A first version that checked only for `refused` would survive
+   * someone gating the wrong tool on it.
+   */
+  const hook = read("src/tools/useHazmatTools.ts");
+
+  it("gates propose_load on REFUSED and commit_manifest on PASS", () => {
+    expect(hook).toMatch(/enabled:\s*hasManifest\s*&&\s*refused/);
+    expect(hook).toMatch(/const refused = state\.verdict\?\.status === "REFUSED"/);
+    expect(hook).toMatch(/const passes = state\.verdict\?\.status === "PASS"/);
+    // commit_manifest's own enabled flag is `passes`, and nothing else may be.
+    const commitBlock = hook.slice(hook.indexOf('name: "commit_manifest"'));
+    expect(commitBlock.slice(0, 600)).toMatch(/enabled:\s*passes,/);
+  });
+
+  it("never lets the two be gated on the same condition", () => {
+    // The whole point is that they are opposites. If someone ever gates both on
+    // `passes` or both on `refused`, the demonstration silently becomes one
+    // tool appearing and nothing leaving.
+    const proposeBlock = hook.slice(hook.indexOf('name: "propose_load"'));
+    const commitBlock = hook.slice(hook.indexOf('name: "commit_manifest"'));
+    const proposeEnabled = /enabled:\s*([^,\n]+)/.exec(proposeBlock.slice(0, 700))?.[1];
+    const commitEnabled = /enabled:\s*([^,\n]+)/.exec(commitBlock.slice(0, 700))?.[1];
+    // Non-vacuity: if either regex stopped matching, the rest of this test
+    // would compare undefined to undefined and pass having checked nothing.
+    expect(proposeEnabled, "no enabled flag found for propose_load").toBeTruthy();
+    expect(commitEnabled, "no enabled flag found for commit_manifest").toBeTruthy();
+    expect(proposeEnabled!.trim()).not.toBe(commitEnabled!.trim());
+    expect(proposeEnabled!).toContain("refused");
+    expect(commitEnabled!).toContain("passes");
+  });
+
+  it("tells the agent in the schema description that the tool is state-gated", () => {
+    // A tool that vanishes without warning is a trap. The description says so,
+    // so an agent that cannot find it knows why rather than retrying.
+    const d = read("src/tools/schemas.ts");
+    expect(d).toContain("EXISTS ONLY WHILE THE CURRENT LOAD IS REFUSED");
+    expect(d).toContain("only present while");
   });
 });

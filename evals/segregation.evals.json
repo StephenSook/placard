@@ -65,29 +65,6 @@
     ]
   },
   {
-    "name": "An illegal single-vehicle load is split across vehicles by the solver, not by the model",
-    "messages": [
-      {
-        "role": "user",
-        "type": "message",
-        "content": "Find me a legal way to split this manifest across at most two trucks."
-      }
-    ],
-    "expectedCall": [
-      {
-        "functionName": "propose_load",
-        "arguments": {
-          "items": [
-            "UN1090",
-            "UN1830",
-            "UN1748"
-          ],
-          "maxVehicles": 2
-        }
-      }
-    ]
-  },
-  {
     "name": "A material with no identification number can still be placed on a load",
     "messages": [
       {

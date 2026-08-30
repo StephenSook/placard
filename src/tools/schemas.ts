@@ -208,6 +208,9 @@ export const DESCRIPTIONS = Object.freeze({
     "Given the materials to ship and the vehicles available, compute an arrangement that satisfies " +
     "49 CFR 177.848. If no arrangement exists, returns the specific set of materials that conflict " +
     "with one another, so the refusal names items rather than saying no solution. " +
+    "This tool EXISTS ONLY WHILE THE CURRENT LOAD IS REFUSED. A legal split is " +
+    "meaningless for a load that already passes, so once one does, this tool leaves " +
+    "the registry and commit_manifest takes its place. " +
     ATTESTATIONS_ARE_NOT_TOOL_ARGUMENTS,
 
   check_segregation:

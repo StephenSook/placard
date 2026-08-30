@@ -1,0 +1,45 @@
+[
+  {
+    "name": "propose_load exists ONLY while the load is refused, because a legal split is meaningless for a load that already passes",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "Find me a legal way to split this manifest across at most two trucks."
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "propose_load",
+        "arguments": {
+          "items": [
+            "UN1090",
+            "UN1830",
+            "UN1748"
+          ],
+          "maxVehicles": 2
+        }
+      }
+    ]
+  },
+  {
+    "name": "The same page still answers a lookup, so the refused state is not a dead end",
+    "messages": [
+      {
+        "role": "user",
+        "type": "message",
+        "content": "What is UN1748 and what hazard class is it?"
+      }
+    ],
+    "expectedCall": [
+      {
+        "functionName": "lookup_material",
+        "arguments": {
+          "query": {
+            "$contains": "1748"
+          }
+        }
+      }
+    ]
+  }
+]

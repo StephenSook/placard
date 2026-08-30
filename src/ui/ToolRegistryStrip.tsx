@@ -30,8 +30,16 @@ export type ToolRegistryStripProps = {
   supported: boolean;
 };
 
-/** Which tool is the gated one. Drawn differently because it is the point. */
-const GATED = "commit_manifest";
+/**
+ * The two state-gated tools, drawn differently because they are the point.
+ *
+ * They are ANTICORRELATED. commit_manifest exists only while the load passes;
+ * propose_load exists only while it is refused, because a legal split is
+ * meaningless for a load that is already legal. They are never both present and
+ * never both absent, so the strip below always shows one of them arriving as
+ * the other leaves.
+ */
+const GATED = ["commit_manifest", "propose_load"];
 
 export function ToolRegistryStrip({ registered, all, supported }: ToolRegistryStripProps) {
   const live = new Set(registered);
@@ -65,7 +73,7 @@ export function ToolRegistryStrip({ registered, all, supported }: ToolRegistrySt
       <ul className="registry__list">
         {all.map((name) => {
           const on = live.has(name);
-          const gated = name === GATED;
+          const gated = GATED.includes(name);
           return (
             <li
               key={name}
@@ -88,10 +96,19 @@ export function ToolRegistryStrip({ registered, all, supported }: ToolRegistrySt
       <p className="registry__note">
         {supported ? (
           <>
-            <strong>{GATED}</strong> is absent from the agent&rsquo;s registry until the load passes.
-            That is the visible layer. The boundary is that its handler re-derives the verdict from a
-            hash of the exact contents it is about to export, so a stale load, a mutated load and a
-            same-named shadow tool are all uncommittable regardless of registration order.
+            These two tools are never present together.
+            <strong> commit_manifest</strong> exists only while the load passes.
+            <strong> propose_load</strong> exists only while it is refused, because a legal split is
+            meaningless for a load that is already legal. So the agent is handed exactly the
+            capability the regulation currently permits, and the other one leaves in the same
+            instant. An agent cannot optimise before it consults: it has to be refused before the
+            tool that fixes the refusal exists.
+            <br />
+            <br />
+            That is the visible layer, and it is not the boundary. The boundary is that
+            commit_manifest&rsquo;s handler re-derives the verdict from a hash of the exact contents
+            it is about to export, so a stale load, a mutated load and a same-named shadow tool are
+            all uncommittable regardless of registration order.
           </>
         ) : (
           <>

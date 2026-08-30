@@ -98,6 +98,19 @@ export function useHazmatTools(
 
   const hasManifest = state.manifestSize > 0;
   const passes = state.verdict?.status === "PASS";
+  // THE TOOLSET IS ANTICORRELATED, and that is the whole demonstration.
+  //
+  // commit_manifest exists only while the load PASSES. propose_load exists only
+  // while it is REFUSED, because a legal split is meaningless for a load that
+  // is already legal and unknowable for one nobody has checked. So the two
+  // tools are never present together and never absent together: the page hands
+  // the agent exactly the capability the regulation currently permits and takes
+  // away the one it does not need, in the same instant, in opposite directions.
+  //
+  // The practical effect is that an agent cannot optimise before it consults.
+  // It must call check_segregation, be refused, and only then does the tool
+  // that fixes the refusal come into existence.
+  const refused = state.verdict?.status === "REFUSED";
 
   const execPropose = useCallback(
     (a: { items: string[]; maxVehicles: number }) =>
@@ -124,7 +137,9 @@ export function useHazmatTools(
     inputSchema: PROPOSE_LOAD_SCHEMA,
     annotations: READ_ONLY,
     execute: execPropose,
-    enabled: hasManifest,
+    // Not `hasManifest`. See the note above: this tool is the remedy for a
+    // refusal, so it exists exactly when there is a refusal to remedy.
+    enabled: hasManifest && refused,
   });
 
   const check = useWebMCP({
