@@ -6,12 +6,10 @@ No account, no key, no login. WebMCP is enabled on that origin by a registered
 Chrome origin trial, so there is no browser flag to set either. **Open it in
 Chrome 149 or later** and `document.modelContext` is live.
 
-One practical note, so you do not lose a minute to it. If you ask ChatGPT to
-*browse* the URL, that request can be served by its text crawler, which does not
-execute page JavaScript, so no tools appear. That is the crawler rather than the
-page. Open the URL in Chrome and the surface is there, and the agent's-eye panel
-prints the live `getTools()` result so you can confirm it rather than take my
-word for it.
+One practical note so you do not lose a minute: asking ChatGPT to *browse* the
+URL can be served by its text crawler, which runs no page JavaScript, so no
+tools appear there. In Chrome the surface is live, and the agent's-eye panel
+prints the real `getTools()` result so you can check it rather than take my word.
 
 The page opens on a number it recomputes while you are looking at it:
 
@@ -141,27 +139,53 @@ get a shipping paper for a load that does not pass.
 Because the interesting question in agentic browsing is not what the agent can
 reach. It is what the agent cannot.
 
-Most tool surfaces are a menu. Everything is registered, always, and safety
-lives in the model's judgment about which one to call. That works until the
-model is confidently wrong, and in this domain confidently wrong means a truck
-fire.
+Most tool surfaces are a menu. Everything is registered, always, and safety lives
+in the model's judgment about which one to call. That works until the model is
+confidently wrong, and in this domain confidently wrong means a truck fire.
 
-WebMCP registers tools against a live document with an AbortSignal, which means
-the tool set is a function of page state rather than a fixed manifest. So the
-action space can be made to depend on whether the action is currently legal.
+WebMCP registers tools against a live document with an AbortSignal, so the tool
+set is a function of page state rather than a fixed manifest. The action space
+can therefore be made to depend on whether the action is currently legal.
 `commit_manifest` is not disabled, not greyed out, not guarded by a polite error
 message. While the load fails it is not in `getTools()` at all. The agent cannot
 choose it, because from where the agent stands it does not exist.
 
+**The part I think is actually new is that the two gated tools are exact
+complements.** With a manifest on the page, `propose_load` is registered exactly
+when `commit_manifest` is not:
+
+```
+load REFUSED   ->  propose_load REGISTERED   commit_manifest ABSENT
+load PASSES    ->  propose_load ABSENT       commit_manifest REGISTERED
+```
+
+Never both. Never neither. The page hands the agent the capability the regulation
+currently permits and takes the other away in the same instant, in opposite
+directions.
+
+That symmetry is doing real work, and I only got it right after getting it
+wrong. My first version gated the remedy on the verdict being REFUSED, which
+looks the same and is not: a manifest nobody had checked yet was neither passing
+nor refused, so the agent had no export AND no way to ask for a legal
+arrangement. It was stranded by a tool surface trying to protect it. Gating on
+the exact complement of the export condition, rather than on a lookalike, is what
+removes that dead end. **Withholding a capability is only safe if the remedy for
+withholding it is present in the same breath.**
+
 That is a property of WebMCP specifically. An out-of-process MCP server does not
 know what your page currently believes. This one does, because it is the page.
 
-There is a second half to that which I only found by driving the real client.
-Registration follows the PAGE's verdict, not the agent's call. An agent that
-speculatively calls `check_segregation` on some other, legal load gets a PASS and
-an approval token back, and `commit_manifest` still does not appear, because the
-load on the page has not changed. The agent cannot talk the tool into existence.
-It has to actually fix the truck.
+There is a second half I only found by driving the real client. Registration
+follows the PAGE's verdict, not the agent's call. An agent that speculatively
+calls `check_segregation` on some other, legal load gets a PASS and an approval
+token back, and `commit_manifest` still does not appear, because the load on the
+page has not changed. The agent cannot talk the tool into existence. It has to
+actually fix the truck.
+
+And the anticorrelation is not a claim in prose. It is why the eval harness below
+takes TWO commands: the harness opens one URL per run, and no single page state
+registers both gated tools any more. Same page, two states, and the tool set
+differs in exactly the two positions the regulation controls.
 
 ## How it creates a better user experience
 
@@ -235,10 +259,8 @@ check_segregation    readOnlyHint                       manifest is non-empty
 commit_manifest      mutating                           ONLY while the load passes
 ```
 
-`propose_load` and `commit_manifest` are exact complements. With a manifest on
-the page, precisely one of them is registered at any moment: the page hands the
-agent the capability the regulation currently permits and takes the other away
-in the same instant, in opposite directions. Never both, never neither.
+The last two rows are the anticorrelation argued above: with a manifest on the
+page, exactly one of them is registered at any moment.
 
 Unregistration is AbortSignal driven, which is the current spec: `unregisterTool`
 was removed in April 2026 and `provideContext` in March.
@@ -396,16 +418,12 @@ those audits report nothing at all rather than failing when the token is
 missing.
 
 Two audits do not score full marks and I would rather name them than round them
-away. `speed-index` is 0.99. `valid-source-maps` is 0, and the obvious fix is to
-ship the maps, since this repository is public and there is nothing to withhold,
-so I turned them on, built, deployed and requested one. **Vercel answers 403 with
-an empty body for any `.map` path, at the platform level, regardless of headers
-or rewrites.** Emitting a 728 KB artifact the host will never serve is worse than
-not emitting it, and renaming the file to dodge a deliberate platform protection
-would be defeating a security control to win a score, which is the exact move
-this project exists to argue against. A judge who wants the mapping clones the
-repository. The third diagnostic, `network-dependency-tree-insight`, is the
-critical request chain of a bundled application and I have not eliminated it.
+away. `speed-index` is 0.99. `valid-source-maps` is 0: I turned the maps on,
+built and deployed, and **Vercel answers 403 with an empty body for any `.map`
+path, at the platform level, regardless of headers or rewrites.** Renaming the
+file to dodge a deliberate platform protection would be defeating a security
+control to win a score, which is the exact move this project exists to argue
+against, so the maps stay off and a judge who wants them clones the repository.
 
 Verified by hand in Chrome 151 against the live origin with no flag, driving
 `document.modelContext` directly: `getTools` returns 2 tools at mount and 4 once
@@ -413,42 +431,30 @@ a manifest is loaded, `executeTool` on `check_segregation` with a barrier
 asserted returns REFUSED carrying 177.848(e)(3) verbatim, and `commit_manifest`
 is absent throughout.
 
-## I attacked my own safety claim with a second model, and it earned its keep
+## I attacked my own safety claim with a second model, twelve times
 
 The claim this project makes is narrow and absolute: no shipping paper can be
 exported for a load that fails 49 CFR 177.848. So before shipping I pointed a
-second model at the whole repository with that one question and nothing else.
+second model at the repository with that one question and nothing else, and then
+kept doing it.
 
-It found five real defects. I reproduced every one before touching anything, and
-every one of them had passed a 147-test suite, because every one lived in the
-interaction between two features rather than inside either. That is the part
-worth reporting: a green suite measures the paths you thought of.
+**Twelve rounds. Not one has come back empty.** Forty-one defects, thirty-seven
+of them carrying a numbered regression in `tests/codex-findings.test.ts` and the
+rest in its sibling suites. Every one reproduced before it was touched. Every fix
+paired with the load that used to clear AND a load that must still clear, so no
+fix could degenerate into a blunt refusal. Every guard mutation-tested.
+
+The first round alone found five, and every one of them had already passed a
+147-test suite, because every one lived in the interaction between two features
+rather than inside either. A green suite measures the paths you thought of.
 
 The architecture held where it was designed to. The token binding, the canonical
 encoding and the TOCTOU handling showed no bypass, and the export gate was never
-defeated. What the review found was upstream of it: the SOLVER was returning
-PASS for loads the regulation forbids, and the gate was faithfully exporting
-them. A correct lock on a door in the wrong wall.
+defeated. What the reviews kept finding was upstream of it: the SOLVER returning
+PASS for loads the regulation forbids, and the gate faithfully exporting them. A
+correct lock on a door in the wrong wall.
 
-**A subsidiary cell hid the explosives referral.** The most-restrictive
-reduction ranks X above O above the asterisk. That is right for restrictiveness
-and wrong for routing, because the asterisk does not mean "less restrictive", it
-means "the answer is in the 177.848(f) table". UN0018 is Division 1.2G carrying
-a subsidiary Class 8, so the subsidiary pairing produced an O, the O outranked
-the asterisk, a barrier cleared the O, and the compatibility table was never
-consulted. It exported. Groups G and B are X.
-
-**An identification number is not always an identifier either.** UN1950 covers
-five entries across Divisions 2.1 and 2.2 and the resolver took the first, a 2.2
-aerosol. This is the same defect I had fixed for proper shipping names one
-commit earlier and left in place for numbers, which is worse, because a number
-looks authoritative. The shipping paper also carried the wrong proper shipping
-name, so the document named a material nobody had described.
-
-**Safety depended on a comma.** The table spells the incendiary-ammunition name
-both with and without a comma before "or propelling charge". The no-comma
-spelling has exactly one row at 1.4G and resolved cleanly, while the same name
-normalised also covers 1.2G and 1.3G.
+The whole list is in the repository. These six taught me the most.
 
 **The 177.848(e)(3) exception was granted on half its conditions.** The clause
 permits a single-shipper truckload only where it is ALSO known that the mixture
@@ -456,263 +462,113 @@ will not cause a fire or a dangerous evolution of heat or gas. The code granted
 it on the single shipper alone and demoted the second condition to a note that
 admitted it could not determine the fact. So sulfuric acid over calcium
 hypochlorite with a barrier and a single shipper returned PASS and exported: the
-exact pair this project exists to refuse, cleared by the tool built to refuse
-it. The signer now asserts non-reaction explicitly.
+exact pair this project exists to refuse, cleared by the tool built to refuse it.
 
-The first fix for that one was itself wrong, in a way worth reporting. I added
-the assertion to the tool schema with a description telling the agent, in as
-many words, not to assert it on the operator's behalf. Writing a hole down is
-not closing it. See the round below.
+**An agent could forge a fact about the physical world.** `barriersPresent`,
+`singleShipper` and `nonReactionAsserted` were ordinary arguments on the tool
+schemas. An agent that sent `barriersPresent: true` turned a refused load into a
+committed shipping paper in one call, and the schema description for one of them
+said, in these words, that an agent must not assert it on the operator's behalf.
+Writing a hole down is not closing it. They are gone from every schema now. They
+arrive from the operator's checkboxes as a separate trust context, a wire that
+carries one is refused by name rather than silently dropped, and every result
+reports `attestationsInForce` so an agent can see what was assumed and ask the
+operator to change it. That is the division of labour this whole project argues
+for, and I had to be shown four times that my own code did not implement it.
 
-**And my own attack demo could leave the page compromised**, because its
-AbortController was scoped inside the runner and aborted only on the happy path.
+**Ten clauses were quoted, verified verbatim, and enforced by nothing.** The
+citation gate proves every quoted clause is a substring of the pinned eCFR. It
+ran green from the first commit and it never once checked whether the RULE exists
+in code. Ten of the twenty-four clauses in the corpus at the time were quoted,
+verified, counted in the receipt the README prints, and applied by no code path
+at all. Two were live prohibitions reachable from the demo corpus: sodium cyanide
+with sulfuric acid exported, and so did 1.4S fireworks with 1.1G fireworks,
+because the compatibility footnotes were being read as permission when a footnote
+is a condition. A verbatim quote of a rule you do not apply is worse than no
+quote, because it reads as evidence of diligence that is not there. Every clause
+is now either cited by a live code path or listed in a coverage file with a
+written reason, and the build fails on any that is neither.
 
-All five are fixed, each with a regression test reproducing the exact load that
-was cleared, plus the negative case that stops the fix becoming a blunt refusal:
-an ordinary explosive pair still routes through the compatibility table, a
-number whose rows differ only by packing group still resolves, and the (e)(3)
-exception still applies when both of its conditions are genuinely asserted.
+**One word walked the headline pair out of the row that forbids it.** Physical
+state had become an agent-settable field when I added structured references, and
+177.848(d) covers Class 8 LIQUIDS only. So an agent re-sent the operator's own
+load with the sulfuric acid declared SOLID, walked this project's signature pair
+out of the row that forbids it, borrowed the operator's barrier, and committed a
+shipping paper. One word, through a field I had added an hour earlier. State is
+refused by name now, like the other three physical claims.
 
-Then I mutation-tested those regression tests, because a test that cannot fail
-is decoration. Four of five caught their defect immediately. The fifth asserted
-merely that some `finally` existed and survived deleting the very cleanup it was
-written to guard, because another function in the same file also had one. It now
-asserts the specific block, and is caught three separate ways.
-
-### The exit condition is a clean round, and it has not arrived yet
-
-Stopping after one round would have shipped everything below. The rule I now
-follow is that the exit condition is a clean round, not a declared finish,
-because each fix is itself a fresh diff nobody has reviewed. Twelve rounds in,
-no round has yet come back empty, and every single one has found something
-real. I would rather write that down than round it to a finish.
-
-**Round two found four more, and one of them I had introduced two hours
-earlier.** The URL state I added so that `webmcp-evals` could reach a populated
-page also accepted `&barriers=1&shipper=1&nonreaction=1`. A link could therefore
-attest, on the operator's behalf, that physical barriers were installed in a
-truck it had never seen. A URL may describe a load. It may never attest to one.
-
-**Round three found six more**, including a subset of a manifest that still
-exported. When a `?load=` link named materials that did not resolve, the loader
-raised a banner whose own comment read "NEVER quietly load a subset", and then
-loaded the subset, which checked, passed, and produced a shipping paper that
-said nothing about the missing items.
-
-**Then I audited which clauses the code actually applies, and that was the worst
-of it.** The citation gate proves every quoted clause is a verbatim substring of
-the pinned eCFR. It ran green from the first commit and it never once checked
-whether the RULE exists in code. Ten of the twenty-four clauses in the corpus at the time were quoted,
-verified, counted in the receipt the README prints, and enforced by nothing. Two
-were live prohibitions reachable from the demo corpus: sodium cyanide with
-sulfuric acid returned PASS and exported, and so did 1.4S fireworks with 1.1G
-fireworks, because the compatibility footnotes were being read as permission
-when a footnote is a condition. A verbatim quote of a rule you do not apply is
-worse than no quote, because it reads as evidence of diligence that is not
-there. Every clause is now either cited by a code path or listed in a coverage
-file with a written reason, and the build fails on any that is neither.
-
-**And the forgery I had already fixed once was still live on the surface that is
-actually judged.** `barriersPresent`, `singleShipper` and `nonReactionAsserted`
-were ordinary arguments on the tool schemas. An agent that sent
-`barriersPresent: true` turned a refused load into a committed shipping paper in
-one call, and the schema description for one of them said, in these words, that
-an agent must not assert it on the operator's behalf. They are gone from every
-schema. They arrive from the operator's checkboxes as a separate trust context,
-a wire that carries one is refused by name rather than having it silently
-dropped, and every result reports `attestationsInForce` so an agent can see what
-was assumed and ask the operator to change it.
-
-That is the division of labour this whole project argues for, and I had to be
-shown twice that my own code did not implement it: the agent searches the
-arrangement space, the person attests to the world.
-
-**Two more from the page's own input box.** Typing "sulfuric acid", the material
-in my own headline demonstration, added UN2584 Alkyl sulfonic acids: a different
-material in a different hazard class, with no signal. Typing something the table
-does not contain did nothing at all, which reads to a person as accepted. An
-index that silently returns the wrong entry is worse than one that returns
-nothing. That is the thesis of this project, and the page was doing it to its own
-operator.
-
-**Rounds five, six and seven found eleven more, and every one of them was
-opened or left open by a previous round's FIX.** That is the strongest argument
-I have for the rule that the exit condition is a clean round rather than a
-declared finish.
-
-**Round five: a proposal was borrowing a physical fact.** propose_load took the
-page's vehicle 1 attestation positionally and applied it to every vehicle in an
-arrangement that does not exist yet, so an agent proposing a pair the operator
-had never seen received PROPOSED with barriersPresent true. There is no correct
-binding available there, because the vehicles a proposal describes have not been
-loaded and nobody has walked out and looked at them, so proposals now carry no
-attestation at all. The same round found that the binding check compared
-reference STRINGS: the page holding UN1090 and an agent writing "UN 1090", the
-spelling 49 CFR itself uses, failed the comparison and lost a barrier the
-operator had genuinely asserted. And that a supplied packing group was being
-overruled by a severity heuristic, so a legal PG II load came back prohibited.
-
-**Round six found that my own fix had opened a hole.** I pinned 49 CFR 173.52
-so that whether an explosive is an article or a substance comes from the
-regulation's own definitions rather than from whether its name happens to start
-with the word "Article". That was right, and it removed a blanket fail-closed
-that had been standing in for every unevaluable condition at once. 177.848(g)(vi)
-has THREE conditions, not two: group G articles may load with C, D and E "other
-than fireworks and those requiring special handling". Nothing in 172.101
+**An unevaluable condition is not a satisfied one, and I had to learn that
+twice.** 177.848(g)(vi) permits group G articles with C, D and E "other than
+fireworks and those requiring special handling", and nothing in 172.101
 designates a material as requiring special handling, so that exclusion cannot be
-evaluated at all, and a pair that should refuse went straight to a committed
-shipping paper. Worse, the regression test I had written in the same commit
-ASSERTED that pass, so the suite would have defended it. An unevaluable
-condition is not a satisfied one, and the refusal now says so in those words.
+evaluated at all. I fixed it there and left the identical shape in 177.848(e)(5)
+note A, which permits ammonium nitrate with Division 1.1 or 1.5 "unless otherwise
+prohibited by 177.835(c)". 177.835(c) is not in the pinned corpus, so my code
+granted the permission and pushed a note reading "Confirm 177.835(c) does not
+apply", which asked a reader to discharge a burden nothing could discharge.
+Ammonium nitrate with black powder exported a shipping paper for a cell the table
+marks X. Both clauses decline in the same words now, and a test asserts they
+still match, because I had fixed the example I was handed and not the pattern
+behind it.
 
-**Round seven found the paper omitting what it rested on.** Subsidiary hazards
-were not printed, though 172.202(a)(3) requires them in parentheses after the
-primary and the document model already carried the labels, so acetyl chloride
-printed "3" rather than "3 (8)" on a document produced by a tool whose entire
-argument is that subsidiary hazards decide verdicts. The non-reaction assertion
-was dropped the same way, beside an executor comment reading "a shipping paper
-that was permitted by that assertion and does not record it is missing the
-reason it exists". The renderer's types are now derived from the executor's
-output rather than hand-narrowed, which is how a field came to be discarded in
-silence.
+**Safety depended on a comma.** The table spells the incendiary-ammunition name
+both with and without a comma before "or propelling charge". The no-comma
+spelling has exactly one row at 1.4G and resolved cleanly, while the same name
+normalised also covers 1.2G and 1.3G.
 
-That round also caught the attestation problem in its last hiding place. Four
-rounds had fixed it one path at a time: the tool stopped accepting barriers as
-arguments, the check stopped applying them to contents they were not made about,
-the proposal stopped copying them onto invented vehicles, and dragging an item
-between bays was STILL carrying them. Put a corrosive in one bay, tick all three
-assertions, put an oxidizer in another, drag it across, and the pair arrives
-holding claims made when the bay contained something else. The invalidation now
-lives at the single place bays are written rather than in the six handlers that
-write them, because a handler cannot forget a rule it does not have to remember.
+### The other thirty-five, and the three patterns underneath them
 
-**And a reproduction step nobody could run.** /api/forbidden-audit prints "how
-to check this yourself", and step one was the eCFR endpoint as a TEMPLATE, with
-both query parameters empty. It answers HTTP 400. I found it by running the URL
-this repository publishes, which is the whole point: a reproduction step that
-does not work is worse than none, because it reads as evidence.
+In one line each: a URL that could attest on the operator's behalf; a `?load=`
+link that quietly loaded a subset and exported a paper silent about the missing
+items; a proposal that borrowed vehicle one's barrier and applied it to trucks
+nobody had walked out and looked at; a reference comparison that failed on
+"UN 1090", the spelling 49 CFR itself uses; a legal packing-group II load refused
+by a severity heuristic; a shipping paper that omitted the subsidiary hazards its
+own verdict turned on; an item dragged between bays that carried claims made when
+the bay held something else; an approval token that did not bind packing group or
+inhalation zone, so two genuinely different loads shared one; a refusal whose
+remedy the wire could not express; a removed vehicle that shifted every later bay
+left and stole a barrier the operator had asserted; a hard block that reached
+gases when the clause reaches liquids; an input box that answered "sulfuric acid"
+with a different acid in a different hazard class; a wire that accepted any
+property nobody had thought to forbid and silently dropped it, so an approval
+token covered bytes the caller never sent; and a clause-reachability gate that
+was wrong in both directions twice, once calling dead code live and once calling
+live code dead.
 
-**Round eight found the boundary was not binding the identity.** The approval
-token's canonical encoding left out packing group and inhalation hazard zone, so
-UN1744 "Bromine solutions" PG I Zone A and the same material at Zone B serialised
-to identical bytes and a token issued for one verified against the other. Those
-are two different loads. 6.1 PG I Zone A has its own row in the 177.848(d) table
-and Zone B does not.
+Three patterns ran through all of it, and they are the part worth carrying.
 
-The same round found the wire could not say the thing the refusal asked for. The
-resolver refuses an ambiguous reference and names the field that would settle it,
-and the wire took strings only. A refusal whose remedy nobody can send is a dead
-end dressed as guidance. It also found that removing a vehicle shifted every
-later bay left, so a truck whose contents had not changed was compared against
-the empty bay that used to sit at its index and lost a barrier the operator had
-genuinely asserted.
+**A fix is a fresh diff nobody has reviewed.** Rounds five, six and seven each
+found a defect that a previous round's fix had opened or left open, and then
+rounds ten, eleven and twelve did it again: ten's allowlist created eleven's
+dropped-value hole, and eleven's call graph created twelve's. That is why the
+exit condition here is a clean round rather than a declared finish.
 
-**Round nine ran on a different model family, over the whole repository instead
-of a diff.** That is why it found what eight diff-scoped rounds had not. It
-reported four things and two reproduced, and the two that did not include the one
-it ranked most severe, which is the whole argument for reproducing a finding
-before touching anything.
+**Three separate times, a test written in the same commit as a fix asserted the
+resulting hole.** Round six's regression test required the pass that round ten
+had to remove. A later test required the pass that let an X cell export. And my
+own positive control for the reachability gate asserted the very rule round
+twelve overturned. A test is not independent evidence when it was written by the
+same hand, in the same hour, as the thing it guards.
 
-The real ones. 177.848(e)(3) reaches Class 8 LIQUIDS, and my predicate asked for
-"not solid", which also catches gases: UN1048 hydrogen bromide is Division 2.3
-with a subsidiary Class 8 and was being hard-blocked by a clause that does not
-reach it. Separately, PROPOSE_LOAD_SCHEMA advertised a structured item form that
-its own executor threw out as malformed.
+**A reviewer's finding is a claim like any other.** Round twelve reported a
+cross-payload token reuse, and it did not hold: "UN1090", " UN1090 " and
+"un1090" are one material and one load, 49 CFR itself writes UN 1090 with a
+space, and an earlier round had to make those compare equal because an agent
+using the regulation's own spelling was losing a barrier the operator had
+genuinely asserted. I pinned both halves with tests instead of "fixing" it. That
+same round had also ended its turn mid-work while printing "no material
+findings", which is a verdict-shaped false green, so it was treated as no verdict
+and its claims were reproduced by hand before anything moved.
 
-That round also confirmed a lead from a review that DIED mid-turn, which is worth
-saying because a failed round is no verdict rather than a pass. Physical state had
-become an agent-settable field when I added structured references, and 177.848(d)
-covers Class 8 liquids only. So an agent re-sent the operator's own load with the
-sulfuric acid declared SOLID, walked this project's headline pair out of the row
-that forbids it, borrowed the operator's barrier, and committed a shipping paper.
-One word, through a field I had added an hour earlier. State is refused by name
-now, like the other three physical claims.
-
-**Round ten found three, and the first was round six's own lesson, which I had
-failed to generalise.** Note A permits ammonium nitrate to load with a Division
-1.1 or 1.5 material "unless otherwise prohibited by 177.835(c)". My code
-granted that and pushed a note reading "Confirm 177.835(c) does not apply".
-177.835(c) is not in the pinned corpus, and the vehicle-combination facts it
-turns on are not in the 172.101 table either, so there was nothing for anyone
-to confirm it against. UN1942 with UN0027, black powder, returned PASS and
-exported a shipping paper for a cell the table marks X. Round six had already
-established that an unevaluable condition is not a satisfied one, and fixed it
-for 177.848(g)(vi). I fixed the example I was handed and not the pattern behind
-it. Both clauses decline in the same words now, and a test asserts they match.
-The regression test written in that earlier round had asserted this hole too.
-
-**A named denylist only refuses the claims somebody already thought of.** Items
-rejected `state` and `quantity` by name and vehicles rejected only the three
-attestations, so every other property at every other layer was accepted and
-silently dropped. A vehicle carrying `quantity: "999 railcars"` returned PASS,
-and the token hashes the COERCED load, so the caller held approval for bytes it
-had not sent. The review named one layer; it reproduced at three. It is an
-exact allowlist per layer now, and the refusal names the offending path.
-
-**The clause gate itself was the third.** It inferred reachability by splitting
-source text on exported declarations, and text cannot see scope: default
-exports, class methods, object-literal methods and private helpers all slipped
-through, and a bare re-export read as a caller. Any of them could have held a
-clause's only live citation while the 41-clause receipt stayed green. It parses
-the syntax tree now.
-
-**Round eleven found two, both inside round ten's own fixes.** Round ten had
-refused unsupported property NAMES so a token could not cover bytes the caller
-had not sent; the item coercer then did exactly that to SUPPORTED names
-carrying unusable values, skipping null and strings that trim to empty. So
-`{ id: "UN1090", name: "" }` canonicalised to a bare UN1090, returned PASS, and
-its token committed a different payload. The schema permitted it too: id and
-name carried a maximum length and no minimum.
-
-The second was the reachability gate I had just rebuilt. Counting how often an
-identifier appears is not a call graph, and it was wrong in both directions. A
-chain nothing calls read as reachable, because the inner name was mentioned,
-and a self-recursive dead function referenced itself into life; while an
-aliased import left the original with no references at all, so a LIVE citation
-read as dead. That direction is the dangerous one, because it fails the build
-for the wrong reason and the tempting repair is to weaken the gate until it
-goes green. It builds edges now and takes the closure from the roots.
-
-**Round twelve found two more in that graph, one of each kind.** A default
-export imported under a different local name had no references, so a live
-citation read as dead; and a plain member access on unrelated data, `q.dead`,
-credited a module helper that merely shared the name. Under both sat a smaller
-mistake: the test for "is this identifier a declaration's own name" recognised
-only declarations holding a FUNCTION, so `export const bag = {...}` counted its
-own name as a reference and, sitting at module level, became a root.
-
-My own positive control was, once again, asserting the reported hole. That is
-three separate times a test written in the same commit as a fix would have
-defended the gap the next round found, which is the whole case for treating
-every fix as unreviewed code.
-
-Round twelve also reported a cross-payload token reuse, and that one did not
-hold. "UN1090", " UN1090 " and "un1090" are one material and one load; 49 CFR
-itself writes UN 1090 with a space, and round five had to make those compare
-equal because an agent using the regulation's own spelling was losing a barrier
-the operator had genuinely asserted. Two of a material does produce a different
-token, and a token issued for the pair is refused against the single. Both
-halves are pinned by tests now, so the intended behaviour is not "fixed" later.
-A reviewer's finding is a claim like any other, and that one I checked rather
-than took. Its turn had also ended mid-work, printing "no material findings" in
-the same breath as saying it was still running checks, which is a
-verdict-shaped false green: no verdict is not a pass.
-
-I am putting all of this in the writeup rather than quietly fixing it because
-the alternative is a submission that claims a safety property and hides the
-evidence that the claim was tested. Forty-one defects across twelve rounds,
-thirty-seven of which carry a numbered regression in
-`tests/codex-findings.test.ts` and the rest in its sibling suites, every one
-reproduced before being touched, every one with a regression test that pairs
-the load which used to clear against a load that must still clear, so no fix can
-degenerate into a blunt refusal. Every guard mutation-checked.
+I am putting this in the writeup rather than quietly fixing it because the
+alternative is a submission that claims a safety property and hides the evidence
+that the claim was tested. The review command, the loads that reproduced each
+defect, and the tests are all in the repository.
 
 The corpus grew through all of this rather than being trimmed to fit. It is now
 eight pinned sections and 41 verbatim clauses, 9,380 characters of regulation
 text, each proven byte for byte against the committed source.
-
-The discipline is the durable part, and it is reproducible: the review command,
-the loads that reproduced each defect, and the tests are all in the repository.
 
 ## Challenges
 
