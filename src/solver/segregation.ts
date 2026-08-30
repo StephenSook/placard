@@ -51,8 +51,21 @@ const keysOf = (r: ResolvedItem): MatrixKey[] =>
 const groupsOf = (r: ResolvedItem): CompatibilityGroup[] =>
   r.hazards.map((h) => h.compatibilityGroup).filter((g): g is CompatibilityGroup => g !== null);
 
+/**
+ * 177.848(e)(3) is about Class 8 **LIQUIDS**, and this said `state !== "solid"`,
+ * which is a different set: it also catches GASES. UN1048 hydrogen bromide,
+ * anhydrous is Division 2.3 with a subsidiary Class 8, its state resolves
+ * correctly to "gas", and it was being hard-blocked against Class 4 and Class 5
+ * materials by a clause that does not reach it. A false refusal, and a
+ * compliance tool that cries wolf gets switched off.
+ *
+ * Asking for "liquid" positively is safe in both directions because
+ * `inferState` never returns "unknown": it reads the proper shipping name, and
+ * where the name settles nothing it falls back to LIQUID for exactly this
+ * reason, so an ambiguous Class 8 entry is still caught here.
+ */
 const isClass8Liquid = (r: ResolvedItem) =>
-  keysOf(r).includes("8") && r.state !== "solid";
+  keysOf(r).includes("8") && r.state === "liquid";
 
 /**
  * The most restrictive published cell across every combination of two items'

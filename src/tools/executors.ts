@@ -189,15 +189,27 @@ export function proposeLoad(input: { items: string[]; maxVehicles: number }) {
   for (const k of ATTESTATION_KEYS) {
     if ((input as Record<string, unknown>)?.[k] !== undefined) return malformed(ATTESTATION_REFUSAL);
   }
-  if (!isStringArray(input?.items) || input.items.length === 0) {
-    return malformed("items must be a non-empty array of strings, each an identification number or a proper shipping name.");
+  // THE SCHEMA ADVERTISES THE STRUCTURED FORM, SO THIS PATH MUST ACCEPT IT.
+  //
+  // Items became "a string OR an identity object" for check_segregation and
+  // commit_manifest, and PROPOSE_LOAD_SCHEMA shares the same MATERIAL_REF, so
+  // the published contract promised an object form that this executor still
+  // refused as malformed. An agent following the schema got
+  // "items must be a non-empty array of strings" back. A tool surface that
+  // documents a shape it rejects is worse than one that never offered it.
+  if (!Array.isArray(input?.items) || input.items.length === 0) {
+    return malformed("items must be a non-empty array of material references.");
+  }
+  const refs: WireRef[] = [];
+  for (const x of input.items) {
+    const r = coerceRef(x);
+    if (r === null) return malformed(ATTESTATION_REFUSAL);
+    refs.push(r);
   }
   if (typeof input.maxVehicles !== "number" || !Number.isInteger(input.maxVehicles) || input.maxVehicles < 1) {
     return malformed("maxVehicles must be an integer of at least 1.");
   }
-  const items: LineItem[] = input.items.map((ref) =>
-    looksLikeId(ref) ? { id: ref.replace(/\s/g, "").toUpperCase() } : { name: ref }
-  );
+  const items: LineItem[] = refs.map(toLineItem);
   const r = proposePartition(items, { maxVehicles: input.maxVehicles });
 
   if (r.status === "UNRESOLVED") {
@@ -375,9 +387,6 @@ const malformed = (reason: string): MalformedInput => ({
   reason: `malformed request: ${reason}`,
   note: "Nothing was evaluated and nothing was produced. Fix the arguments and call again.",
 });
-
-const isStringArray = (x: unknown): x is string[] =>
-  Array.isArray(x) && x.every((i) => typeof i === "string");
 
 export function coerceVehicles(input: unknown): WireVehicle[] | null {
   if (!Array.isArray(input)) return null;

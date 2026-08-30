@@ -792,3 +792,74 @@ describe("24. physical state is an attestation, not an identity field", () => {
     expect((v as { attestationsNotApplied?: number[] }).attestationsNotApplied).toEqual([1]);
   });
 });
+
+// ── round eight, a WHOLE-REPO pass by a different model family ────────────────
+//
+// Codex was out of quota and Grok's balance was empty, so this round ran on
+// Gemini with a whole-repo brief rather than a diff. It reported four findings.
+// TWO REPRODUCED. The two that did not include the one it ranked most severe,
+// which is the argument for reproducing every finding before touching anything:
+// a load it said passed unconditionally was refused, and a load it said was
+// falsely refused already passed.
+
+describe("25. the 177.848(e)(3) hard block is about LIQUIDS", () => {
+  it("no longer blocks a Class 2.3 gas that carries a subsidiary Class 8", async () => {
+    // UN1048 hydrogen bromide, anhydrous is Division 2.3 with a subsidiary
+    // Class 8, and its state resolves correctly to "gas". The predicate asked
+    // for `state !== "solid"`, which is a different set, so a clause reaching
+    // only Class 8 LIQUIDS was hard-blocking a gas against Class 5 materials.
+    const withBarrier = await checkLoad(toLoad([{ items: ["UN1048", "UN1438"], barriersPresent: true }]), N);
+    expect(withBarrier.status).toBe("PASS");
+  });
+
+  it("still lets the table adjudicate that pair, rather than clearing it outright", async () => {
+    // The non-vacuity half. Removing the hard block must hand the pair to the
+    // matrix, not wave it through: the O cell still needs a barrier.
+    const noBarrier = await checkLoad(toLoad([{ items: ["UN1048", "UN1438"] }]), N);
+    expect(noBarrier.status).toBe("REFUSED");
+  });
+
+  it("and a real Class 8 LIQUID is still blocked notwithstanding any separation", async () => {
+    // The headline refusal of this entire project, and two more like it. If the
+    // narrower predicate had leaked, this is where it would show.
+    for (const items of [["UN1830", "UN1748"], ["UN1789", "UN1479"]]) {
+      const v = await checkLoad(toLoad([{ items, barriersPresent: true, singleShipper: false }]), N);
+      expect(v.status, `${items.join(" + ")} cleared the hard block`).toBe("REFUSED");
+    }
+  });
+});
+
+describe("26. propose_load accepts the item shape its own schema publishes", () => {
+  it("takes a structured identity, which the schema advertises and the executor refused", () => {
+    // PROPOSE_LOAD_SCHEMA shares MATERIAL_REF with the other two tools, so the
+    // published contract promised an object form while this executor still
+    // demanded strings and answered "items must be a non-empty array of
+    // strings". A tool surface that documents a shape it rejects is worse than
+    // one that never offered it.
+    const r = proposeLoad({ items: [{ id: "UN1090" }, { id: "UN1830" }], maxVehicles: 2 });
+    expect(r.status).toBe("PROPOSED");
+  });
+
+  it("resolves an ambiguous number when the caller supplies the zone", () => {
+    // The whole reason the object form exists, now reachable from propose too.
+    const bare = proposeLoad({ items: ["UN1744", "UN1090"], maxVehicles: 2 });
+    expect(bare.status).toBe("UNRESOLVED");
+    const named = proposeLoad({
+      items: [{ id: "UN1744", name: "Bromine solutions", packingGroup: "I", pihZone: "B" }, "UN1090"],
+      maxVehicles: 2,
+    });
+    expect(named.status).toBe("PROPOSED");
+  });
+
+  it("still refuses an attestation on the wire, through the new path", () => {
+    const r = proposeLoad({ items: [{ id: "UN1090", barriersPresent: true } as never], maxVehicles: 2 });
+    expect(r.status).toBe("REFUSED");
+  });
+
+  it("all three tools coerce items through the same function", () => {
+    // The divergence existed because propose had its own check. One coercer.
+    const src = readFileSync(join(process.cwd(), "src/tools/executors.ts"), "utf8");
+    expect(src).not.toContain("isStringArray");
+    expect((src.match(/coerceRef\(/g) ?? []).length).toBeGreaterThanOrEqual(2);
+  });
+});
