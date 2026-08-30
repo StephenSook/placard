@@ -127,6 +127,22 @@ function zoneFor(entry: HmtEntry): PihZone | null {
   return null;
 }
 
+/**
+ * Of several 172.101 rows that a caller's reference could mean, the one whose
+ * verdict is hardest: lowest packing group first, then the row bearing the most
+ * hazard labels, ties keeping table order.
+ *
+ * Only ever applied to rows that are still genuinely ambiguous. A packing group
+ * the caller supplied narrows the set BEFORE this runs, because overruling a
+ * stated identity with a severity heuristic is a false refusal, not caution.
+ */
+const PG_RANK: Record<string, number> = { I: 0, II: 1, III: 2 };
+const mostSevere = (rows: HmtEntry[]): HmtEntry =>
+  [...rows].sort((x, y) => {
+    const px = PG_RANK[x.pg ?? ""] ?? 3, py = PG_RANK[y.pg ?? ""] ?? 3;
+    return px - py || (y.labels?.length ?? 0) - (x.labels?.length ?? 0);
+  })[0]!;
+
 /** Resolve one line item against the corpus into every hazard it presents. */
 export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
   let entry: HmtEntry | null = null;
@@ -138,8 +154,35 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
     // number reaching two different answers is the shape of defect this project
     // exists to expose, and it was in the resolver.
     const id = item.id.trim().replace(/\s+/g, "").toUpperCase();
-    const rows = lookupByUn(id);
-    if (rows.length === 0) return { error: `${id} is not in the 49 CFR 172.101 table` };
+    const all = lookupByUn(id);
+    if (all.length === 0) return { error: `${id} is not in the 49 CFR 172.101 table` };
+
+    // A SUPPLIED PACKING GROUP IS IDENTITY, NOT A HINT, AND DISCARDING IT IS A
+    // FALSE REFUSAL. The conservative row sort below reaches for the lowest
+    // packing group on the reasoning that the most severe row is the safe
+    // choice when the caller has not said which row they mean. When the caller
+    // HAS said, that reasoning does not apply and the sort silently overrules
+    // them. Reproduced: UN2810 has PG I, II and III rows, all Division 6.1;
+    // asking for PG II selected the PG I row, and PG I Division 6.1 zone A has
+    // its own row in the 177.848(d) table, so a legal PG II load came back
+    // PROHIBITED_TOGETHER and the shipping paper would have named a material
+    // the operator had not described.
+    //
+    // Narrow to the supplied packing group first, refuse an impossible one
+    // rather than falling back to a different material, and let the sort run
+    // only among rows that are still genuinely ambiguous.
+    let rows = all;
+    if (item.packingGroup) {
+      rows = all.filter((r) => r.pg === item.packingGroup);
+      if (rows.length === 0) {
+        const offered = [...new Set(all.map((r) => r.pg ?? "none"))].join(", ");
+        return {
+          error:
+            `${id} has no packing group ${item.packingGroup} entry in the 49 CFR 172.101 table. ` +
+            `That identification number is listed with packing group ${offered}.`,
+        };
+      }
+    }
 
     // AN IDENTIFICATION NUMBER IS NOT ALWAYS AN IDENTIFIER EITHER, and this is
     // the same defect that was fixed for proper shipping names and left in
@@ -155,9 +198,7 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
     // had not described.
     const classes = [...new Set(rows.map((r) => r.class))];
     if (classes.length > 1) {
-      const pgMatch = item.packingGroup
-        ? rows.filter((r) => r.pg === item.packingGroup)
-        : [];
+      const pgMatch = item.packingGroup ? rows : [];
       const pgClasses = [...new Set(pgMatch.map((r) => r.class))];
       if (pgMatch.length === 0 || pgClasses.length > 1) {
         return {
@@ -169,7 +210,7 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
             (rows.length > 4 ? "; and others" : ""),
         };
       }
-      entry = pgMatch[0]!;
+      entry = mostSevere(pgMatch);
     } else {
       // One class across every row, so the verdict cannot turn on which row is
       // chosen for the CLASS. It can still turn on the SUBSIDIARY hazards, and
@@ -187,11 +228,7 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
       //
       // Choose the genuinely most severe: lowest packing group first, then the
       // row bearing the most hazard labels. Ties keep table order.
-      const PG_RANK: Record<string, number> = { I: 0, II: 1, III: 2 };
-      entry = [...rows].sort((x, y) => {
-        const px = PG_RANK[x.pg ?? ""] ?? 3, py = PG_RANK[y.pg ?? ""] ?? 3;
-        return px - py || (y.labels?.length ?? 0) - (x.labels?.length ?? 0);
-      })[0]!;
+      entry = mostSevere(rows);
     }
   } else if (item.name) {
     const r = resolveName(item.name);
