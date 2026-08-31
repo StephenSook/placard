@@ -32,91 +32,18 @@ export type Source = { path: string; text: string };
 const parse = (s: Source) =>
   ts.createSourceFile(s.path, s.text, ts.ScriptTarget.Latest, /* setParentNodes */ true);
 
-/** The name a node declares, when the node is something callable or a class. */
-function declaredName(n: ts.Node): string | null {
-  const fnLike = (x: ts.Node | undefined) =>
-    !!x && (ts.isArrowFunction(x) || ts.isFunctionExpression(x));
-  if (ts.isFunctionDeclaration(n) && n.name) return n.name.text;
-  if (ts.isClassDeclaration(n) && n.name) return n.name.text;
-  if (ts.isMethodDeclaration(n) && ts.isIdentifier(n.name)) return n.name.text;
-  if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && fnLike(n.initializer)) return n.name.text;
-  // A default export can be imported under ANY local name, and this analysis
-  // does not resolve modules, so it cannot see the binding. Naming it here
-  // would make every default export dead; see defaultExportRoots.
-  if (ts.isPropertyAssignment(n) && ts.isIdentifier(n.name) && fnLike(n.initializer)) return n.name.text;
-  if (ts.isPropertyDeclaration(n) && ts.isIdentifier(n.name) && fnLike(n.initializer)) return n.name.text;
-  return null;
-}
-
-/**
- * THE CALL GRAPH, AND WHY A REFERENCE COUNT WAS NOT ONE.
- *
- * Counting how often a name appears outside its own declaration is not
- * reachability, and round eleven showed both directions of the error:
- *
- *   function dead()   { return helper(); }
- *   function helper() { return cite("e2-X"); }
- *
- * counted `helper` as used, so a citation inside a chain nothing calls read as
- * reachable. A self-recursive dead function did the same, referencing itself.
- * And in the other direction, `import { original as alias }` then `alias()`
- * left `original` with no references at all, so a LIVE citation read as dead
- * and would have failed the build for the wrong reason.
- *
- * So this builds edges instead. A reference recorded inside a named
- * declaration is an edge from that declaration to the name; a reference
- * recorded outside every named declaration is a ROOT, because module-level code
- * runs when the module is imported. Reachable is the closure of the roots.
- *
- * Round twelve then found one error of each kind. A DEFAULT export imported
- * under a different local name (`import Foo from "./x"` where x declares
- * `export default function bar`) left bar with no references, a false DEAD.
- * And a plain member access on unrelated data, `q.dead`, credited a module
- * helper that happened to share the name, a false LIVE.
- *
- * So a member access no longer credits the property name, and reaching an
- * object or a class reaches ITS OWN members by an explicit edge, which is the
- * calling convention that access stood in for. A default export is treated as a
- * root, because its importer may bind any local name and this analysis cannot
- * resolve modules to find out.
- *
- * WHAT THIS STILL DOES NOT DO, stated rather than implied: it matches on
- * identifier TEXT, not resolved symbols, so two modules that both declare a
- * private helper of the same name share a node. Nor does it know WHICH object a
- * member access lands on, so reaching an object reaches every method it
- * declares. Both make the analysis more permissive, never less. A
- * symbol-resolved graph from the TypeScript TypeChecker would remove them. That
- * direction is the deliberate one: the gate fails the build when a clause is
- * unaccounted, so a false DEAD is loud and wrong, and a false LIVE is the
- * residual risk this accepts.
- */
 type Graph = {
   /** Names referenced from module level, which runs on import. */
   roots: Set<string>;
-  /** Declared name to the names its body references. */
+  /** Declared node to the nodes its body references. */
   edges: Map<string, Set<string>>;
 };
 
-/**
- * Is this identifier the NAME a declaration is introducing, rather than a use?
- *
- * This used to ask `declaredName(parent) === text`, which is only non-null for
- * things that hold a function. So `export const bag = { ... }` did not match,
- * its own name counted as a reference, and because it sits at module level it
- * became a ROOT. Anything the object declared was then reachable. A declaration
- * is never a use of itself, whatever it holds.
- */
-function isDeclarationName(n: ts.Identifier, p: ts.Node | undefined): boolean {
-  if (!p) return false;
-  const named =
-    ts.isVariableDeclaration(p) || ts.isFunctionDeclaration(p) || ts.isClassDeclaration(p) ||
-    ts.isMethodDeclaration(p) || ts.isPropertyAssignment(p) || ts.isPropertyDeclaration(p) ||
-    ts.isParameter(p) || ts.isBindingElement(p) || ts.isEnumDeclaration(p) ||
-    ts.isInterfaceDeclaration(p) || ts.isTypeAliasDeclaration(p) ||
-    ts.isFunctionExpression(p) || ts.isClassExpression(p) || ts.isEnumMember(p) ||
-    ts.isTypeParameterDeclaration(p) || ts.isModuleDeclaration(p);
-  return named && (p as { name?: ts.Node }).name === n;
-}
+/** A member whose key cannot be read statically. Nothing can reference it. */
+const UNRESOLVED = "<computed>";
+
+const fnLike = (x: ts.Node | undefined): boolean =>
+  !!x && (ts.isArrowFunction(x) || ts.isFunctionExpression(x));
 
 /** `import { original as alias }` means a use of alias is a use of original. */
 function aliasMap(sf: ts.SourceFile): Map<string, string> {
@@ -129,10 +56,79 @@ function aliasMap(sf: ts.SourceFile): Map<string, string> {
   return m;
 }
 
+/** The member key as written, or UNRESOLVED when it cannot be read statically. */
+function memberKey(name: ts.PropertyName | undefined): string {
+  if (!name) return UNRESOLVED;
+  if (ts.isIdentifier(name) || ts.isStringLiteral(name) || ts.isNumericLiteral(name)) return name.text;
+  return UNRESOLVED;
+}
+
+const qualify = (container: string | null, key: string) => (container ? `${container}.${key}` : key);
+
+/**
+ * The node a declaration introduces, or null when the node introduces no scope.
+ *
+ * An ANONYMOUS INLINE function returns null on purpose so its citations inherit
+ * the enclosing scope: a callback passed to map is reached when its caller is,
+ * and treating it as unknown would fail the build on live code.
+ */
+function declaredNode(n: ts.Node, container: string | null): string | null {
+  if (ts.isClassDeclaration(n) && n.name) return n.name.text;
+  if (ts.isMethodDeclaration(n) || ts.isGetAccessorDeclaration(n) || ts.isSetAccessorDeclaration(n)) {
+    return qualify(container, memberKey(n.name));
+  }
+  if (ts.isClassStaticBlockDeclaration(n)) return qualify(container, "<static>");
+  if (ts.isPropertyDeclaration(n) && (fnLike(n.initializer) || n.initializer)) {
+    return qualify(container, memberKey(n.name));
+  }
+  if (ts.isPropertyAssignment(n) && fnLike(n.initializer)) return qualify(container, memberKey(n.name));
+  if (ts.isShorthandPropertyAssignment(n)) return null;
+  if (ts.isFunctionDeclaration(n) && n.name) return qualify(container, n.name.text);
+  if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && fnLike(n.initializer)) {
+    return qualify(container, n.name.text);
+  }
+  // `bag.dead = function () { ... }` names the function after the property it
+  // is assigned to, so it cannot fall out to module scope.
+  if (fnLike(n)) {
+    const p = n.parent;
+    if (p && ts.isBinaryExpression(p) && p.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
+        p.right === n && ts.isPropertyAccessExpression(p.left) &&
+        ts.isIdentifier(p.left.expression)) {
+      return `${p.left.expression.text}.${p.left.name.text}`;
+    }
+  }
+  return null;
+}
+
+/** The container a node opens for its members, if any. */
+function openedContainer(n: ts.Node, current: string | null): string | null {
+  if (ts.isClassDeclaration(n) && n.name) return n.name.text;
+  if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer &&
+      (ts.isObjectLiteralExpression(n.initializer) || ts.isClassExpression(n.initializer))) {
+    return n.name.text;
+  }
+  if (ts.isExportAssignment(n) && !n.isExportEquals) return "<default>";
+  return current;
+}
+
+/** Is this identifier the NAME a declaration introduces, rather than a use? */
+function isDeclarationName(n: ts.Identifier, p: ts.Node | undefined): boolean {
+  if (!p) return false;
+  const named =
+    ts.isVariableDeclaration(p) || ts.isFunctionDeclaration(p) || ts.isClassDeclaration(p) ||
+    ts.isMethodDeclaration(p) || ts.isPropertyAssignment(p) || ts.isPropertyDeclaration(p) ||
+    ts.isParameter(p) || ts.isBindingElement(p) || ts.isEnumDeclaration(p) ||
+    ts.isInterfaceDeclaration(p) || ts.isTypeAliasDeclaration(p) || ts.isGetAccessorDeclaration(p) ||
+    ts.isSetAccessorDeclaration(p) || ts.isFunctionExpression(p) || ts.isClassExpression(p) ||
+    ts.isEnumMember(p) || ts.isTypeParameterDeclaration(p) || ts.isModuleDeclaration(p);
+  return named && (p as { name?: ts.Node }).name === n;
+}
+
 function buildGraph(universe: Source[]): Graph {
   const roots = new Set<string>();
   const edges = new Map<string, Set<string>>();
-  const edge = (from: string, to: string) => {
+  const record = (from: string | undefined, to: string) => {
+    if (from === undefined) { roots.add(to); return; }
     let set = edges.get(from);
     if (!set) edges.set(from, (set = new Set()));
     set.add(to);
@@ -140,55 +136,60 @@ function buildGraph(universe: Source[]): Graph {
   for (const src of universe) {
     const sf = parse(src);
     const alias = aliasMap(sf);
-    const walk = (n: ts.Node, stack: readonly string[]): void => {
-      const name = declaredName(n);
-      const next = name ? [...stack, name] : stack;
-      // Reaching an object or a class reaches the members it declares. This
-      // replaces the member ACCESS that used to credit them, which credited any
-      // same-named helper anywhere in the repository.
-      const holdsFn = (m: ts.Node): boolean =>
-        ts.isMethodDeclaration(m) ||
-        ((ts.isPropertyAssignment(m) || ts.isPropertyDeclaration(m)) &&
-          !!m.initializer && (ts.isArrowFunction(m.initializer) || ts.isFunctionExpression(m.initializer)));
-      if (ts.isClassDeclaration(n) && n.name) {
-        for (const m of n.members) {
-          if (m.name && ts.isIdentifier(m.name) && holdsFn(m)) edge(n.name.text, m.name.text);
-        }
+    const walk = (n: ts.Node, enclosing: readonly string[], container: string | null): void => {
+      const name = declaredNode(n, container);
+      const next = name ? [...enclosing, name] : enclosing;
+      const nextContainer = openedContainer(n, container);
+      const here = enclosing[enclosing.length - 1];
+
+      // Static initialisers and static blocks RUN when the module is imported,
+      // whether or not the class is ever referenced.
+      if (((ts.isPropertyDeclaration(n) && ts.canHaveModifiers(n) &&
+            ts.getModifiers(n)?.some((m) => m.kind === ts.SyntaxKind.StaticKeyword)) ||
+           ts.isClassStaticBlockDeclaration(n)) && name) {
+        roots.add(name);
+        // The class binding is evaluated too, so do not require a reference to it.
+        if (container) roots.add(container);
       }
-      if (ts.isVariableDeclaration(n) && ts.isIdentifier(n.name) && n.initializer &&
-          ts.isObjectLiteralExpression(n.initializer)) {
-        for (const m of n.initializer.properties) {
-          if (m.name && ts.isIdentifier(m.name) && holdsFn(m)) edge(n.name.text, m.name.text);
-        }
+      // `export default { ... }` can be imported under any local name, so its
+      // members are rooted rather than resolved.
+      if (ts.isExportAssignment(n) && !n.isExportEquals) {
+        const e = n.expression;
+        if (ts.isObjectLiteralExpression(e)) {
+          for (const m of e.properties) roots.add(qualify("<default>", memberKey(m.name)));
+        } else if (ts.isIdentifier(e)) roots.add(e.text);
+        else if ((ts.isFunctionExpression(e) || ts.isClassExpression(e)) && e.name) roots.add(e.name.text);
       }
-      // An anonymous or renamed default export is reachable by definition.
-      if ((ts.isExportAssignment(n) || (ts.canHaveModifiers(n) &&
-          ts.getModifiers(n)?.some((m) => m.kind === ts.SyntaxKind.DefaultKeyword))) ) {
-        const dn = declaredName(n);
+      if (ts.canHaveModifiers(n) && ts.getModifiers(n)?.some((m) => m.kind === ts.SyntaxKind.DefaultKeyword)) {
+        const dn = declaredNode(n, null);
         if (dn) roots.add(dn);
       }
+
+      // `bag.used()` reaches the OBJECT and that ONE member, never its siblings.
+      // The TARGET of an assignment is a write, not a use: `bag.dead = fn` must
+      // not root bag.dead, or the function it installs is live by definition.
+      const isAssignTarget = !!n.parent && ts.isBinaryExpression(n.parent) &&
+        n.parent.operatorToken.kind === ts.SyntaxKind.EqualsToken && n.parent.left === n;
+      if (ts.isPropertyAccessExpression(n) && ts.isIdentifier(n.expression) && !isAssignTarget) {
+        const obj = alias.get(n.expression.text) ?? n.expression.text;
+        record(here, obj);
+        record(here, `${obj}.${n.name.text}`);
+      }
+
       if (ts.isIdentifier(n)) {
         const p = n.parent as ts.Node | undefined;
-        const isOwnName = isDeclarationName(n, p);
-        const isSpecifier =
-          !!p &&
+        const isSpecifier = !!p &&
           (ts.isImportSpecifier(p) || ts.isExportSpecifier(p) ||
             ts.isImportClause(p) || ts.isNamespaceImport(p) || ts.isNamespaceExport(p));
-        // `q.dead` is not a call to a module helper named dead.
-        const isMemberName =
-          !!p && (ts.isPropertyAccessExpression(p) || ts.isQualifiedName(p)) &&
+        const isMemberName = !!p && (ts.isPropertyAccessExpression(p) || ts.isQualifiedName(p)) &&
           (p as { name?: ts.Node }).name === n;
-        if (!isOwnName && !isSpecifier && !isMemberName) {
-          for (const t of new Set([n.text, alias.get(n.text) ?? n.text])) {
-            const inside = stack[stack.length - 1];
-            if (inside === undefined) roots.add(t);
-            else edge(inside, t);
-          }
+        if (!isDeclarationName(n, p) && !isSpecifier && !isMemberName) {
+          record(here, alias.get(n.text) ?? n.text);
         }
       }
-      ts.forEachChild(n, (c) => walk(c, next));
+      ts.forEachChild(n, (c) => walk(c, next, nextContainer));
     };
-    walk(sf, []);
+    walk(sf, [], null);
   }
   return { roots, edges };
 }
@@ -217,22 +218,18 @@ export function reachableCitedIds(scanned: Source[], universe: Source[]): Set<st
   const live = closure(buildGraph(universe));
   const out = new Set<string>();
   for (const src of scanned) {
-    const walk = (n: ts.Node, enclosing: readonly string[]): void => {
-      const name = declaredName(n);
+    const walk = (n: ts.Node, enclosing: readonly string[], container: string | null): void => {
+      const name = declaredNode(n, container);
       const next = name ? [...enclosing, name] : enclosing;
-      if (
-        ts.isCallExpression(n) &&
-        ts.isIdentifier(n.expression) &&
-        n.expression.text === "cite" &&
-        n.arguments.length > 0
-      ) {
+      const nextContainer = openedContainer(n, container);
+      if (ts.isCallExpression(n) && ts.isIdentifier(n.expression) &&
+          n.expression.text === "cite" && n.arguments.length > 0) {
         const arg = n.arguments[0]!;
-        // Every enclosing name must be reached, not merely the innermost one.
         if (ts.isStringLiteral(arg) && next.every((nm) => live.has(nm))) out.add(arg.text);
       }
-      ts.forEachChild(n, (c) => walk(c, next));
+      ts.forEachChild(n, (c) => walk(c, next, nextContainer));
     };
-    walk(parse(src), []);
+    walk(parse(src), [], null);
   }
   return out;
 }

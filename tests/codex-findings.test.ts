@@ -1381,3 +1381,80 @@ describe("37. the approval token binds the resolved load, not the wire spelling"
     expect(c.status).toBe("REFUSED");
   });
 });
+
+// ── round thirteen ───────────────────────────────────────────────────────────
+
+describe("38. the reachability graph was vacuously true for forms it did not know", () => {
+  const R = (files: Source[], i = 0) => reachableCitedIds([files[i]!], files).has("e2-X");
+  const one = (text: string) => reachableCitedIds(
+    [{ path: "src/solver/x.ts", text }], [{ path: "src/solver/x.ts", text }],
+  );
+
+  it("does not certify a sibling method because another member was reached", () => {
+    // The container edged to ALL of its members, so calling one made every
+    // other one live, which is exactly how a dead prohibition could satisfy the
+    // clause gate. Member nodes are namespaced now and a property access edges
+    // to that one node.
+    expect(one(`
+      export const bag = { used() { return 1; }, dead() { return cite("e2-X"); } };
+      bag.used();
+    `).has("e2-X")).toBe(false);
+  });
+
+  it("fails CLOSED on a member form the namer does not recognise", () => {
+    // THE WORST OF THE FOUR, and it is this project's own signature defect.
+    // A getter, a computed key or a post-declaration assignment left the
+    // citation with NO enclosing declaration, and `[].every(...)` is trivially
+    // true, so it counted as reachable. An unevaluable condition is not a
+    // satisfied one, in the gate as much as in the regulation.
+    expect(one(`export const bag = { get dead() { return cite("e2-X"); } };`).has("e2-X")).toBe(false);
+    expect(one(`export const bag = { ["de" + "ad"]() { return cite("e2-X"); } };`).has("e2-X")).toBe(false);
+    expect(one(`
+      export const bag = {};
+      bag.dead = function () { return cite("e2-X"); };
+    `).has("e2-X")).toBe(false);
+  });
+
+  it("treats a static initialiser and a static block as module evaluation", () => {
+    // Both RUN when the module is imported, whether or not the class is ever
+    // referenced, so requiring a reference to the class was a false DEAD, which
+    // fails the build for the wrong reason.
+    expect(R([
+      { path: "src/solver/x.ts", text: `export class C { static value = cite("e2-X"); }` },
+      { path: "src/main.ts", text: `import "./x.ts";` },
+    ])).toBe(true);
+    expect(R([
+      { path: "src/solver/x.ts", text: `export class C { static { cite("e2-X"); } }` },
+      { path: "src/main.ts", text: `import "./x.ts";` },
+    ])).toBe(true);
+  });
+
+  it("roots the members of an anonymous default export", () => {
+    // `export default { ... }` can be bound to any local name by its importer,
+    // and this analysis does not resolve modules, so its members are rooted.
+    expect(R([
+      { path: "src/solver/x.ts", text: `export default { cites() { return cite("e2-X"); } };` },
+      { path: "src/ui/y.ts", text: `import bag from "./x.ts";\nfunction ui(){ return bag.cites(); }\nui();` },
+    ])).toBe(true);
+  });
+
+  it("still reaches a member that IS called, and still refuses a dead container", () => {
+    // The negative half, so none of the above degenerates into a blunt refusal.
+    expect(R([
+      { path: "src/solver/x.ts", text: `export const bag = { cites: () => cite("e2-X") };` },
+      { path: "src/ui/y.ts", text: `import { bag } from "./x.ts";\nfunction ui(){ return bag.cites(); }\nui();` },
+    ])).toBe(true);
+    expect(one(`export const bag = { cites: () => cite("e2-X") };`).has("e2-X")).toBe(false);
+  });
+
+  it("pins the limitation it does NOT close, so it stays a decision", () => {
+    // A shorthand reference marks the function live without proving it is
+    // called. That is the same permissiveness that lets `arr.map(helper)` work,
+    // and closing it would fail the build on live callbacks. Asserted here so
+    // it cannot change silently and so a reader sees it is known, not missed.
+    expect(one(`
+      const f = () => cite("e2-X");
+      export const bag = { f };
+    `).has("e2-X")).toBe(true);
+  });
+});
