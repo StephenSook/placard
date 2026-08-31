@@ -1572,3 +1572,54 @@ describe("43. the published gap is an upper bound, and says so", () => {
     expect(ep).not.toContain("would inflate the result");
   });
 });
+
+describe("44. the special provisions the solver does NOT know, audited", () => {
+  // SP53 was found by a reviewer looking at one row. That prompted the obvious
+  // question: what else is in column 7? Measured against the committed corpus
+  // on 2026-08-31, deterministically rather than by asking a model.
+  //
+  //   403 distinct special provisions are in use across data/hmt.json.
+  //   15 have text in 172.102 that mentions class, division, subsidiary hazard,
+  //   packing group or hazard zone. 13 of those 15 are unknown to hazards.ts,
+  //   which handles only 1 to 4 (the inhalation zones), 53 and 128.
+  //
+  // Every one of the 13 was then checked for DIRECTION, which is the only
+  // question that matters for the safety claim. An exemption the solver ignores
+  // ("not subject to the requirements") makes this tool stricter than the
+  // regulation, which cannot produce a false PASS. What could produce one is a
+  // provision that makes a material MORE restricted than its label column says,
+  // which is exactly what SP53 does. None of the remaining 13 do, because the
+  // defaults below are conservative. These tests pin that.
+  const SOLVER_KNOWS = ["1", "2", "3", "4", "53", "128"];
+
+  it("takes the more restrictive row when column 7 does not fix the zone", () => {
+    // SP6 asserts a material is poisonous-by-inhalation without naming a zone.
+    // Division 2.3 Zone A and Zone B are different rows in the 177.848(d)
+    // table, so an undetermined zone has to resolve to the stricter one.
+    for (const id of ["UN3168", "NA9035"]) {
+      const r = resolveItem({ id });
+      expect("error" in r, `${id} should resolve`).toBe(false);
+      const item = r as { pihZone?: string | null; hazards: Array<{ matrixKey: string | null }> };
+      expect(item.pihZone ?? null).toBe(null);
+      expect(item.hazards[0]?.matrixKey).toBe("2.3 zone A");
+    }
+    const src = readFileSync(join(process.cwd(), "src/solver/hazards.ts"), "utf8");
+    expect(src).toContain("take the MORE restrictive of the two published rows");
+  });
+
+  it("does not take an optional reclassification that would loosen the row", () => {
+    // SP114 says a jet perforating gun MAY be reclassed to a lower division.
+    // Taking an optional downgrade on the material's behalf would be the
+    // permissive direction, so UN0494 stays where the table puts it.
+    const r = resolveItem({ id: "UN0494" });
+    expect("error" in r).toBe(false);
+    expect((r as { hazardClass: string }).hazardClass).toBe("1.4D");
+  });
+
+  it("still refuses the one provision whose direction IS unsafe", () => {
+    // The control for this whole audit. SP53 adds an explosive subsidiary the
+    // label column does not print, so it is the one that must fail closed.
+    expect("error" in resolveItem({ id: "UN3221" })).toBe(true);
+    expect(SOLVER_KNOWS).toContain("53");
+  });
+});
