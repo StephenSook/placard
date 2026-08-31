@@ -121,3 +121,5 @@ lighthouse-report.*
 # Agent skill caches installed by `npx skills add`, machine-local tooling.
 /.agents/
 /skills-lock.json
+# Discord transcript: third-party chat, participant handles, never published.
+/private/discord-webmcp-chat.txt

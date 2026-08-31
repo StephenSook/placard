@@ -6,10 +6,13 @@ No account, no key, no login. WebMCP is enabled on that origin by a registered
 Chrome origin trial, so there is no browser flag to set either. **Open it in
 Chrome 149 or later** and `document.modelContext` is live.
 
-One practical note so you do not lose a minute: asking ChatGPT to *browse* the
-URL can be served by its text crawler, which runs no page JavaScript, so no
-tools appear there. In Chrome the surface is live, and the agent's-eye panel
-prints the real `getTools()` result so you can check it rather than take my word.
+One practical note so you do not lose a minute, because the harness matters
+here. WebMCP is supported in the ChatGPT desktop app's built-in browser and in
+Chrome 149 or later. It is not available in ChatGPT Work, on Luna, on mobile, or
+through the plain browse tool, which is served by a text crawler that runs no
+page JavaScript and so reports no tools. In Chrome the surface is live, and the
+agent's-eye panel prints the real `getTools()` result so you can check it rather
+than take my word.
 
 The page opens on a number it recomputes while you are looking at it:
 
