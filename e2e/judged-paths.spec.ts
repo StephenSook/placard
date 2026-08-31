@@ -105,6 +105,26 @@ test.describe("a link that names materials the table does not contain", () => {
     await expect(page.getByText(/did not\s+resolve/i).first()).toBeVisible();
     await expect(page.getByText(/cannot be exported until you acknowledge/i)).toBeVisible();
   });
+
+  test("mints NO verdict for the subset that did resolve", async ({ page }) => {
+    // The banner and the export block were not enough. `check=1` still ran on
+    // whatever survived, so a PASS token existed for a manifest nobody sent,
+    // and acknowledging the banner cleared the block while that token lived on.
+    await page.goto("/?load=UN1090,UN9999zzz&check=1");
+    await expect(page.getByText(/did not\s+resolve/i).first()).toBeVisible();
+    await expect(page.getByText(/^\s*(CLEARED|REFUSED)\s*$/)).toHaveCount(0);
+  });
+
+  test("a comma inside a proper shipping name is not a separator", async ({ page }) => {
+    // "Acetylene, solvent free" is a real Forbidden entry with no
+    // identification number, and URLSearchParams decodes %2C before any split
+    // can see it, so the comma form tore it into two fragments that resolve to
+    // nothing while the acetone beside it loaded and got checked. Repeated
+    // `load` parameters are unambiguous.
+    await page.goto("/?load=UN1090&load=Acetylene%2C%20solvent%20free&check=1");
+    await expect(page.getByText(/Acetylene, solvent free/i).first()).toBeVisible();
+    await expect(page.getByText(/did not\s+resolve/i)).toHaveCount(0);
+  });
 });
 
 test.describe("the surfaces the writeup advertises", () => {

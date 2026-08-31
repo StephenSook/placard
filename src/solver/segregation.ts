@@ -113,6 +113,16 @@ function sameClassCarveOutApplies(a: ResolvedItem, b: ResolvedItem, v: VehiclePr
   // while UN1581 then UN3516 refused, on the identical pair. A verdict that
   // depends on the order two items were typed in is not a verdict, and it broke
   // the permutation invariant this solver claims elsewhere.
+  // AND A THIRD, which round fourteen found: the assertion this reads was
+  // WORDED FOR A DIFFERENT CLAUSE. The operator's checkbox said "will not cause
+  // a fire or a dangerous evolution of heat or gas", which is 177.848(e)(3).
+  // 177.848(e)(6) asks whether the materials "are not capable of reacting
+  // dangerously with each other", which also covers outcomes that are neither
+  // fire nor heat nor gas, so the narrower assertion was clearing the wider
+  // exception. Reproduced: UN3513 with UN3503, both Division 2.2 carrying
+  // subsidiary hazards, committed a shipping paper with no barrier and no
+  // single shipper. The checkbox now states BOTH conditions and is always
+  // visible, because it used to hide while its value stayed true.
   if (a.hazardClass !== b.hazardClass) return false;
   if (!a.hazards.some((h) => h.subsidiary) && !b.hazards.some((h) => h.subsidiary)) return false;
   return v.nonReactionAsserted === true;

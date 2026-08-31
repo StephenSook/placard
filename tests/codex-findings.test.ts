@@ -1458,3 +1458,53 @@ describe("38. the reachability graph was vacuously true for forms it did not kno
     `).has("e2-X")).toBe(true);
   });
 });
+
+// ── round fourteen, a WHOLE-REPO pass after three diff-scoped rounds ──────────
+
+describe("39. one attestation was proving two clauses that ask different things", () => {
+  const src = (f: string) => readFileSync(join(process.cwd(), f), "utf8");
+
+  it("asks for BOTH conditions, because 177.848(e)(3) and (e)(6) differ", () => {
+    // (e)(3) is satisfied when the mixture "would not cause a fire or a
+    // dangerous evolution of heat or gas". (e)(6) needs the materials to be
+    // "not capable of reacting dangerously with each other", which also covers
+    // outcomes that are neither fire nor heat nor gas. The checkbox stated only
+    // the first and the solver accepted it as proof of the second, so the
+    // narrower assertion cleared the wider exception.
+    const ui = src("src/ui/LoadPlanPanel.tsx");
+    expect(ui).toContain("cannot react dangerously with each other");
+    expect(ui).toContain("fire or a dangerous evolution of heat or gas");
+    expect(ui).toContain("177.848(e)(6)");
+  });
+
+  it("never hides a control that still holds a live claim", () => {
+    // It rendered only while single shipper was ticked, and kept its value when
+    // it hid. Tick both, untick single shipper, and a same-class pair with
+    // subsidiary hazards committed on an assertion the operator could not see.
+    const ui = src("src/ui/LoadPlanPanel.tsx");
+    expect(ui).not.toContain("{bay.singleShipper && (");
+  });
+});
+
+describe("40. a name reference ignored the identity fields sent with it", () => {
+  it("honours a supplied packing group on the name branch", async () => {
+    // REPRODUCED: { name: "Adhesives, containing a flammable liquid",
+    // packingGroup: "III" } was adjudicated and exported as packing group I,
+    // so the paper named a row the caller had explicitly not asked for. The id
+    // branch narrowed on both fields; this branch narrowed on neither.
+    const r = resolveItem({ name: "Adhesives, containing a flammable liquid", packingGroup: "III" });
+    expect("error" in r).toBe(false);
+    expect((r as { packingGroup?: string | null }).packingGroup).toBe("III");
+  });
+
+  it("refuses a packing group that name does not have, rather than substituting", async () => {
+    const r = resolveItem({ name: "Adhesives, containing a flammable liquid", packingGroup: "IV" as never });
+    expect("error" in r).toBe(true);
+  });
+
+  it("still resolves a bare name with no identity fields", async () => {
+    // The negative half: narrowing must not become a blunt refusal.
+    const r = resolveItem({ name: "Adhesives, containing a flammable liquid" });
+    expect("error" in r).toBe(false);
+  });
+});

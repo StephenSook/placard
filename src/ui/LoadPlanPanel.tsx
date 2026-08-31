@@ -133,26 +133,39 @@ export function LoadPlanPanel({
                   </em>
                 </span>
               </label>
-              {/* The second half of the 177.848(e)(3) exception. Shown only
-                  once the first half is claimed, because on its own it governs
-                  nothing and would read as noise. */}
-              {bay.singleShipper && (
-                <label className="bay__check bay__check--grave">
-                  <input
-                    type="checkbox"
-                    checked={bay.nonReactionAsserted}
-                    onChange={(e) => onToggle(bi, "nonReactionAsserted", e.target.checked)}
-                  />
-                  <span>
-                    I know this mixture will not cause a fire or a dangerous evolution of heat or gas
-                    <em className="bay__hint">
-                      177.848(e)(3) requires this IN ADDITION to the truckload above before its
-                      exception applies. No table decides it. Ticking it is an assertion about the
-                      chemistry that you carry under 172.204.
-                    </em>
-                  </span>
-                </label>
-              )}
+              {/* ONE CHECKBOX WAS PROVING TWO DIFFERENT CLAUSES, and they do
+                  not say the same thing. It read "will not cause a fire or a
+                  dangerous evolution of heat or gas", which is 177.848(e)(3).
+                  The solver also accepted it as proof of 177.848(e)(6), whose
+                  condition is that the materials "are not capable of reacting
+                  dangerously with each other" and so also covers outcomes that
+                  are neither fire nor heat nor gas. The narrower assertion was
+                  clearing the wider exception.
+
+                  It was also shown only while single shipper was ticked, while
+                  its VALUE persisted when it hid. Reproduced: tick both, untick
+                  single shipper, and a same-class pair with subsidiary hazards
+                  committed a shipping paper on an assertion the operator could
+                  no longer see. A hidden control must never hold a live claim,
+                  so this asks for both conditions and is always visible. */}
+              <label className="bay__check bay__check--grave">
+                <input
+                  type="checkbox"
+                  checked={bay.nonReactionAsserted}
+                  onChange={(e) => onToggle(bi, "nonReactionAsserted", e.target.checked)}
+                />
+                <span>
+                  I know these materials cannot react dangerously with each other, and that the
+                  mixture will not cause a fire or a dangerous evolution of heat or gas
+                  <em className="bay__hint">
+                    Two clauses turn on this and they ask different things. 177.848(e)(3) needs the
+                    second half, in addition to the truckload above, before its exception applies.
+                    177.848(e)(6) needs the first half before a subsidiary hazard can be set aside
+                    between materials of the same class. No table decides either. Ticking it is an
+                    assertion about the chemistry that you carry under 172.204.
+                  </em>
+                </span>
+              </label>
             </div>
           </article>
         ))}

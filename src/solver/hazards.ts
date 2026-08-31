@@ -17,7 +17,7 @@
  *    (177.848(e)(6)), and 717 of 3,293 entries carry more than one label code,
  *    so this fires on roughly 22 percent of materials.
  */
-import { lookupByUn, resolveName } from "./corpus.ts";
+import { entriesByName, lookupByUn, resolveName } from "./corpus.ts";
 import type { HmtEntry } from "./corpus.ts";
 import type {
   Hazard, LineItem, MatrixKey, PhysicalState, PihZone, ResolvedItem,
@@ -280,6 +280,46 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
     }
     if (r.kind === "not_found") return { error: `"${item.name}" did not resolve to a 172.101 entry, directly or through a "see" pointer` };
     entry = r.entry;
+
+    // NARROW BY THE IDENTITY FIELDS THE CALLER ACTUALLY SENT.
+    //
+    // This branch took whatever resolveName settled on and ignored packingGroup
+    // and pihZone entirely, although both are published wire fields and the id
+    // branch above narrows on both. Reproduced: a caller sending
+    // { name: "Adhesives, containing a flammable liquid", packingGroup: "III" }
+    // was adjudicated and EXPORTED as packing group I, so the shipping paper
+    // named a row the caller had explicitly not asked for. Same defect round
+    // eight fixed for the token's canonical encoding, one layer earlier and on
+    // the branch nobody had narrowed.
+    if (item.packingGroup || item.pihZone) {
+      let rows = entriesByName(entry.name);
+      if (rows.length === 0) rows = [entry];
+      if (item.packingGroup) {
+        const byPg = rows.filter((r2) => (r2.pg ?? null) === item.packingGroup);
+        if (byPg.length === 0) {
+          const offered = [...new Set(rows.map((r2) => r2.pg ?? "none"))].join(", ");
+          return {
+            error:
+              `"${entry.name}" has no packing group ${item.packingGroup} entry in the ` +
+              `49 CFR 172.101 table. That name is listed at packing group ${offered}.`,
+          };
+        }
+        rows = byPg;
+      }
+      if (item.pihZone) {
+        const byZone = rows.filter((r2) => zoneFor(r2) === item.pihZone);
+        if (byZone.length === 0) {
+          const offered = [...new Set(rows.map((r2) => zoneFor(r2) ?? "none"))].join(", ");
+          return {
+            error:
+              `"${entry.name}" has no Hazard Zone ${item.pihZone} entry in the ` +
+              `49 CFR 172.101 table. That name is listed with hazard zone ${offered}.`,
+          };
+        }
+        rows = byZone;
+      }
+      entry = mostSevere(rows);
+    }
   } else {
     return { error: "a line item needs an identification number or a proper shipping name" };
   }

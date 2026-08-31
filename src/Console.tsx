@@ -453,9 +453,18 @@ export function Console() {
     if (bootedFromUrl.current || typeof window === "undefined") return;
     bootedFromUrl.current = true;
     const q = new URLSearchParams(window.location.search);
+    // A COMMA IS PART OF SOME PROPER SHIPPING NAMES, and URLSearchParams
+    // decodes %2C before anything here can see it, so splitting on commas tore
+    // "Acetylene, solvent free" (a real Forbidden entry, no identification
+    // number) into two fragments that resolve to nothing. Repeated `load`
+    // parameters are unambiguous, so they win when present; the comma form is
+    // kept for links already published.
+    const loads = q.getAll("load");
     const refs = q.get("demo") === "1"
       ? [...DEMO]
-      : (q.get("load") ?? "").split(",").map((x) => x.trim()).filter(Boolean);
+      : loads.length > 1
+        ? loads.map((x) => x.trim()).filter(Boolean)
+        : (loads[0] ?? "").split(",").map((x) => x.trim()).filter(Boolean);
     if (refs.length === 0) return;
 
     const { items: resolved, unresolved } = resolveRefs(refs);
@@ -477,7 +486,11 @@ export function Console() {
     // load, never attest to one.
     setBays([newBay(resolved)]);
     setAgentViewRevision((n) => n + 1);
-    if (q.get("check") === "1") setPendingCheck(true);
+    // NEVER CHECK A SUBSET. The banner and the export block were not enough:
+    // an unresolved reference still let `check=1` issue a PASS token for the
+    // items that DID resolve, and acknowledging the banner cleared the block
+    // while that token survived. No token is minted for a manifest nobody sent.
+    if (q.get("check") === "1" && unresolved.length === 0) setPendingCheck(true);
   }, [resolveRefs]);
 
   // The check has to run AFTER the bays state lands, so it is deferred one
