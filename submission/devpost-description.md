@@ -21,8 +21,9 @@ segregation table, in every barrier configuration, 1,296 cases. The table alone
 clears 792 of them. Of those, the full regulation forbids 56.**
 
 `/api/measure` runs the real solver on every request and returns all of it,
-including the examples, so you can check the arithmetic rather than take my word
-for it. Nothing there is cached and nothing there needs a key.
+including the examples and the composition of that 56, so you can check the
+arithmetic rather than take my word for it. Nothing there is cached and nothing
+there needs a key.
 
 ```
 curl -s https://segregation-console.vercel.app/api/measure
@@ -122,12 +123,13 @@ sentence from 177.848(e)(3) that blocks Class 8 liquids above or adjacent to
 Class 4 and 5 materials notwithstanding the methods of separation employed.
 
 A load plan whose three checkboxes are worded as assertions about the physical
-world rather than as preferences, because that is what they are. Barriers means
-impediments, dividers or non-hazardous packages, and PHMSA interpretation
-03-0300 is explicit that air space alone does not satisfy it. Those checkboxes
-are the ONLY route by which an assertion reaches the solver. No tool argument
-and no URL parameter can make one, and any edit that changes what a vehicle
-holds clears the assertions made about it.
+world rather than as preferences, because that is what they are. Each one states
+the condition its clause actually asks for: the barrier box asserts that if a
+package leaked in normal transport the contents could not commingle, which is
+what 177.848(e)(3) requires and is not the same as a divider being present.
+Those checkboxes are the ONLY route by which an assertion reaches the solver. No
+tool argument and no URL parameter can make one, and any edit that changes what
+a vehicle holds clears the assertions made about it.
 
 A shipping paper in the 172.202(a) basic description sequence, with subsidiary
 hazards in parentheses as 172.202(a)(3) requires, and the 172.204(a)(1)
