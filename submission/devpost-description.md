@@ -373,7 +373,7 @@ npm test
 having checked nothing is indistinguishable from one that works:
 
 ```
-PASS  checked 14 hashes, 41 verbatim clauses (9380 characters), 493 table cells, 3293 table entries
+PASS  checked 14 hashes, 42 verbatim clauses (9604 characters), 493 table cells, 3293 table entries
 ```
 
 Every clause the app quotes is proven to be a verbatim substring of the pinned
@@ -414,7 +414,7 @@ written down rather than left for you to discover:
 It scored 2 of 6 the first time I actually ran it, on the single-file version of
 these evals. Running a command you publish is not optional.
 
-14 test files, 362 tests. Lighthouse on the live origin, desktop: **agentic
+14 test files, 367 tests. Lighthouse on the live origin, desktop: **agentic
 browsing 100, accessibility 100, best practices 100, SEO 100, performance 100.**
 Agentic browsing at 100 is itself the proof the origin trial is live, because
 those audits report nothing at all rather than failing when the token is
@@ -434,15 +434,15 @@ a manifest is loaded, `executeTool` on `check_segregation` with a barrier
 asserted returns REFUSED carrying 177.848(e)(3) verbatim, and `commit_manifest`
 is absent throughout.
 
-## I attacked my own safety claim with a second model, twelve times
+## I attacked my own safety claim with a second model, again and again
 
 The claim this project makes is narrow and absolute: no shipping paper can be
 exported for a load that fails 49 CFR 177.848. So before shipping I pointed a
 second model at the repository with that one question and nothing else, and then
 kept doing it.
 
-**Fourteen rounds. Not one has come back empty.** Forty-eight defects, forty of
-them carrying a numbered regression in `tests/codex-findings.test.ts` and the
+**Fifteen rounds. Not one has come back empty.** Fifty-two defects, forty-three
+of them carrying a numbered regression in `tests/codex-findings.test.ts` and the
 rest in its sibling suites. Every one reproduced before it was touched. Every fix
 paired with the load that used to clear AND a load that must still clear, so no
 fix could degenerate into a blunt refusal. Every guard mutation-tested.
@@ -607,13 +607,44 @@ free", a real Forbidden entry with no identification number, tore into two
 unresolved fragments while the acetone beside it loaded, checked, and minted an
 approval token for a manifest nobody had sent.
 
+**Round fifteen made me correct a number I had already published, and that is
+the one I would want a judge to read.** The headline figure counts
+configurations the segregation table clears and the full regulation still
+forbids. An asterisk cell is not a clearance: 177.848(e)(4) refers that pair to
+the compatibility table in paragraph (f), so an agent that stops at the table
+has not been told yes, only that it has not been told no. Counting the referral
+as a clearance is the generous reading, and 48 of the 56 rest on it. My own
+endpoint said the opposite, that reading the table more strictly "would inflate
+the result", when in fact it would drop the figure from 56 to 8. The arithmetic
+was right and the framing was backwards. The number stands as an UPPER BOUND on
+the naive-table failure rather than a floor, `/api/measure` now says so in those
+words, and it publishes the composition, 48 explosive and 8 corrosive, so
+nobody has to take my word for the split.
+
+The same round found a subsidiary hazard the 172.101 table does not print.
+Special provision 53 adds an EXPLOSIVE subsidiary risk label to the type B
+self-reactives, and its class and division come from an approval no corpus
+contains, so UN3221 with acetone returned PASS and committed a paper showing
+only 4.1 and 3. I did not take the reviewer's word for what SP53 says: it is
+sliced from the pinned 172.102 source and proved verbatim by the same citation
+gate as everything else, which is why the receipt now reads 42 clauses rather
+than 41. A load carrying it is refused.
+
+Two more. The barrier checkbox asserted less than its clause requires, reading
+"physical barriers separate incompatible items" when 177.848(e)(3) asks for
+separation such that commingling could not occur in the event of leakage: a
+divider satisfies the words and not the condition. And a proper shipping name
+that identifies more than one material was resolving to whichever row came
+first, so "Bromine solutions" committed Hazard Zone A with no zone supplied and
+"Diesel fuel" committed NA1993 though the name also identifies UN1202.
+
 I am putting this in the writeup rather than quietly fixing it because the
 alternative is a submission that claims a safety property and hides the evidence
 that the claim was tested. The review command, the loads that reproduced each
 defect, and the tests are all in the repository.
 
 The corpus grew through all of this rather than being trimmed to fit. It is now
-eight pinned sections and 41 verbatim clauses, 9,380 characters of regulation
+eight pinned sections and 42 verbatim clauses, 9,604 characters of regulation
 text, each proven byte for byte against the committed source.
 
 ## Challenges
