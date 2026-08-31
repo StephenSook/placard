@@ -125,7 +125,7 @@ shasum -a 256 -c data/SHA256SUMS
 | `hmt.json` | 2,275,271 | `2ce32a2e81aaec8cb25d015a6c9df7ce3026a17810c0b106181750a4d9a3d026` |
 | `synonyms.json` | 48,075 | `8db6792a3fcc3cc5f13217304890514b56bc13d3ede2d383ea556b6c77c73d14` |
 | `segregation_table.json` | 10,618 | `25f0ab940458c09d543817045943536fed7d0e7962670d539e4afac18e49f2e5` |
-| `clauses.json` | 13,515 | `84cc8d1cca5c0045b581e78a7bb470da72cbd12c3b417f69ff74fc29f833d638` |
+| `clauses.json` | 13,857 | `ffeb65b0f38ab9169c4d74bd3aead048d1b5a4eb2d6bbaa8b0f233834d1cb6c4` |
 | `compatibility_table.json` | 3,165 | `b23cec599899b4f36b85467e65c0be40a1fe5dd093ae899a23b4f6315d2e4b3f` |
 
 The raw eCFR XML is hashed here but not committed: it is large and it is

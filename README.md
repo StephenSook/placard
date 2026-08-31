@@ -40,7 +40,7 @@ invisible in Chromium's phone emulation and 1286px wide in WebKit.
 examined nothing is indistinguishable from one that works:
 
 ```
-PASS  checked 14 hashes, 41 verbatim clauses (9380 characters), 493 table cells, 3293 table entries
+PASS  checked 14 hashes, 42 verbatim clauses (9604 characters), 493 table cells, 3293 table entries
 ```
 
 ---

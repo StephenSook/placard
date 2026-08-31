@@ -158,6 +158,17 @@ export const CLAUSES: ClauseSpec[] = [
     from: "Regardless of the provisions of § 172.101(c)(12)",
     to: "required by this part for subsidiary hazards.",
   },
+  // A SUBSIDIARY HAZARD THE 172.101 LABEL COLUMN DOES NOT CARRY. The type B
+  // self-reactives (UN3221, UN3222, UN3231, UN3232) are listed class 4.1 with
+  // labels showing only 4.1, and special provision 53 adds an EXPLOSIVE
+  // subsidiary whose class and division come from an approval this tool cannot
+  // read. Several Class 1 rows against Class 3 are X, so the division decides
+  // the verdict and the corpus cannot supply it.
+  {
+    id: "sp53-explosive-subsidiary", section: "49 CFR 172.102, special provision 53", slug: "172-102-special-provisions",
+    from: "Packages of these materials must bear the subsidiary risk label",
+    to: "immediately following the primary hazard class in the shipping description",
+  },
 
   // ── 173.52(b) table 1, what each compatibility group IS ────────────────────
   //

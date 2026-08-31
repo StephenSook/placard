@@ -59,11 +59,16 @@ export const CATEGORIES = SEGREGATION.rows.map((r) => r.key) as MatrixKey[];
 /**
  * What an agent reading ONLY the table would conclude for one pair.
  *
- * This is the generous reading, deliberately. `X` refuses. `O` means "may be
- * loaded together only when separated", so a barrier clears it. `*` routes to
- * 177.848(f) for explosives, and a blank imposes no restriction, so both clear.
- * Reading the table any more strictly than this would inflate the result, and
- * the number is only worth publishing if the naive arm is given every benefit.
+ * This is the generous reading, deliberately, and the comment here used to have
+ * the direction of that generosity BACKWARDS. `X` refuses. `O` means "may be
+ * loaded together only when separated", so a barrier clears it. A blank imposes
+ * no restriction, so it clears. An asterisk does NOT clear in the strict sense:
+ * 177.848(e)(4) refers that pair to the compatibility table in paragraph (f),
+ * so an agent that stops at the table has not been told yes, only that it has
+ * not been told no. Counting the referral as a clearance MAXIMISES the measured
+ * gap, so this figure is an upper bound on the naive-table failure rather than
+ * a floor, and 48 of the 56 rest on it. Saying it any other way overstates how
+ * conservative the number is, which is the opposite of the point.
  */
 export function tableAloneClears(code: string, barriersPresent: boolean): boolean {
   if (code === "X") return false;

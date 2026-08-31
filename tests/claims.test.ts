@@ -165,7 +165,7 @@ describe("every clause is either ENFORCED or declared reference-only", () => {
       const cited = reachableIds.has(id);
       if (!cited && !declared.includes(id) && !advisory.includes(id)) unaccounted.push(id);
     }
-    expect(ids.length).toBe(41);
+    expect(ids.length).toBe(42);
     expect(
       unaccounted,
       `clauses shipped and verified verbatim but neither enforced nor declared reference-only:\n${unaccounted.join("\n")}`,
@@ -192,7 +192,7 @@ describe("citations", () => {
     const ids = new Set(
       Object.keys((JSON.parse(read("data/clauses.json")) as { clauses: Record<string, unknown> }).clauses),
     );
-    expect(ids.size).toBe(41);
+    expect(ids.size).toBe(42);
     const bad: string[] = [];
     let seen = 0;
     for (const f of sourceFiles) {

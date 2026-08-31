@@ -1,6 +1,6 @@
 {
   "source": "verbatim slices of the pinned eCFR sections",
-  "count": 41,
+  "count": 42,
   "clauses": {
     "e1-blank": {
       "section": "49 CFR 177.848(e)(1)",
@@ -97,6 +97,10 @@
     "sp128-reclass": {
       "section": "49 CFR 172.102, special provision 128",
       "text": "Regardless of the provisions of § 172.101(c)(12), aluminum smelting by-products and aluminum remelting by-products described under this entry, meeting the definition of Class 8, Packing Group II and III may be classed as a Division 4.3 material and transported under this entry. The presence of a Class 8 hazard must be communicated as required by this part for subsidiary hazards."
+    },
+    "sp53-explosive-subsidiary": {
+      "section": "49 CFR 172.102, special provision 53",
+      "text": "Packages of these materials must bear the subsidiary risk label, \"EXPLOSIVE\", and the subsidiary hazard class/division must be entered in parentheses immediately following the primary hazard class in the shipping description"
     },
     "17352-group-A": {
       "section": "49 CFR 173.52(b), table 1, compatibility group A",

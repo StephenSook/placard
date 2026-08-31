@@ -17,7 +17,7 @@
  *    (177.848(e)(6)), and 717 of 3,293 entries carry more than one label code,
  *    so this fires on roughly 22 percent of materials.
  */
-import { entriesByName, lookupByUn, resolveName } from "./corpus.ts";
+import { cite, entriesByName, lookupByUn, resolveName } from "./corpus.ts";
 import type { HmtEntry } from "./corpus.ts";
 import type {
   Hazard, LineItem, MatrixKey, PhysicalState, PihZone, ResolvedItem,
@@ -27,7 +27,25 @@ import type {
 const SP_ZONE: Record<string, PihZone> = { "1": "A", "2": "B", "3": "C", "4": "D" };
 
 /** Column-7 codes that can change class, packing group, subsidiary hazard or PIH status. */
-const CLASS_ALTERING_SP = new Set(["128"]);
+const CLASS_ALTERING_SP = new Set(["53", "128"]);
+
+/**
+ * Column-7 codes whose effect this corpus CANNOT determine, so a load carrying
+ * one is refused rather than adjudicated.
+ *
+ * Special provision 53 is the whole set today. The type B self-reactives
+ * (UN3221, UN3222, UN3231, UN3232) are listed Class 4.1 with column-6 labels
+ * showing only 4.1, and SP53 adds an EXPLOSIVE subsidiary risk label whose
+ * class and division come from an approval that is not in the 172.101 table.
+ * Several Class 1 rows against Class 3 are X in the 177.848(d) table, so that
+ * missing division decides the verdict. Reproduced: UN3221 with UN1090
+ * returned PASS, minted a token, and committed a paper showing only 4.1 and 3.
+ *
+ * An unevaluable condition is not a satisfied one. This is the same shape as
+ * 177.848(g)(vi) and 177.848(e)(5) note A, and it fails closed for the same
+ * reason: the tool cannot show the permission applies.
+ */
+const UNEVALUABLE_SP = new Set(["53"]);
 
 /**
  * Map a hazard class string to its 177.848(d) key.
@@ -320,8 +338,58 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
       }
       entry = mostSevere(rows);
     }
+
+    // AND THE NAME MUST STILL LAND ON ONE ROW IDENTITY.
+    //
+    // resolveName settles on a single hazard class and returns the first row,
+    // which is not enough for a shipping paper. "Bromine solutions" has two
+    // Class 8 PG I rows differing only by Hazard Zone A against B, and a
+    // name-only call committed Zone A although no zone was sent. "Diesel fuel"
+    // committed NA1993 although the same proper name also identifies UN1202.
+    // The identification NUMBER is part of the identity here in a way it is
+    // not on the id branch, because there it is given and here it is printed.
+    // Packing group stays out of the key: severity ordering settles that axis,
+    // which is what keeps a plain name with several packing groups working.
+    const named = entriesByName(entry.name);
+    if (named.length > 1) {
+      const nameIdentity = (r2: HmtEntry) =>
+        [
+          r2.un ?? "",
+          r2.class,
+          [...(r2.labels ?? [])].sort().join(","),
+          zoneFor(r2) ?? "",
+          r2.specialProvisions.filter((sp) => CLASS_ALTERING_SP.has(sp.trim())).sort().join(","),
+        ].join("|");
+      const shown = [...new Map(named.map((r2) => [nameIdentity(r2), r2])).values()];
+      if (shown.length > 1) {
+        return {
+          error:
+            `"${item.name}" names ${shown.length} different materials in the 172.101 table, and ` +
+            `the verdict and the shipping paper both depend on which one it is. Give the ` +
+            `identification number, or the inhalation hazard zone where that is the only ` +
+            `difference: ` +
+            `${shown.map((r2) => `${r2.un ?? "no ID number"} ${r2.class}${r2.pg ? ` PG ${r2.pg}` : ""}${zoneFor(r2) ? ` Zone ${zoneFor(r2)}` : ""}`).slice(0, 4).join("; ")}` +
+            (shown.length > 4 ? "; and others" : "") + ".",
+        };
+      }
+    }
   } else {
     return { error: "a line item needs an identification number or a proper shipping name" };
+  }
+
+  // FAIL CLOSED ON A SUBSIDIARY HAZARD THE TABLE DOES NOT PRINT.
+  const unevaluable = entry.specialProvisions.filter((sp) => UNEVALUABLE_SP.has(sp.trim()));
+  if (unevaluable.length > 0) {
+    const c = cite("sp53-explosive-subsidiary");
+    return {
+      error:
+        `${entry.name} carries special provision ${unevaluable.join(", ")}, and this tool cannot ` +
+        `adjudicate a load containing it. ${c.section}: "${c.text}" The explosive subsidiary that ` +
+        `provision requires is not in the 172.101 label column, and its class and division come ` +
+        `from an approval this corpus does not contain. Several Class 1 rows are marked X against ` +
+        `other classes in the 177.848(d) table, so the missing division decides the verdict. This ` +
+        `is a stated gap in coverage, not a judgement about the material.`,
+    };
   }
 
   const pihZone = zoneFor(entry);

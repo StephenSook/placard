@@ -113,10 +113,24 @@ export function LoadPlanPanel({
                   onChange={(e) => onToggle(bi, "barriersPresent", e.target.checked)}
                 />
                 <span>
-                  Physical barriers separate incompatible items
+                  Every pair marked O is separated so that if a package leaked in normal
+                  transport, the contents could not commingle
+                  {/* THE CHECKBOX ASSERTED LESS THAN THE CLAUSE REQUIRES, which is
+                      the round-fourteen shape again on a different control. It read
+                      "physical barriers separate incompatible items", and a divider
+                      satisfies that wording while leaked liquids still meet.
+                      177.848(e)(3) asks for separation such that "in the event of
+                      leakage from packages under conditions normally incident to
+                      transportation, commingling of hazardous materials would not
+                      occur", which is a claim about what happens when a drum fails,
+                      not about what sits between two drums. */}
                   <em className="bay__hint">
-                    Impediments, dividers or non-hazardous packages. Air space alone does not
-                    satisfy this.
+                    177.848(e)(3) is not satisfied by a divider on its own. The separation has to
+                    make commingling impossible in the event of leakage under conditions normally
+                    incident to transportation, and PHMSA interpretation 03-0300 is explicit that
+                    air space alone does not satisfy it. Impediments, dividers or non-hazardous
+                    packages are the usual means. Ticking it is an assertion about the loaded
+                    vehicle that you carry under 172.204.
                   </em>
                 </span>
               </label>

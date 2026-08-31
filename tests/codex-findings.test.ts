@@ -16,6 +16,7 @@ import { attestOf, wireOf } from "./attest.ts";
 import { resolveItem } from "../src/solver/hazards.ts";
 import { entriesByName } from "../src/solver/corpus.ts";
 import { readdirSync, readFileSync } from "node:fs";
+import { measureDivergence } from "../src/evidence/divergence.ts";
 import { reachableCitedIds, type Source } from "./reachability.ts";
 import { join } from "node:path";
 
@@ -1506,5 +1507,68 @@ describe("40. a name reference ignored the identity fields sent with it", () => 
     // The negative half: narrowing must not become a blunt refusal.
     const r = resolveItem({ name: "Adhesives, containing a flammable liquid" });
     expect("error" in r).toBe(false);
+  });
+});
+
+// ── round fifteen, whole repository again ────────────────────────────────────
+
+describe("41. a subsidiary hazard the 172.101 label column does not carry", () => {
+  const N41 = "round-fifteen";
+
+  it("refuses the type B self-reactives rather than adjudicating them", async () => {
+    // REPRODUCED: UN3221 with UN1090 returned PASS, minted a token, and
+    // committed a paper showing only 4.1 and 3. Special provision 53 adds an
+    // EXPLOSIVE subsidiary whose class and division come from an approval this
+    // corpus does not contain, and several Class 1 rows are X against Class 3,
+    // so the missing division decides the verdict.
+    for (const id of ["UN3221", "UN3222", "UN3231", "UN3232"]) {
+      expect("error" in resolveItem({ id }), `${id} must refuse`).toBe(true);
+    }
+    const vehicles = [{ items: [{ id: "UN3221" }, { id: "UN1090" }] }];
+    const r = await checkSegregation({ vehicles }, N41, [{}]);
+    expect(r.status).toBe("REFUSED");
+  });
+
+  it("quotes the provision verbatim rather than asserting what it says", async () => {
+    const r = resolveItem({ id: "UN3221" });
+    const msg = "error" in r ? r.error : "";
+    expect(msg).toContain("special provision 53");
+    expect(msg).toContain('subsidiary risk label, "EXPLOSIVE"');
+    expect(msg).toContain("stated gap in coverage");
+  });
+});
+
+describe("42. a proper shipping name that names more than one material", () => {
+  it("refuses a name whose rows differ in identity", () => {
+    // "Bromine solutions" has two Class 8 PG I rows differing only by Hazard
+    // Zone A against B, and committed Zone A although no zone was sent.
+    // "Diesel fuel" committed NA1993 although the name also identifies UN1202.
+    for (const name of ["Bromine solutions", "Diesel fuel"]) {
+      expect("error" in resolveItem({ name }), `${name} must refuse`).toBe(true);
+    }
+  });
+
+  it("still resolves a name whose rows differ only by packing group", () => {
+    // The negative half. Severity ordering settles the packing-group axis, so
+    // narrowing must not turn every multi-row name into a refusal.
+    expect("error" in resolveItem({ name: "Adhesives, containing a flammable liquid" })).toBe(false);
+  });
+});
+
+describe("43. the published gap is an upper bound, and says so", () => {
+  it("names the asterisk composition rather than calling a referral a clearance", () => {
+    // 48 of the 56 come from asterisk cells, which 177.848(e)(4) refers to the
+    // compatibility table rather than clearing. Counting a referral as a
+    // clearance maximises the gap, so the figure is an upper bound. The
+    // endpoint used to say the opposite, that a stricter reading would inflate
+    // it, which is backwards.
+    const div = measureDivergence();
+    expect(div.byGround.EXPLOSIVE_INCOMPATIBLE).toBe(48);
+    expect(div.byGround.CORROSIVE_OVER_OXIDIZER).toBe(8);
+    expect(div.divergent).toBe(48 + 8);
+
+    const ep = readFileSync(join(process.cwd(), "src/evidence/endpoints.ts"), "utf8");
+    expect(ep).toContain("upper");
+    expect(ep).not.toContain("would inflate the result");
   });
 });

@@ -18,7 +18,7 @@ test.describe("the signature refusal", () => {
 
   test("still refuses once the operator asserts a barrier, which is the point", async ({ page }) => {
     await page.goto("/?load=UN1830,UN1748&check=1");
-    await page.getByRole("checkbox", { name: /Physical barriers/i }).check();
+    await page.getByRole("checkbox", { name: /could not commingle/i }).check();
     await page.getByRole("button", { name: /Check this load/i }).click();
     await expect(page.getByText(/Notwithstanding the methods of separation employed/)).toBeVisible();
     await expect(page.getByRole("button", { name: /Export the shipping paper/i })).toHaveCount(0);

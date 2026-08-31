@@ -53,9 +53,15 @@ export async function measureResponse(): Promise<Response> {
           "axes. A configuration is divergent when the first clears and the " +
           "second refuses.",
         naive_arm_is_deliberately_generous:
-          "X refuses. O clears whenever a barrier is asserted. A blank cell and " +
-          "an asterisk both clear. Reading the table more strictly than this " +
-          "would inflate the result.",
+          "X refuses. O clears whenever a barrier is asserted. A blank cell " +
+          "imposes no restriction and so clears. An ASTERISK is the generous case " +
+          "and the one to watch: 177.848(e)(4) REFERS that pair to the " +
+          "compatibility table in paragraph (f) rather than clearing it, so an " +
+          "agent that stops at the table has not been told yes, only that it has " +
+          "not been told no. Counting a referral as a clearance MAXIMISES the " +
+          "measured gap rather than minimising it, so this figure is an upper " +
+          "bound on the naive-table failure and not a floor.",
+        composition_of_the_divergent_set: divergence.byGround,
         representatives:
           "Each category is represented by a real 172.101 entry, chosen as the " +
           "lowest table index resolving to exactly that one category and not " +
@@ -70,6 +76,7 @@ export async function measureResponse(): Promise<Response> {
         "No language model was run to produce this number, and none is needed to reproduce it. A model-versus-tool benchmark would require an OpenAI key this project does not have, and would measure the model rather than the regulation.",
         "The count is at the level of hazard CATEGORY, not of individual material. A material-level count over all 3,293 entries would be larger; this one is exhaustive over the space it names and involves no sampling.",
         "The tool arm passes by construction, so no comparison of two classifiers is being reported here.",
+        "48 of the 56 divergent configurations are EXPLOSIVE_INCOMPATIBLE and come from asterisk cells, which 177.848(e)(4) refers to the 177.848(f) compatibility table rather than clearing outright. Counting that referral as a clearance is the generous reading described above, and it is what makes this an upper bound. The remaining 8 are CORROSIVE_OVER_OXIDIZER, from O cells the table positively permits once a barrier is asserted, and those are clearances in the strict sense.",
         "The eCFR is an editorial compilation. Only GPO's own editions have legal status.",
       ],
 
