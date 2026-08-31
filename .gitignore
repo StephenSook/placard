@@ -123,3 +123,6 @@ lighthouse-report.*
 /skills-lock.json
 # Discord transcript: third-party chat, participant handles, never published.
 /private/discord-webmcp-chat.txt
+
+# Superseded capture takes, kept locally for reference only.
+/video/captures.superseded-*/
