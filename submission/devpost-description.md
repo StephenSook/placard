@@ -414,7 +414,7 @@ written down rather than left for you to discover:
 It scored 2 of 6 the first time I actually ran it, on the single-file version of
 these evals. Running a command you publish is not optional.
 
-14 test files, 351 tests. Lighthouse on the live origin, desktop: **agentic
+14 test files, 362 tests. Lighthouse on the live origin, desktop: **agentic
 browsing 100, accessibility 100, best practices 100, SEO 100, performance 100.**
 Agentic browsing at 100 is itself the proof the origin trial is live, because
 those audits report nothing at all rather than failing when the token is
@@ -441,8 +441,8 @@ exported for a load that fails 49 CFR 177.848. So before shipping I pointed a
 second model at the repository with that one question and nothing else, and then
 kept doing it.
 
-**Twelve rounds. Not one has come back empty.** Forty-one defects, thirty-seven
-of them carrying a numbered regression in `tests/codex-findings.test.ts` and the
+**Fourteen rounds. Not one has come back empty.** Forty-eight defects, forty of
+them carrying a numbered regression in `tests/codex-findings.test.ts` and the
 rest in its sibling suites. Every one reproduced before it was touched. Every fix
 paired with the load that used to clear AND a load that must still clear, so no
 fix could degenerate into a blunt refusal. Every guard mutation-tested.
@@ -543,9 +543,24 @@ Three patterns ran through all of it, and they are the part worth carrying.
 
 **A fix is a fresh diff nobody has reviewed.** Rounds five, six and seven each
 found a defect that a previous round's fix had opened or left open, and then
-rounds ten, eleven and twelve did it again: ten's allowlist created eleven's
-dropped-value hole, and eleven's call graph created twelve's. That is why the
-exit condition here is a clean round rather than a declared finish.
+rounds ten through thirteen did it again in one unbroken chain: ten's allowlist
+created eleven's dropped-value hole, eleven's call graph created twelve's, and
+twelve's repair created thirteen's. That is why the exit condition here is a
+clean round rather than a declared finish.
+
+**Round thirteen was this project's own signature defect, turned on its own
+gate.** A member form the clause-reachability namer did not recognise, a getter
+or a computed key or a function assigned after its object, left the citation
+with no enclosing declaration at all, and `[].every(...)` is trivially true, so
+it counted as reachable. An unevaluable condition is not a satisfied one, in the
+gate as much as in the regulation, so an unrecognised member is now a node that
+nothing can reference and the build says so. Reaching one member also certified
+every sibling of it, and two more findings ran the other way, reporting live
+code dead: a static initialiser runs on import whether or not its class is ever
+referenced, and the members of an anonymous default export can be bound to any
+local name by the importer. All four were latent, because the shipped source
+contains no getters, no classes, no static members and no default exports. I
+fixed them rather than writing that exposure down as a reason not to.
 
 **Three separate times, a test written in the same commit as a fix asserted the
 resulting hole.** Round six's regression test required the pass that round ten
@@ -563,6 +578,34 @@ genuinely asserted. I pinned both halves with tests instead of "fixing" it. That
 same round had also ended its turn mid-work while printing "no material
 findings", which is a verdict-shaped false green, so it was treated as no verdict
 and its claims were reproduced by hand before anything moved.
+
+**Round fourteen changed the SCOPE, and that turned out to be the finding.**
+Rounds eleven, twelve and thirteen were all scoped to the diff, and all three
+landed on the same test helper, which is the only thing a diff-scoped review can
+see when every recent diff is that helper. Pointed at the whole repository
+against the safety claim instead, it found three defects in the shipped code on
+its first pass. A review is only ever as wide as the window you give it.
+
+The worst was one attestation proving two clauses that ask different things. The
+operator's checkbox read "will not cause a fire or a dangerous evolution of heat
+or gas", which is 177.848(e)(3). The solver also accepted it as proof of
+177.848(e)(6), whose condition is that the materials are "not capable of reacting
+dangerously with each other", and so reaches outcomes that are neither fire nor
+heat nor gas. The narrower assertion was clearing the wider exception. It was
+also rendered only while single shipper was ticked, while its value persisted
+when it hid, so ticking both and then unticking single shipper committed a
+shipping paper on an assertion the operator could no longer see. It states both
+conditions now and it never hides, because a hidden control must not hold a live
+claim.
+
+Beside it, two more. The name branch of the resolver ignored the packing group
+sent alongside the name, so a caller asking for packing group III was adjudicated
+and exported as packing group I: the paper named a row the caller had explicitly
+not asked for. And a comma inside a proper shipping name is not a separator.
+URLSearchParams decodes %2C before any split can see it, so "Acetylene, solvent
+free", a real Forbidden entry with no identification number, tore into two
+unresolved fragments while the acetone beside it loaded, checked, and minted an
+approval token for a manifest nobody had sent.
 
 I am putting this in the writeup rather than quietly fixing it because the
 alternative is a submission that claims a safety property and hides the evidence
