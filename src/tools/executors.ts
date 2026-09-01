@@ -852,6 +852,42 @@ export async function commitManifest(
       note: "No shipping paper was produced. Re-run check_segregation on the arrangement you intend to ship.",
     };
   }
+  // A VERDICT MAY ASSUME WHAT A SIGNED PAPER MAY NOT PRINT (round sixteen).
+  // The check is allowed to settle an unstated packing group by severity and an
+  // unlisted SP6 hazard zone by the conservative row, because both choices only
+  // ever tighten the verdict. The exported document PRINTS those fields as
+  // facts about the shipment, so an assumed one is refused here, with the field
+  // that discharges it named. The token stays valid: re-check with the field
+  // supplied and commit that arrangement.
+  const gaps: string[] = [];
+  for (const v2 of load.vehicles) {
+    for (const li of v2.items) {
+      const r = resolveItem(li);
+      if ("error" in r) continue;
+      if (r.packingGroupAssumed) {
+        gaps.push(
+          `${r.name}: the 172.101 rows for this reference differ in packing group and none was ` +
+          `supplied, so the paper would print an assumed PG ${r.packingGroup}. Send packingGroup.`,
+        );
+      }
+      if (r.pihMandatedNoZone) {
+        const c = cite("sp6-pih-description");
+        gaps.push(
+          `${r.name}: ${c.section}: "${c.text}" No column supplies its hazard zone, and the ` +
+          `172.203(m) entry cannot print without one. Send pihZone.`,
+        );
+      }
+    }
+  }
+  if (gaps.length > 0) {
+    return {
+      status: "REFUSED" as const,
+      reason:
+        `the verdict stands, but a shipping paper may not print a field the caller never ` +
+        `asserted: ${gaps.join(" ")} Nothing was exported.`,
+      note: "No shipping paper was produced. Re-run check_segregation with the named field supplied, then commit that arrangement.",
+    };
+  }
   return {
     status: "COMMITTED" as const,
     shippingPaper: buildShippingPaper(load),
@@ -888,7 +924,8 @@ export const shipperCertification = () => ({
   scope:
     `Scope: this paper carries ${descriptionSequence().section}, the 172.202(a)(3) subsidiary ` +
     `hazard entry and ${inhalationRule().section}. Other 172.203 additional descriptions and ` +
-    "172.102 special-provision entries are NOT generated here and must be added by the shipper.",
+    "172.102 special-provision entries, such as special provision 13's \"Inhalation Hazard\" " +
+    "words for UN1005 and UN3318, are NOT generated here and must be added by the shipper.",
   /** Not part of the regulation. Ours, and marked as ours. */
   disclaimer:
     "This page does not sign anything, and nothing here is legal advice. " +

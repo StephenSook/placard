@@ -27,25 +27,43 @@ import type {
 const SP_ZONE: Record<string, PihZone> = { "1": "A", "2": "B", "3": "C", "4": "D" };
 
 /** Column-7 codes that can change class, packing group, subsidiary hazard or PIH status. */
-const CLASS_ALTERING_SP = new Set(["53", "128"]);
+const CLASS_ALTERING_SP = new Set(["5", "6", "38", "53", "128"]);
 
 /**
  * Column-7 codes whose effect this corpus CANNOT determine, so a load carrying
- * one is refused rather than adjudicated.
+ * one is refused rather than adjudicated, each with the clause that proves it.
  *
- * Special provision 53 is the whole set today. The type B self-reactives
- * (UN3221, UN3222, UN3231, UN3232) are listed Class 4.1 with column-6 labels
- * showing only 4.1, and SP53 adds an EXPLOSIVE subsidiary risk label whose
- * class and division come from an approval that is not in the 172.101 table.
- * Several Class 1 rows against Class 3 are X in the 177.848(d) table, so that
- * missing division decides the verdict. Reproduced: UN3221 with UN1090
- * returned PASS, minted a token, and committed a paper showing only 4.1 and 3.
+ * SP53: the type B self-reactives (UN3221, UN3222, UN3231, UN3232) are listed
+ * Class 4.1 with column-6 labels showing only 4.1, and SP53 adds an EXPLOSIVE
+ * subsidiary risk label whose class and division come from an approval that is
+ * not in the 172.101 table. Several Class 1 rows against Class 3 are X in the
+ * 177.848(d) table, so that missing division decides the verdict. Reproduced:
+ * UN3221 with UN1090 returned PASS, minted a token, and committed a paper
+ * showing only 4.1 and 3.
+ *
+ * SP38 (round sixteen): its violent-effect branch ACTIVATES SP53's explosive
+ * subsidiary on a heating-under-confinement laboratory fact no column carries.
+ * Reproduced: UN3242 with UN1090 passed and exported as plain 4.1.
+ *
+ * SP5 (round sixteen): if the material as shipped meets the 171.8 PIH
+ * definition, a DIFFERENT shipping name in Division 2.3 or 6.1 must be
+ * selected, whose segregation rows are stricter than the listed class. That
+ * determination is about the specific shipment and is not in any column.
+ * Reproduced: NA1911 with UN1090 passed and exported as plain 2.1.
  *
  * An unevaluable condition is not a satisfied one. This is the same shape as
  * 177.848(g)(vi) and 177.848(e)(5) note A, and it fails closed for the same
- * reason: the tool cannot show the permission applies.
+ * reason: the tool cannot show the permission applies. The line drawn here:
+ * provisions that conditionally direct a STRONGER hazard communication on a
+ * fact outside the corpus fail closed; provisions that merely define an
+ * entry's scope (SP78, SP138, SP176 and kin) are the shipper's certification
+ * under 172.204, which the paper already prints verbatim.
  */
-const UNEVALUABLE_SP = new Set(["53"]);
+const UNEVALUABLE_SP: Record<string, string> = {
+  "53": "The explosive subsidiary that provision requires is not in the 172.101 label column, and its class and division come from an approval this corpus does not contain.",
+  "38": "Whether its violent-effect branch applies, and with it special provision 53's explosive subsidiary, turns on heating-under-confinement laboratory results this corpus does not contain.",
+  "5": "Whether the material as shipped meets the poison-by-inhalation definition in 49 CFR 171.8 is a determination about the specific shipment, not a column in the table, and if it does, a different Division 2.3 or 6.1 description with stricter segregation rows is required.",
+};
 
 /**
  * Map a hazard class string to its 177.848(d) key.
@@ -164,6 +182,13 @@ const mostSevere = (rows: HmtEntry[]): HmtEntry =>
 /** Resolve one line item against the corpus into every hazard it presents. */
 export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
   let entry: HmtEntry | null = null;
+  /**
+   * The packing groups the caller's reference could have meant, captured at
+   * row-selection time. Severity ordering settles the VERDICT axis; whether
+   * the caller actually asserted a packing group decides what a shipping
+   * paper may PRINT, and those are different questions (round sixteen).
+   */
+  let pgCandidates: Array<string | null> | null = null;
   if (item.id) {
     // NORMALISE THE IDENTIFICATION NUMBER HERE TOO. The tool path strips
     // whitespace and upper-cases before lookup; this path did not, so "UN 1090"
@@ -221,7 +246,12 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
       rows = byName;
     }
 
-    if (item.pihZone) {
+    // A supplied zone SELECTS among rows that list zones, and SUPPLEMENTS a
+    // row that lists none (the SP6 rows, whose zone comes from an approval).
+    // Filtering unconditionally turned the supplement into a lookup failure:
+    // { id: "UN3168", pihZone: "A" } found zero rows because no row lists a
+    // zone to match, which is precisely the case the field exists for.
+    if (item.pihZone && rows.some((r) => zoneFor(r) !== null)) {
       const byZone = rows.filter((r) => zoneFor(r) === item.pihZone);
       if (byZone.length === 0) {
         const offered = [...new Set(rows.map((r) => zoneFor(r) ?? "none"))].join(", ");
@@ -279,6 +309,7 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
     // ["8","6.1"] carrying special provision 2, and the first is the one
     // WITHOUT the poison-by-inhalation subsidiary; a 6.1 PG I zone A liquid has
     // its own row in the 177.848(d) table, so taking it drops a restriction.
+    pgCandidates = rows.map((r) => r.pg ?? null);
     entry = mostSevere(rows);
   } else if (item.name) {
     const r = resolveName(item.name);
@@ -324,7 +355,9 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
         }
         rows = byPg;
       }
-      if (item.pihZone) {
+      // Same selection-or-supplement rule as the id branch: a zone narrows
+      // only where some row lists one to narrow BY.
+      if (item.pihZone && rows.some((r2) => zoneFor(r2) !== null)) {
         const byZone = rows.filter((r2) => zoneFor(r2) === item.pihZone);
         if (byZone.length === 0) {
           const offered = [...new Set(rows.map((r2) => zoneFor(r2) ?? "none"))].join(", ");
@@ -336,6 +369,7 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
         }
         rows = byZone;
       }
+      pgCandidates = rows.map((r2) => r2.pg ?? null);
       entry = mostSevere(rows);
     }
 
@@ -372,27 +406,49 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
             (shown.length > 4 ? "; and others" : "") + ".",
         };
       }
+      // One identity across several rows: severity settles the verdict row,
+      // and the packing-group spread is recorded so export can insist the
+      // caller assert one before it is printed on a signed document.
+      if (!item.packingGroup && !item.pihZone) {
+        pgCandidates = named.map((r2) => r2.pg ?? null);
+        entry = mostSevere(named);
+      }
     }
   } else {
     return { error: "a line item needs an identification number or a proper shipping name" };
   }
 
-  // FAIL CLOSED ON A SUBSIDIARY HAZARD THE TABLE DOES NOT PRINT.
-  const unevaluable = entry.specialProvisions.filter((sp) => UNEVALUABLE_SP.has(sp.trim()));
+  // FAIL CLOSED ON A CLASSIFICATION THE CORPUS CANNOT EVALUATE. The cite ids
+  // are written out literally because the reachability gate greps source for
+  // literal id strings, and a dynamic id would leave the clause verified,
+  // shipped, and invisible to the gate that proves it is enforced (finding 33).
+  const unevaluable = entry.specialProvisions.map((sp) => sp.trim()).filter((sp) => sp in UNEVALUABLE_SP);
   if (unevaluable.length > 0) {
-    const c = cite("sp53-explosive-subsidiary");
+    const sp0 = unevaluable[0]!;
+    const c =
+      sp0 === "53" ? cite("sp53-explosive-subsidiary")
+      : sp0 === "38" ? cite("sp38-conditional-sp53")
+      : cite("sp5-conditional-pih");
     return {
       error:
         `${entry.name} carries special provision ${unevaluable.join(", ")}, and this tool cannot ` +
-        `adjudicate a load containing it. ${c.section}: "${c.text}" The explosive subsidiary that ` +
-        `provision requires is not in the 172.101 label column, and its class and division come ` +
-        `from an approval this corpus does not contain. Several Class 1 rows are marked X against ` +
-        `other classes in the 177.848(d) table, so the missing division decides the verdict. This ` +
-        `is a stated gap in coverage, not a judgement about the material.`,
+        `adjudicate a load containing it. ${c.section}: "${c.text}" ${UNEVALUABLE_SP[sp0]!} ` +
+        `This is a stated gap in coverage, not a judgement about the material.`,
     };
   }
 
-  const pihZone = zoneFor(entry);
+  // The zone from column 7 governs; a caller-supplied zone fills in only where
+  // no column supplies one (the SP6 rows, whose zone comes from an approval),
+  // and a conflict with a listed zone is an identity error, not an override.
+  const listedZone = zoneFor(entry);
+  if (item.pihZone && listedZone && item.pihZone !== listedZone) {
+    return {
+      error:
+        `${entry.name} is listed with Hazard Zone ${listedZone} in column 7 of the 172.101 ` +
+        `table, and the caller sent Zone ${item.pihZone}. A listed zone cannot be overridden.`,
+    };
+  }
+  const pihZone = listedZone ?? item.pihZone ?? null;
   const { state } = inferState(entry, item.state);
   const primaryRaw = entry.class;
 
@@ -422,6 +478,25 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
     });
   }
 
+  // SP128 (round sixteen): "The presence of a Class 8 hazard must be
+  // communicated as required by this part for subsidiary hazards." The aluminum
+  // smelting by-product rows are classed 4.3 by this provision's own
+  // permission, premised on the material meeting the definition of Class 8, and
+  // the label column does not print the 8. Unconditional, so the hazard is
+  // added here rather than refused: UN3170 with UN1309 passed and exported as
+  // plain 4.3 and 4.1 until it was.
+  const sps = entry.specialProvisions.map((sp) => sp.trim());
+  if (sps.includes("128") && primaryRaw !== "8" && !hazards.some((h) => h.raw === "8")) {
+    const m = matrixKeyFor("8", { pihZone, packingGroup: entry.pg, state });
+    hazards.push({
+      raw: "8",
+      matrixKey: m.key,
+      ...(m.reason ? { notCoveredReason: m.reason } : {}),
+      compatibilityGroup: null,
+      subsidiary: true,
+    });
+  }
+
   return {
     // The identification number AS THE REGULATION WRITES IT, not as the user
     // typed it. This is what reaches the shipping paper's basic description
@@ -438,6 +513,10 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
     forbidden: entry.forbidden,
     outsidePart177: entry.symbols.airOnly || entry.symbols.vesselOnly,
     specialProvisionReview: entry.specialProvisions.filter((sp) => CLASS_ALTERING_SP.has(sp.trim())),
+    ...(!item.packingGroup && new Set((pgCandidates ?? [entry.pg]).map((p) => p ?? "")).size > 1
+      ? { packingGroupAssumed: true }
+      : {}),
+    ...(sps.includes("6") && !pihZone ? { pihMandatedNoZone: true } : {}),
   };
 }
 

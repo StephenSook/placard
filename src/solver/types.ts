@@ -71,6 +71,19 @@ export type ResolvedItem = {
   outsidePart177: boolean;
   /** Column 7 codes that can change class, PG or subsidiary hazard. */
   specialProvisionReview: string[];
+  /**
+   * The caller sent no packing group and the row's siblings differ in it, so
+   * the strictest was used for the VERDICT. A shipping paper may not print a
+   * packing group the caller never asserted, so export refuses on this flag.
+   */
+  packingGroupAssumed?: boolean;
+  /**
+   * Special provision 6: the material is poisonous by inhalation by rule, and
+   * no column supplies its hazard zone. The verdict runs on the conservative
+   * Zone A row; the 172.203(m) entry cannot be printed without a zone, so
+   * export refuses on this flag until the caller supplies `pihZone`.
+   */
+  pihMandatedNoZone?: boolean;
 };
 
 /** One hazard a material presents, primary or subsidiary. */

@@ -178,7 +178,9 @@ describe("check_segregation", () => {
 });
 
 describe("commit_manifest is the security boundary", () => {
-  const good = [{ items: ["UN1830"] }, { items: ["UN1748"] }];
+  // UN1748's packing group is explicit: it has PG II and III rows, and
+  // finding 47 made export refuse a packing group the caller never asserted.
+  const good = [{ items: ["UN1830"] }, { items: [{ id: "UN1748", packingGroup: "II" }] }];
 
   async function token() {
     const v = await checkSegregation({ vehicles: good }, NONCE);

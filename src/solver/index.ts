@@ -8,6 +8,7 @@
  * are all uncommittable regardless of registration order.
  */
 import { resolveItem } from "./hazards.ts";
+import { cite } from "./corpus.ts";
 import { checkVehicle } from "./segregation.ts";
 import { approvalToken, loadDigest, canonical } from "./hash.ts";
 import type { LoadProposal, ResolvedItem, Verdict, Violation } from "./types.ts";
@@ -74,6 +75,31 @@ export async function checkLoad(load: LoadProposal, nonce: string): Promise<Chec
       }
       resolved.push(r);
     });
+    // Assumptions the verdict is allowed to make and a signed paper is not.
+    // Saying so HERE is what gives an agent the remedy in the same breath as
+    // the verdict, instead of a surprise refusal at export.
+    for (const r of resolved) {
+      if (r.packingGroupAssumed) {
+        notes.push(
+          `${r.name}: several 172.101 rows differ only in packing group and none was supplied; ` +
+          `the strictest (PG ${r.packingGroup}) decided this verdict. Export will refuse until ` +
+          `packingGroup is asserted, because a shipping paper may not print an assumed one.`,
+        );
+      }
+      if (r.pihMandatedNoZone) {
+        notes.push(
+          `${r.name} carries special provision 6, poisonous by inhalation by rule, with no hazard ` +
+          `zone in any column; the conservative Zone A row decided this verdict. Export will ` +
+          `refuse until pihZone is supplied, because the 172.203(m) entry cannot print without it.`,
+        );
+      }
+      // The mandated Class 8 subsidiary arrives from special provision 128,
+      // not from the label column, so the verdict says where it came from.
+      if (r.specialProvisions.some((sp) => sp.trim() === "128") && r.hazards.some((h) => h.raw === "8" && h.subsidiary)) {
+        const c = cite("sp128-class8-subsidiary");
+        notes.push(`${r.name}: a Class 8 subsidiary hazard was applied from ${c.section}: "${c.text}"`);
+      }
+    }
     const out = checkVehicle(resolved, v, vi);
     violations.push(...out.violations);
     notes.push(...out.notes);

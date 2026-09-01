@@ -24,7 +24,19 @@ export type FixedPoint =
  * would be a bug in this function, not a property of the regulation, so it
  * throws rather than looping.
  */
-export function resolveCompatibility(input: Iterable<CompatibilityGroup>): FixedPoint {
+export function resolveCompatibility(
+  input: Iterable<CompatibilityGroup>,
+  /**
+   * One identity string per group-L MATERIAL in the load, when the caller can
+   * supply them. 177.848(g)(3)(i) permits group L "only ... with an identical
+   * explosive", so two line items of the SAME material are legal together and
+   * two different L materials are not. Without identities this stays
+   * conservative: any two L letters refuse (round sixteen: the letter count
+   * that fixed the Set collapse also refused two drums of the same UN0380,
+   * which the clause permits by name).
+   */
+  lIdentities?: readonly string[],
+): FixedPoint {
   let groups = new Set(input);
   const rewrites: Rewrite[] = [];
   const BOUND = 16;
@@ -65,8 +77,9 @@ export function resolveCompatibility(input: Iterable<CompatibilityGroup>): Fixed
   // identical explosive and these are two different ones. Multiplicity is
   // therefore counted from the ORIGINAL input rather than from the Set.
   const lCount = [...input].filter((g) => g === "L").length;
-  if (lCount > 1) {
-    return { ok: false, reason: "compatibility group L may only be carried with an identical explosive, and this load carries more than one group L material", citation: cite("g3i-group-L") };
+  const distinctL = lIdentities !== undefined ? new Set(lIdentities).size : lCount;
+  if (lCount > 1 && distinctL > 1) {
+    return { ok: false, reason: "compatibility group L may only be carried with an identical explosive, and this load carries more than one distinct group L material", citation: cite("g3i-group-L") };
   }
   if (groups.has("L") && groups.size > 1) {
     return { ok: false, reason: "compatibility group L may only be carried with an identical explosive", citation: cite("g3i-group-L") };

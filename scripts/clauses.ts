@@ -169,6 +169,43 @@ export const CLAUSES: ClauseSpec[] = [
     from: "Packages of these materials must bear the subsidiary risk label",
     to: "immediately following the primary hazard class in the shipping description",
   },
+  // SP38 ACTIVATES SP53 ON A LABORATORY FACT THE CORPUS CANNOT READ. UN3242
+  // azodicarbonamide is listed 4.1; whether the violent-effect branch applies,
+  // and with it SP53's explosive subsidiary, turns on heating-under-confinement
+  // tests no table column carries. An unevaluable condition is not a satisfied
+  // one, so a load carrying SP38 is refused, in the same words as SP53.
+  {
+    id: "sp38-conditional-sp53", section: "49 CFR 172.102, special provision 38", slug: "172-102-special-provisions",
+    from: "If this material shows a violent effect",
+    to: "of Special Provision 53 apply",
+  },
+  // SP5 CONDITIONALLY SELECTS A DIFFERENT, STRONGER SHIPPING NAME. Whether the
+  // material as shipped meets the 171.8 poison-by-inhalation definition is a
+  // determination about the specific shipment, not a column in the table, and
+  // if it does, the correct description is a Division 2.3 or 6.1 PIH entry
+  // whose segregation rows are stricter than the listed class. Refused.
+  {
+    id: "sp5-conditional-pih", section: "49 CFR 172.102, special provision 5", slug: "172-102-special-provisions",
+    from: "If this material meets the definition for a material poisonous by inhalation",
+    to: "in Division 2.3 or Division 6.1, as appropriate.",
+  },
+  // SP128 MANDATES A CLASS 8 SUBSIDIARY THE LABEL COLUMN DOES NOT PRINT. The
+  // aluminum smelting by-product rows are classed 4.3 by permission of this
+  // provision, whose own text requires the Class 8 hazard to be communicated
+  // as a subsidiary. Unconditional, so the solver adds hazard 8 to those rows.
+  {
+    id: "sp128-class8-subsidiary", section: "49 CFR 172.102, special provision 128", slug: "172-102-special-provisions",
+    from: "aluminum smelting by-products and aluminum remelting by-products",
+    to: "communicated as required by this part for subsidiary hazards.",
+  },
+  // SP6 SAYS THE MATERIAL IS PIH BY RULE, WITH NO ZONE IN ANY COLUMN. The
+  // 172.203(m) entry needs a zone, and for these rows it comes from an
+  // approval, so export is refused until the caller supplies the zone.
+  {
+    id: "sp6-pih-description", section: "49 CFR 172.102, special provision 6", slug: "172-102-special-provisions",
+    from: "This material is poisonous-by-inhalation",
+    to: "under the provisions of this subchapter.",
+  },
 
   // ── 173.52(b) table 1, what each compatibility group IS ────────────────────
   //

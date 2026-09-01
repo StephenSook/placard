@@ -282,7 +282,12 @@ export function checkVehicle(items: ResolvedItem[], v: VehicleProposal, vehicleI
 
       if (worst.code === "*" || referredToCompatibility) {
         const groups = [...groupsOf(a), ...groupsOf(b)];
-        const fp = resolveCompatibility(groups);
+        // Which MATERIALS carry group L, not just how many L letters: the
+        // (g)(3)(i) footnote permits an identical explosive with itself.
+        const lIds = [a, b]
+          .filter((x) => groupsOf(x).includes("L"))
+          .map((x) => `${x.name}|${x.hazardClass}`);
+        const fp = resolveCompatibility(groups, lIds);
         if (!fp.ok) {
           violations.push({
             code: "EXPLOSIVE_INCOMPATIBLE", items: [i, j], vehicle: vehicleIndex, cell: "*",

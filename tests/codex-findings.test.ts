@@ -103,9 +103,17 @@ describe("4. the 177.848(e)(3) exception needs BOTH of its conditions", () => {
   });
 
   it("permits only when both are asserted, since that is what the clause says", async () => {
+    // The pair carries an explicit packing group for UN1748 because `clears`
+    // includes the EXPORT, and finding 47 made export refuse a packing group
+    // the caller never asserted (UN1748 has PG II and PG III rows). The
+    // carve-out itself is packing-group independent, which the two refusal
+    // cases above still prove on the bare pair.
     expect(
       await clears([
-        { items: PAIR, barriersPresent: true, singleShipper: true, nonReactionAsserted: true },
+        {
+          items: ["UN1830", { id: "UN1748", packingGroup: "II" }],
+          barriersPresent: true, singleShipper: true, nonReactionAsserted: true,
+        },
       ]),
     ).toBe(true);
   });
@@ -1621,5 +1629,139 @@ describe("44. the special provisions the solver does NOT know, audited", () => {
     // label column does not print, so it is the one that must fail closed.
     expect("error" in resolveItem({ id: "UN3221" })).toBe(true);
     expect(SOLVER_KNOWS).toContain("53");
+  });
+});
+
+describe("45. a conditional stronger classification is unevaluable, and fails closed", () => {
+  // Round sixteen. SP38's violent-effect branch ACTIVATES SP53's explosive
+  // subsidiary on a laboratory fact no column carries, and SP5 conditionally
+  // requires a DIFFERENT Division 2.3/6.1 description whose segregation rows
+  // are stricter than the listed class. Both cleared: UN3242 with acetone
+  // passed and exported as plain 4.1, NA1911 with acetone as plain 2.1. The
+  // finding 44 audit had called every SP beyond the known six conservative,
+  // and round sixteen falsified that for exactly these two.
+  it("refuses SP38: UN3242 with acetone used to clear", async () => {
+    const check = await checkSegregation({ vehicles: [{ items: ["UN3242", "UN1090"] }] }, "t45");
+    expect(check.status).toBe("REFUSED");
+    const text = JSON.stringify(check);
+    expect(text).toContain("special provision 38");
+    expect(text).toContain("If this material shows a violent effect");
+  });
+  it("refuses SP5: NA1911 with acetone used to clear", async () => {
+    const check = await checkSegregation({ vehicles: [{ items: ["NA1911", "UN1090"] }] }, "t45");
+    expect(check.status).toBe("REFUSED");
+    expect(JSON.stringify(check)).toContain("special provision 5");
+  });
+  it("still clears a plain 4.1 beside acetone, so the refusal is the provision, not the class", async () => {
+    // UN1309 aluminum powder, coated, PG II: same 4.1 class as UN3242, no SP38.
+    const check = await checkSegregation(
+      { vehicles: [{ items: [{ id: "UN1309", packingGroup: "II" }, "UN1090"] }] }, "t45");
+    expect(check.status).toBe("PASS");
+  });
+});
+
+describe("46. SP128's Class 8 subsidiary is mandated, not a note", () => {
+  // Round sixteen. "The presence of a Class 8 hazard must be communicated as
+  // required by this part for subsidiary hazards." The UN3170 rows are 4.3 by
+  // this provision's own permission, premised on the material meeting Class 8,
+  // and the label column does not print the 8. UN3170 with UN1309 passed and
+  // COMMITTED a paper showing plain 4.3 and 4.1.
+  it("refuses the pair that used to export, on the corrosive hard block", async () => {
+    const items = [{ id: "UN3170", packingGroup: "II" }, { id: "UN1309", packingGroup: "II" }];
+    const check = await checkSegregation({ vehicles: [{ items }] }, "t46");
+    expect(check.status).toBe("REFUSED");
+    expect(JSON.stringify(check)).toContain("CORROSIVE_OVER_OXIDIZER");
+  });
+  it("still clears UN3170 alone, and its resolution now carries the 8", () => {
+    const r = resolveItem({ id: "UN3170", packingGroup: "II" });
+    expect("error" in r).toBe(false);
+    const hazards = (r as { hazards: Array<{ raw: string; subsidiary: boolean }> }).hazards;
+    expect(hazards.some((h) => h.raw === "8" && h.subsidiary)).toBe(true);
+  });
+});
+
+describe("47. an omitted packing group may decide a verdict, never a printed field", () => {
+  // Round sixteen. UN1170 has real PG II and PG III rows; a bare reference was
+  // checked at the strictest and the paper then PRINTED PG II as if the caller
+  // had asserted a concentration. The verdict keeps the conservative choice,
+  // the export refuses until the caller asserts the field, and the check says
+  // so in its notes, so the remedy arrives with the verdict.
+  it("check passes with a note; commit refuses; supplying the field commits it", async () => {
+    const bare = { vehicles: [{ items: ["UN1170"] }] };
+    const check = await checkSegregation(bare, "t47");
+    expect(check.status).toBe("PASS");
+    expect(JSON.stringify((check as { notes?: string[] }).notes ?? [])).toContain("packing group");
+    const token = (check as { approvalToken: string }).approvalToken;
+    const commit = await commitManifest({ approvalToken: token, vehicles: bare.vehicles }, "t47");
+    expect(commit.status).toBe("REFUSED");
+    expect(JSON.stringify(commit)).toContain("packingGroup");
+
+    const asserted = { vehicles: [{ items: [{ id: "UN1170", packingGroup: "III" }] }] };
+    const c2 = await checkSegregation(asserted, "t47");
+    expect(c2.status).toBe("PASS");
+    const commit2 = await commitManifest(
+      { approvalToken: (c2 as { approvalToken: string }).approvalToken, vehicles: asserted.vehicles }, "t47");
+    expect(commit2.status).toBe("COMMITTED");
+    expect(JSON.stringify(commit2)).toContain('"packingGroup":"III"');
+  });
+  it("a single-row reference stays unaffected: bare acetone still commits", async () => {
+    const bare = { vehicles: [{ items: ["UN1090"] }] };
+    const check = await checkSegregation(bare, "t47");
+    expect(check.status).toBe("PASS");
+    const commit = await commitManifest(
+      { approvalToken: (check as { approvalToken: string }).approvalToken, vehicles: bare.vehicles }, "t47");
+    expect(commit.status).toBe("COMMITTED");
+  });
+});
+
+describe("48. a PIH-by-rule material does not export without its zone", () => {
+  // Round sixteen. UN3168 carries SP6: poisonous by inhalation by rule, no
+  // zone in any column. The verdict correctly ran on the conservative Zone A
+  // row and the paper then omitted the 172.203(m) entry entirely, exporting
+  // "2.3 (2.1)" with no inhalation line. Export now refuses until pihZone is
+  // supplied; a supplied zone prints the entry; a LISTED zone (SP1) is not
+  // overridable and never was.
+  it("commit refuses bare UN3168 and accepts it with a zone, printing 172.203(m)", async () => {
+    const bare = { vehicles: [{ items: ["UN3168"] }] };
+    const check = await checkSegregation(bare, "t48");
+    expect(check.status).toBe("PASS");
+    const commit = await commitManifest(
+      { approvalToken: (check as { approvalToken: string }).approvalToken, vehicles: bare.vehicles }, "t48");
+    expect(commit.status).toBe("REFUSED");
+    expect(JSON.stringify(commit)).toContain("pihZone");
+
+    const zoned = { vehicles: [{ items: [{ id: "UN3168", pihZone: "A" }] }] };
+    const c2 = await checkSegregation(zoned, "t48");
+    expect(c2.status).toBe("PASS");
+    const commit2 = await commitManifest(
+      { approvalToken: (c2 as { approvalToken: string }).approvalToken, vehicles: zoned.vehicles }, "t48");
+    expect(commit2.status).toBe("COMMITTED");
+    expect(JSON.stringify(commit2)).toContain("Toxic-Inhalation Hazard, Zone A");
+  });
+  it("a listed zone still exports and cannot be overridden", async () => {
+    const listed = { vehicles: [{ items: ["UN1092"] }] };
+    const check = await checkSegregation(listed, "t48");
+    expect(check.status).toBe("PASS");
+    const commit = await commitManifest(
+      { approvalToken: (check as { approvalToken: string }).approvalToken, vehicles: listed.vehicles }, "t48");
+    expect(commit.status).toBe("COMMITTED");
+    expect(JSON.stringify(commit)).toContain("Toxic-Inhalation Hazard, Zone A");
+    const conflict = resolveItem({ id: "UN1092", pihZone: "B" });
+    expect("error" in conflict).toBe(true);
+  });
+});
+
+describe("49. group L permits an identical explosive, and only an identical one", () => {
+  // Round sixteen, and the defect was a previous fix: counting L letters from
+  // the input (added when the Set collapse let UN0380 ride with UN0248) also
+  // refused two drums of the SAME UN0380, which 177.848(g)(3)(i) permits in
+  // its own words: "an explosive from compatibility group L shall only be
+  // carried on the same transport vehicle with an identical explosive."
+  it("two of the same L material clear; two different L materials refuse", async () => {
+    const same = await checkSegregation({ vehicles: [{ items: ["UN0380", "UN0380"] }] }, "t49");
+    expect(same.status).toBe("PASS");
+    const mixed = await checkSegregation({ vehicles: [{ items: ["UN0380", "UN0248"] }] }, "t49");
+    expect(mixed.status).toBe("REFUSED");
+    expect(JSON.stringify(mixed)).toContain("identical explosive");
   });
 });

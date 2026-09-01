@@ -381,7 +381,7 @@ npm test
 having checked nothing is indistinguishable from one that works:
 
 ```
-PASS  checked 14 hashes, 42 verbatim clauses (9604 characters), 493 table cells, 3293 table entries
+PASS  checked 14 hashes, 46 verbatim clauses (10446 characters), 493 table cells, 3293 table entries
 ```
 
 Every clause the app quotes is proven to be a verbatim substring of the pinned
@@ -422,7 +422,7 @@ written down rather than left for you to discover:
 It scored 2 of 6 the first time I actually ran it, on the single-file version of
 these evals. Running a command you publish is not optional.
 
-14 test files, 367 tests. Lighthouse on the live origin, desktop: **agentic
+14 test files, 380 tests. Lighthouse on the live origin, desktop: **agentic
 browsing 100, accessibility 100, best practices 100, SEO 100, performance 100.**
 Agentic browsing at 100 is itself the proof the origin trial is live, because
 those audits report nothing at all rather than failing when the token is
@@ -457,7 +457,7 @@ exported for a load that fails 49 CFR 177.848. So before shipping I pointed a
 second model at the repository with that one question and nothing else, and then
 kept doing it.
 
-**Fifteen rounds. Not one has come back empty.** Fifty-two defects, forty-three
+**Sixteen rounds. Not one has come back empty.** Fifty-seven defects, forty-eight
 of them carrying a numbered regression in `tests/codex-findings.test.ts` and the
 rest in its sibling suites. Every one reproduced before it was touched. Every fix
 paired with the load that used to clear AND a load that must still clear, so no
@@ -643,8 +643,8 @@ self-reactives, and its class and division come from an approval no corpus
 contains, so UN3221 with acetone returned PASS and committed a paper showing
 only 4.1 and 3. I did not take the reviewer's word for what SP53 says: it is
 sliced from the pinned 172.102 source and proved verbatim by the same citation
-gate as everything else, which is why the receipt now reads 42 clauses rather
-than 41. A load carrying it is refused.
+gate as everything else, which is why the receipt then read 42 clauses rather
+than 41 (round sixteen later grew it to 46). A load carrying it is refused.
 
 Two more. The barrier checkbox asserted less than its clause requires, reading
 "physical barriers separate incompatible items" when 177.848(e)(3) asks for
@@ -654,13 +654,39 @@ that identifies more than one material was resolving to whichever row came
 first, so "Bromine solutions" committed Hazard Zone A with no zone supplied and
 "Diesel fuel" committed NA1993 though the name also identifies UN1202.
 
+**Round sixteen took three attempts to produce a verdict, and the verdict found
+five more.** The first attempt died on a capacity error; the second was a
+partial turn that printed "No material findings" beside its own admission that
+the code was still untraced, a verdict-shaped false green treated as no verdict
+at all; the third ran whole-repo to completion. Its findings, each verified
+against the pinned corpus before any code moved: special provision 38
+conditionally activates SP53's explosive subsidiary on a laboratory fact no
+column carries, and SP5 conditionally requires a stronger inhalation-hazard
+description, so both now fail closed beside SP53, quoting their own clauses
+(azodicarbonamide with acetone used to export as plain 4.1). SP128's own text
+mandates a Class 8 subsidiary the label column does not print, so the solver
+now adds it, and the aluminum by-products pair that used to export refuses on
+the same corrosive hard block as the headline pair. An omitted packing group
+may still decide a VERDICT at the strictest row, but it may no longer be
+PRINTED: a bare UN1170 was exporting a paper that stated a concentration the
+caller never asserted, so export now refuses until the field is supplied, and
+the check's notes say so in the same breath as the verdict. A material that is
+poisonous by inhalation by rule (SP6) no longer exports without its hazard
+zone, because the 172.203(m) entry cannot print without one. And one finding
+ran the OTHER way: the group L guard, itself a round-seven fix, was refusing
+two drums of the same explosive that 177.848(g)(3)(i) permits in its own words,
+"an identical explosive"; a false refusal, fixed by material identity rather
+than letter count. The corpus grew to 46 proven clauses in the process, and the
+column-7 audit's own published conclusion, that every unknown provision runs
+conservative, was falsified for exactly two provisions and corrected.
+
 I am putting this in the writeup rather than quietly fixing it because the
 alternative is a submission that claims a safety property and hides the evidence
 that the claim was tested. The review command, the loads that reproduced each
 defect, and the tests are all in the repository.
 
 The corpus grew through all of this rather than being trimmed to fit. It is now
-eight pinned sections and 42 verbatim clauses, 9,604 characters of regulation
+eight pinned sections and 46 verbatim clauses, 10,446 characters of regulation
 text, each proven byte for byte against the committed source.
 
 ## Challenges

@@ -111,7 +111,9 @@ describe("an attestation is not a tool argument", () => {
    * said "an agent must not assert it on the operator's behalf" while handing
    * the agent the field. Writing a hole down is not closing it.
    */
-  const OCELL = ["UN1090", "UN1479"]; // Class 3 with a 5.1 oxidizer
+  // Class 3 with a 5.1 oxidizer. The packing group is explicit because UN1479
+  // spans PG I to III and finding 47 made export refuse an assumed one.
+  const OCELL = ["UN1090", { id: "UN1479", packingGroup: "II" }];
 
   it("refuses the wire attestation instead of honouring it", async () => {
     const forged = await checkSegregation(
@@ -321,7 +323,10 @@ describe("every attestation that changes a verdict is in the hash and on the pap
    * The dangerous direction was already covered, because commit re-runs the
    * solver. That is not a reason to leave a false claim standing.
    */
-  const PAIR = ["UN1830", "UN1748"]; // needs the (e)(3) carve-out to pass
+  // Needs the (e)(3) carve-out to pass. UN1748's packing group is explicit
+  // because it has PG II and III rows and finding 47 made export refuse an
+  // assumed one; the carve-out itself is packing-group independent.
+  const PAIR = ["UN1830", { id: "UN1748", packingGroup: "II" }];
 
   it("two loads differing only in the assertion no longer share a token", async () => {
     const withIt = await approvalToken(

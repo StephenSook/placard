@@ -10,7 +10,7 @@ no account, no API key and no network.
 | eCFR snapshot requested | `2026-08-27` |
 | Title 49 `latest_amended_on` | `2026-08-19` |
 | Title 49 `latest_issue_date` | `2026-08-19` |
-| Title 49 `up_to_date_as_of` | `2026-08-27` |
+| Title 49 `up_to_date_as_of` | `2026-08-28` |
 | Endpoint | `https://www.ecfr.gov/api/versioner/v1/full/2026-08-27/title-49.xml?part=172&section=172.101` |
 | Authentication | none required |
 
@@ -125,7 +125,7 @@ shasum -a 256 -c data/SHA256SUMS
 | `hmt.json` | 2,275,271 | `2ce32a2e81aaec8cb25d015a6c9df7ce3026a17810c0b106181750a4d9a3d026` |
 | `synonyms.json` | 48,075 | `8db6792a3fcc3cc5f13217304890514b56bc13d3ede2d383ea556b6c77c73d14` |
 | `segregation_table.json` | 10,618 | `25f0ab940458c09d543817045943536fed7d0e7962670d539e4afac18e49f2e5` |
-| `clauses.json` | 13,857 | `ffeb65b0f38ab9169c4d74bd3aead048d1b5a4eb2d6bbaa8b0f233834d1cb6c4` |
+| `clauses.json` | 15,145 | `e51776ee2514b43d1823636f1a852833079e665b6c1bdc8f0ef84d5f9ea85a72` |
 | `compatibility_table.json` | 3,165 | `b23cec599899b4f36b85467e65c0be40a1fe5dd093ae899a23b4f6315d2e4b3f` |
 
 The raw eCFR XML is hashed here but not committed: it is large and it is
