@@ -1732,7 +1732,13 @@ describe("48. a PIH-by-rule material does not export, and the wire cannot invent
     const commit = await commitManifest(
       { approvalToken: (check as { approvalToken: string }).approvalToken, vehicles: bare.vehicles }, "t48");
     expect(commit.status).toBe("REFUSED");
-    expect(JSON.stringify(commit)).toContain("approval this corpus does not contain");
+    const text = JSON.stringify(commit);
+    expect(text).toContain("approval this corpus does not contain");
+    // Round eighteen: a refusal must not name a remedy that cannot be
+    // performed. The shared note told this caller to re-run with "the named
+    // field supplied" while every pihZone value is refused by name.
+    expect(text).not.toContain("the named field supplied");
+    expect(text).toContain("no field can change that");
   });
   it("every wire zone on an SP6 row is refused by name, including the two with no table row", () => {
     for (const z of ["A", "B", "C", "D"]) {

@@ -860,17 +860,21 @@ export async function commitManifest(
   // that discharges it named. The token stays valid: re-check with the field
   // supplied and commit that arrangement.
   const gaps: string[] = [];
+  let dischargeable = false;
+  let permanent = false;
   for (const v2 of load.vehicles) {
     for (const li of v2.items) {
       const r = resolveItem(li);
       if ("error" in r) continue;
       if (r.packingGroupAssumed) {
+        dischargeable = true;
         gaps.push(
           `${r.name}: the 172.101 rows for this reference differ in packing group and none was ` +
           `supplied, so the paper would print an assumed PG ${r.packingGroup}. Send packingGroup.`,
         );
       }
       if (r.pihMandatedNoZone) {
+        permanent = true;
         const c = cite("sp6-pih-description");
         gaps.push(
           `${r.name}: ${c.section}: "${c.text}" Its hazard zone comes from an approval this ` +
@@ -882,12 +886,21 @@ export async function commitManifest(
     }
   }
   if (gaps.length > 0) {
+    // A REFUSAL MUST NAME A REMEDY ONLY WHERE ONE EXISTS (round eighteen). The
+    // shared retry note told an SP6 caller to re-run with "the named field
+    // supplied" when every pihZone value is refused by name, which is a remedy
+    // that cannot be performed and an invitation to loop. The note now matches
+    // the gap: a packing group is the caller's to supply; an SP6 zone is not
+    // anybody's to supply here.
+    const note = permanent
+      ? dischargeable
+        ? "No shipping paper was produced. The packing-group line is fixable: re-run check_segregation with packingGroup supplied. The special-provision-6 line is not: this tool cannot export a paper for it, and no field changes that."
+        : "No shipping paper was produced, and no field can change that for this load: the missing hazard zone comes from an approval outside this corpus. A stated gap in coverage, not a judgement about the material."
+      : "No shipping paper was produced. Re-run check_segregation with the named field supplied, then commit that arrangement.";
     return {
       status: "REFUSED" as const,
-      reason:
-        `the verdict stands, but a shipping paper may not print a field the caller never ` +
-        `asserted: ${gaps.join(" ")} Nothing was exported.`,
-      note: "No shipping paper was produced. Re-run check_segregation with the named field supplied, then commit that arrangement.",
+      reason: `the verdict stands, but the paper cannot be produced: ${gaps.join(" ")} Nothing was exported.`,
+      note,
     };
   }
   return {
