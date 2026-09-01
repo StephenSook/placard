@@ -52,22 +52,17 @@ none of these is waiting on anyone.
 **28257 Which agent(s) or client(s) did you test your WebMCP tools with?**
 (required, textarea, 255 characters max)
 
-**DECIDED. Chrome only, and the answer says so, because the ChatGPT attempt did
-not exercise WebMCP.**
+**UPDATED 2026-09-01: the desktop-app run happened and PASSED**, so the answer
+now names both harnesses. (The 2026-08-29 browser-ChatGPT attempt on a Plus
+account only reached the text crawler and is superseded; full run record in
+`evidence/chatgpt-app-run.md`.)
 
-Attempted 2026-08-29 on a ChatGPT Plus account: asked it to open the live URL
-and name the tools. It used its TEXT CRAWLER, said so in its own words ("the
-text crawler isn't exposing the JavaScript-registered tools directly"), then
-fell back to web and GitHub search. No model picker is exposed on that account,
-only a thinking-effort control, so there is no Sol or Terra to select. WebMCP
-was never reached, so naming ChatGPT here would describe a test that did not
-happen.
+> ChatGPT desktop app built-in browser (GPT-5.6 Sol, site tools on): agent found
+> 2 tools, watched 2 more register on state change, REFUSED quoting
+> 177.848(e)(3), commit_manifest withheld so no export. Also Chrome 151 via
+> document.modelContext, no flag.
 
-> Chrome 151 with the WebMCP origin trial live on the origin, no flag. Driven
-> through document.modelContext directly: getTools, executeTool, and tools
-> unregistering by AbortSignal as page state changes. Lighthouse
-> agentic-browsing scores 100. webmcp-evals runs against the live page in smoke
-> mode.
+250 characters, verified with `wc -c`.
 
 ---
 
@@ -125,5 +120,5 @@ Exactly one thing, and it is a decision rather than work.
 
 Settled and no longer open: the project is named **Placard**; the repository is
 renamed, public and at 100% community health; every required text and dropdown
-field is decided above; and field 28257 no longer waits on a ChatGPT run,
-because that run was attempted, did not reach WebMCP, and the answer says so.
+field is decided above; and field 28257 now records a PASSED run in the ChatGPT
+desktop app's built-in browser (2026-09-01, GPT-5.6 Sol), alongside Chrome 151.

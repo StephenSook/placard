@@ -8,7 +8,8 @@ Chrome 149 or later** and `document.modelContext` is live.
 
 One practical note so you do not lose a minute, because the harness matters
 here. WebMCP is supported in the ChatGPT desktop app's built-in browser and in
-Chrome 149 or later. It is not available in ChatGPT Work, on Luna, on mobile, or
+Chrome 149 or later, and this project is verified in both. It is not available
+in ChatGPT Work, on Luna, on mobile, or
 through the plain browse tool, which is served by a text crawler that runs no
 page JavaScript and so reports no tools. In Chrome the surface is live, and the
 agent's-eye panel prints the real `getTools()` result so you can check it rather
@@ -241,9 +242,14 @@ past hazmat.
 Five tools, all imperative, all on the top-level document. ChatGPT's in-app
 browser supports neither the declarative HTML form API nor tools registered
 inside iframes, so a declarative gate would be invisible to the client the rules
-name first. That decision still holds even though I could not reach that client:
-the imperative top-level surface is the one that works everywhere, and a
-declarative gate would have been a bet on a path I cannot verify.
+name first. That decision is now verified in that client. In the desktop app's
+built-in browser (GPT-5.6 Sol, site tools enabled), the agent found the two
+always-on tools, watched `propose_load` and `check_segregation` register the
+moment the manifest gained its first line item, and said so unprompted: "The
+registry is state-dependent, so I'm tracking each change before calling
+anything." It was refused with 177.848(e)(3) quoted verbatim, and it could not
+export, reporting that the site withheld `commit_manifest` because the load
+failed.
 
 ```js
 document.modelContext.registerTool({
@@ -435,6 +441,14 @@ Verified by hand in Chrome 151 against the live origin with no flag, driving
 a manifest is loaded, `executeTool` on `check_segregation` with a barrier
 asserted returns REFUSED carrying 177.848(e)(3) verbatim, and `commit_manifest`
 is absent throughout.
+
+Verified again in the client the rules name first: the ChatGPT desktop app's
+built-in browser on GPT-5.6 Sol, with site tools enabled, given only the URL and
+the UN1830 + UN1748 task. The agent discovered the tools, tracked the registry
+growing as the manifest changed, returned REFUSED on ground
+CORROSIVE_OVER_OXIDIZER with 177.848(e)(3) quoted in full, and closed with: "No
+shipping paper was exported. The site withheld commit_manifest because the load
+failed, so export was blocked."
 
 ## I attacked my own safety claim with a second model, again and again
 
