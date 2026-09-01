@@ -457,11 +457,14 @@ exported for a load that fails 49 CFR 177.848. So before shipping I pointed a
 second model at the repository with that one question and nothing else, and then
 kept doing it.
 
-**Seventeen rounds. Not one has come back empty.** Fifty-eight defects, forty-nine
-of them carrying a numbered regression in `tests/codex-findings.test.ts` and the
-rest in its sibling suites. Every one reproduced before it was touched. Every fix
-paired with the load that used to clear AND a load that must still clear, so no
-fix could degenerate into a blunt refusal. Every guard mutation-tested.
+**Nineteen rounds, and the exit condition was finally met.** The first eighteen
+never came back empty: fifty-nine defects, fifty of them carrying a numbered
+regression in `tests/codex-findings.test.ts` and the rest in its sibling suites.
+Every one reproduced before it was touched. Every fix paired with the load that
+used to clear AND a load that must still clear, so no fix could degenerate into
+a blunt refusal. Every guard mutation-tested. Round nineteen, pointed at round
+eighteen's own diff, returned no material findings: the project's first clean
+round, and the reason the reviewing stopped.
 
 The first round alone found five, and every one of them had already passed a
 147-test suite, because every one lived in the interaction between two features
@@ -692,6 +695,16 @@ selects only among rows column 7 actually lists, a zone for a row that lists
 none is refused by name, and SP6 rows do not export at all, because their zone
 comes from an approval this corpus does not contain. A stated gap in coverage
 rather than a field an agent may assert.
+
+**Round eighteen found one more, in the refusal itself: a remedy that cannot be
+performed.** The export gate's shared note told an SP6 caller to re-run with
+"the named field supplied" while every pihZone value is refused by name, an
+invitation to loop forever. A refusal must name a remedy only where one exists,
+so the note now matches the gap: a packing group is the caller's to supply, an
+SP6 zone is nobody's to supply here, and a mixed load is told which line is
+which. **Round nineteen reviewed that diff and returned no material findings**,
+the first clean round of the project, arriving only when the review had nothing
+left to find rather than when I declared the work done.
 
 I am putting this in the writeup rather than quietly fixing it because the
 alternative is a submission that claims a safety property and hides the evidence
