@@ -437,9 +437,17 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
     };
   }
 
-  // The zone from column 7 governs; a caller-supplied zone fills in only where
-  // no column supplies one (the SP6 rows, whose zone comes from an approval),
-  // and a conflict with a listed zone is an identity error, not an override.
+  // THE WIRE ZONE SELECTS AMONG LISTED ROWS; IT NEVER SUPPLEMENTS AN UNLISTED
+  // ONE (round seventeen, and the hole was round sixteen's own fix). For a few
+  // hours this fell back to `item.pihZone` where no column listed a zone, so an
+  // agent could declare Zone C for an SP6 material, and Zones C and D have no
+  // row in the 177.848(d) table at all: the declaration walked the material out
+  // of the conservative Zone A row and a pairing the bare reference refuses
+  // returned PASS and committed a paper printing the invented zone. An SP6
+  // zone comes from an approval this corpus does not contain, so a wire field
+  // carrying one is a claim about the physical world, refused by name exactly
+  // like a barrier or a physical state. A listed zone still narrows rows above
+  // and still refuses on conflict here.
   const listedZone = zoneFor(entry);
   if (item.pihZone && listedZone && item.pihZone !== listedZone) {
     return {
@@ -448,7 +456,16 @@ export function resolveItem(item: LineItem): ResolvedItem | { error: string } {
         `table, and the caller sent Zone ${item.pihZone}. A listed zone cannot be overridden.`,
     };
   }
-  const pihZone = listedZone ?? item.pihZone ?? null;
+  if (item.pihZone && !listedZone) {
+    return {
+      error:
+        `pihZone selects among 172.101 rows whose column 7 lists a hazard zone, and no row for ` +
+        `${entry.name} lists one: its zone comes from an approval this corpus does not contain. ` +
+        `A zone this tool cannot verify is a claim about the material, not a lookup key, so the ` +
+        `field is refused rather than trusted.`,
+    };
+  }
+  const pihZone = listedZone;
   const { state } = inferState(entry, item.state);
   const primaryRaw = entry.class;
 

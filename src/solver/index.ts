@@ -89,8 +89,10 @@ export async function checkLoad(load: LoadProposal, nonce: string): Promise<Chec
       if (r.pihMandatedNoZone) {
         notes.push(
           `${r.name} carries special provision 6, poisonous by inhalation by rule, with no hazard ` +
-          `zone in any column; the conservative Zone A row decided this verdict. Export will ` +
-          `refuse until pihZone is supplied, because the 172.203(m) entry cannot print without it.`,
+          `zone in any column; the conservative Zone A row decided this verdict. Export refuses ` +
+          `for this material: its zone comes from an approval this corpus does not contain, the ` +
+          `172.203(m) entry cannot print without one, and a zone is not something a caller can ` +
+          `assert. A stated gap in coverage.`,
         );
       }
       // The mandated Class 8 subsidiary arrives from special provision 128,

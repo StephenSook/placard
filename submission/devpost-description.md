@@ -422,7 +422,7 @@ written down rather than left for you to discover:
 It scored 2 of 6 the first time I actually ran it, on the single-file version of
 these evals. Running a command you publish is not optional.
 
-14 test files, 380 tests. Lighthouse on the live origin, desktop: **agentic
+14 test files, 382 tests. Lighthouse on the live origin, desktop: **agentic
 browsing 100, accessibility 100, best practices 100, SEO 100, performance 100.**
 Agentic browsing at 100 is itself the proof the origin trial is live, because
 those audits report nothing at all rather than failing when the token is
@@ -457,7 +457,7 @@ exported for a load that fails 49 CFR 177.848. So before shipping I pointed a
 second model at the repository with that one question and nothing else, and then
 kept doing it.
 
-**Sixteen rounds. Not one has come back empty.** Fifty-seven defects, forty-eight
+**Seventeen rounds. Not one has come back empty.** Fifty-eight defects, forty-nine
 of them carrying a numbered regression in `tests/codex-findings.test.ts` and the
 rest in its sibling suites. Every one reproduced before it was touched. Every fix
 paired with the load that used to clear AND a load that must still clear, so no
@@ -671,14 +671,27 @@ may still decide a VERDICT at the strictest row, but it may no longer be
 PRINTED: a bare UN1170 was exporting a paper that stated a concentration the
 caller never asserted, so export now refuses until the field is supplied, and
 the check's notes say so in the same breath as the verdict. A material that is
-poisonous by inhalation by rule (SP6) no longer exports without its hazard
-zone, because the 172.203(m) entry cannot print without one. And one finding
+poisonous by inhalation by rule (SP6) no longer exports its paper with the
+172.203(m) entry missing. And one finding
 ran the OTHER way: the group L guard, itself a round-seven fix, was refusing
 two drums of the same explosive that 177.848(g)(3)(i) permits in its own words,
 "an identical explosive"; a false refusal, fixed by material identity rather
 than letter count. The corpus grew to 46 proven clauses in the process, and the
 column-7 audit's own published conclusion, that every unknown provision runs
 conservative, was falsified for exactly two provisions and corrected.
+
+**Round seventeen reviewed round sixteen's own diff, and found the fix had
+opened a door.** Round sixteen's export gate let the wire supply the missing
+SP6 hazard zone, treating the zone as an identity field. It is not one: Zones C
+and D have no row in the 177.848(d) table at all, so an agent declaring Zone C
+walked the material out of the conservative Zone A row, and a pairing the bare
+reference REFUSES returned PASS and committed a paper printing the invented
+zone. The same shape as the forged barrier, rounds later, in my own fresh code:
+a claim about the physical world arriving on the wire. The zone field now
+selects only among rows column 7 actually lists, a zone for a row that lists
+none is refused by name, and SP6 rows do not export at all, because their zone
+comes from an approval this corpus does not contain. A stated gap in coverage
+rather than a field an agent may assert.
 
 I am putting this in the writeup rather than quietly fixing it because the
 alternative is a submission that claims a safety property and hides the evidence

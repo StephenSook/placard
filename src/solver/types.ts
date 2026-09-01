@@ -79,9 +79,11 @@ export type ResolvedItem = {
   packingGroupAssumed?: boolean;
   /**
    * Special provision 6: the material is poisonous by inhalation by rule, and
-   * no column supplies its hazard zone. The verdict runs on the conservative
-   * Zone A row; the 172.203(m) entry cannot be printed without a zone, so
-   * export refuses on this flag until the caller supplies `pihZone`.
+   * no column supplies its hazard zone; it comes from an approval outside this
+   * corpus. The verdict runs on the conservative Zone A row, and export
+   * REFUSES on this flag outright. The wire cannot discharge it: a zone no
+   * column lists is a claim about the material, refused by name (round
+   * seventeen closed the brief window where the wire could assert one).
    */
   pihMandatedNoZone?: boolean;
 };

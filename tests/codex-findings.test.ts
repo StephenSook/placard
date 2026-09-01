@@ -1714,31 +1714,44 @@ describe("47. an omitted packing group may decide a verdict, never a printed fie
   });
 });
 
-describe("48. a PIH-by-rule material does not export without its zone", () => {
-  // Round sixteen. UN3168 carries SP6: poisonous by inhalation by rule, no
-  // zone in any column. The verdict correctly ran on the conservative Zone A
-  // row and the paper then omitted the 172.203(m) entry entirely, exporting
-  // "2.3 (2.1)" with no inhalation line. Export now refuses until pihZone is
-  // supplied; a supplied zone prints the entry; a LISTED zone (SP1) is not
-  // overridable and never was.
-  it("commit refuses bare UN3168 and accepts it with a zone, printing 172.203(m)", async () => {
+describe("48. a PIH-by-rule material does not export, and the wire cannot invent its zone", () => {
+  // Round sixteen found the paper exporting "2.3 (2.1)" with no 172.203(m)
+  // entry. Round sixteen's FIX then let the wire supply the missing zone, and
+  // round seventeen found what that means: Zones C and D have no row in the
+  // 177.848(d) table at all, so { id: "UN3168", pihZone: "C" } walked the
+  // material out of the conservative Zone A row and a pairing the bare
+  // reference REFUSES returned PASS and committed a paper printing the
+  // invented zone. A zone no column lists is a claim about the material, so
+  // it is refused by name, and SP6 rows do not export at all: their zone
+  // comes from an approval this corpus does not contain.
+  it("the verdict is conservative and the export refuses, with no wire remedy", async () => {
     const bare = { vehicles: [{ items: ["UN3168"] }] };
     const check = await checkSegregation(bare, "t48");
     expect(check.status).toBe("PASS");
+    expect(JSON.stringify((check as { notes?: string[] }).notes ?? [])).toContain("special provision 6");
     const commit = await commitManifest(
       { approvalToken: (check as { approvalToken: string }).approvalToken, vehicles: bare.vehicles }, "t48");
     expect(commit.status).toBe("REFUSED");
-    expect(JSON.stringify(commit)).toContain("pihZone");
-
-    const zoned = { vehicles: [{ items: [{ id: "UN3168", pihZone: "A" }] }] };
-    const c2 = await checkSegregation(zoned, "t48");
-    expect(c2.status).toBe("PASS");
-    const commit2 = await commitManifest(
-      { approvalToken: (c2 as { approvalToken: string }).approvalToken, vehicles: zoned.vehicles }, "t48");
-    expect(commit2.status).toBe("COMMITTED");
-    expect(JSON.stringify(commit2)).toContain("Toxic-Inhalation Hazard, Zone A");
+    expect(JSON.stringify(commit)).toContain("approval this corpus does not contain");
   });
-  it("a listed zone still exports and cannot be overridden", async () => {
+  it("every wire zone on an SP6 row is refused by name, including the two with no table row", () => {
+    for (const z of ["A", "B", "C", "D"]) {
+      const r = resolveItem({ id: "UN3168", pihZone: z as "A" });
+      expect("error" in r, `Zone ${z} must be refused`).toBe(true);
+      expect((r as { error: string }).error).toContain("refused rather than trusted");
+    }
+  });
+  it("the round-seventeen bypass load is refused end to end", async () => {
+    // Bare: the SP6 material rides the conservative Zone A row and the pair
+    // refuses. With an invented Zone C it briefly PASSED and COMMITTED.
+    const bare = await checkSegregation({ vehicles: [{ items: ["UN3168", "UN1090"] }] }, "t48");
+    expect(bare.status).toBe("REFUSED");
+    const zoned = await checkSegregation(
+      { vehicles: [{ items: [{ id: "UN3168", pihZone: "C" }, "UN1090"] }] }, "t48");
+    expect(zoned.status).toBe("REFUSED");
+    expect(JSON.stringify(zoned)).toContain("refused rather than trusted");
+  });
+  it("a listed zone still selects, still exports its 172.203(m) entry, and cannot be overridden", async () => {
     const listed = { vehicles: [{ items: ["UN1092"] }] };
     const check = await checkSegregation(listed, "t48");
     expect(check.status).toBe("PASS");

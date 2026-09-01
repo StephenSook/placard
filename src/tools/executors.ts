@@ -873,8 +873,10 @@ export async function commitManifest(
       if (r.pihMandatedNoZone) {
         const c = cite("sp6-pih-description");
         gaps.push(
-          `${r.name}: ${c.section}: "${c.text}" No column supplies its hazard zone, and the ` +
-          `172.203(m) entry cannot print without one. Send pihZone.`,
+          `${r.name}: ${c.section}: "${c.text}" Its hazard zone comes from an approval this ` +
+          `corpus does not contain, and the 172.203(m) entry cannot print without one, so this ` +
+          `tool does not export a paper for it. A stated gap in coverage, not a judgement ` +
+          `about the material.`,
         );
       }
     }
